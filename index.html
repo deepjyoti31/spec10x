@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Spec10x - Deep Space Precision</title>
+  <link href="https://fonts.googleapis.com" rel="preconnect" />
+  <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:ital,wght@0,400;0,500;0,600;0,700;1,400;1,700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#5E6AD2",
+            "primary-glow": "#8A94EF",
+            "accent": "#00C2FF",
+            "bg-deep": "#08090A",
+            "bg-surface": "#121417",
+            "border-subtle": "#26292F",
+            "text-main": "#EDEDEF",
+            "text-muted": "#8A8F98",
+            "code-text": "#A3B3CC",
+            // Mapped theme colors for compatibility if needed, though design uses custom palette
+            "background-light": "#08090A", // Force dark for this specific design
+            "background-dark": "#08090A",
+          },
+          fontFamily: {
+            "sans": ['"Inter Tight"', "sans-serif"],
+            "mono": ['"JetBrains Mono"', "monospace"],
+            "display": ['"Inter Tight"', "sans-serif"]
+          },
+          backgroundImage: {
+            'gradient-hero': 'linear-gradient(to right, #EDEDEF, #A3B3CC)',
+            'grid-pattern': 'linear-gradient(to right, #26292F 1px, transparent 1px), linear-gradient(to bottom, #26292F 1px, transparent 1px)',
+          },
+          boxShadow: {
+            'neon': '0 0 15px rgba(94, 106, 210, 0.4)',
+            'neon-cyan': '0 0 15px rgba(0, 194, 255, 0.3)',
+            'glass': '0 4px 30px rgba(0, 0, 0, 0.1)',
+          },
+          borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+        },
+      },
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .text-balance {
+        text-wrap: balance;
+      }
+      .glass-panel {
+        @apply bg-bg-surface/80 backdrop-blur-md border border-border-subtle;
+      }
+      .grid-bg {
+        background-size: 40px 40px;
+        mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+      }
+    }
+    /* FAQ summary marker reset */
+    details summary::-webkit-details-marker { display: none; }
+    details summary { list-style: none; }
+  </style>
+</head>
+
+<body
+  class="bg-bg-deep text-text-main font-display selection:bg-primary/30 selection:text-white overflow-x-hidden antialiased">
+  <nav class="fixed top-0 left-0 w-full z-50 h-16 border-b border-border-subtle bg-bg-deep/80 backdrop-blur-md">
+    <div class="max-w-[1200px] mx-auto px-6 h-full flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 relative flex items-center justify-center">
+          <svg fill="none" height="32" viewBox="0 0 32 32" width="32" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 2L28.1244 9V23L16 30L3.87564 23V9L16 2Z" fill="rgba(94, 106, 210, 0.1)" stroke="#5E6AD2"
+              stroke-width="2"></path>
+            <path
+              d="M12 10C12 10 10 11 10 13C10 15 12 15 14 16C16 17 18 17 18 19C18 21 16 22 16 22M20 22C20 22 22 21 22 19M12 10C12 10 14 9 16 9"
+              stroke="white" stroke-linecap="round" stroke-width="1.5"></path>
+          </svg>
+        </div>
+        <span class="font-display font-semibold text-lg tracking-tight text-white">Spec10x</span>
+      </div>
+      <div class="flex items-center gap-6">
+        <div class="hidden md:flex items-center gap-6 text-sm text-text-muted font-medium" id="navLinks">
+          <a class="hover:text-primary transition-colors" href="#features-section">Features</a>
+          <a class="hover:text-primary transition-colors" href="#pricing-section">Pricing</a>
+          <a class="hover:text-primary transition-colors" href="#">Docs</a>
+        </div>
+        <button
+          class="hidden md:inline-flex h-8 px-4 bg-[#1A1D21] border border-[#363A45] text-text-main text-sm font-medium rounded hover:border-primary hover:text-primary transition-all duration-200">
+          Join Waitlist
+        </button>
+        <!-- Mobile menu toggle -->
+        <button id="mobileMenuToggle" class="md:hidden flex flex-col gap-1.5 p-2" aria-label="Toggle menu">
+          <span class="block w-5 h-0.5 bg-text-main transition-all duration-200"></span>
+          <span class="block w-5 h-0.5 bg-text-main transition-all duration-200"></span>
+          <span class="block w-5 h-0.5 bg-text-main transition-all duration-200"></span>
+        </button>
+      </div>
+    </div>
+    <!-- Mobile menu panel -->
+    <div id="mobileMenu" class="hidden md:hidden border-t border-border-subtle bg-bg-deep/95 backdrop-blur-md">
+      <div class="flex flex-col px-6 py-4 gap-3 text-sm text-text-muted font-medium">
+        <a class="hover:text-primary transition-colors py-2" href="#features-section">Features</a>
+        <a class="hover:text-primary transition-colors py-2" href="#pricing-section">Pricing</a>
+        <a class="hover:text-primary transition-colors py-2" href="#">Docs</a>
+        <button
+          class="mt-2 h-10 px-4 bg-primary text-white text-sm font-medium rounded hover:bg-primary-glow transition-all duration-200">Join
+          Waitlist</button>
+      </div>
+    </div>
+  </nav>
+  <main class="relative flex flex-col items-center w-full pt-32 pb-20">
+    <div class="absolute top-0 left-0 w-full h-[800px] grid-bg bg-grid-pattern opacity-10 pointer-events-none -z-10">
+    </div>
+    <div class="w-full max-w-[1200px] px-6 flex flex-col items-center text-center z-10 mb-24">
+      <h1
+        class="font-display font-bold text-5xl md:text-[64px] leading-[1.1] tracking-[-0.02em] text-transparent bg-clip-text bg-gradient-hero max-w-4xl mx-auto mb-6 text-balance">
+        Know What to Build.<br />Before You Build It.
+      </h1>
+      <p class="text-text-muted text-lg md:text-xl font-normal max-w-2xl mx-auto mb-10 leading-relaxed">
+        Turn customer interviews and raw feedback into engineering-ready specs. The intelligence layer for product teams
+        who value precision.
+      </p>
+      <div class="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
+        <button
+          class="h-12 px-8 bg-primary text-white text-base font-semibold rounded shadow-neon hover:bg-primary-glow transition-all duration-300 flex items-center gap-2 group">
+          Get Early Access
+          <span
+            class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+        </button>
+        <button
+          class="h-12 px-8 bg-transparent border border-border-subtle text-text-muted text-base font-medium rounded hover:text-white hover:border-text-muted transition-all duration-300 flex items-center gap-2">
+          <span class="material-symbols-outlined text-lg">play_circle</span>
+          Watch Demo
+        </button>
+      </div>
+    </div>
+    <div class="w-full max-w-[1100px] px-6 mb-32 relative group perspective-1000">
+      <div
+        class="absolute -inset-1 bg-gradient-to-r from-primary to-accent rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-1000">
+      </div>
+      <div
+        class="relative w-full aspect-[16/9] bg-bg-surface border border-border-subtle rounded-xl overflow-hidden shadow-2xl flex flex-col">
+        <div class="h-8 bg-[#0F1115] border-b border-border-subtle flex items-center px-4 gap-2">
+          <div class="w-3 h-3 rounded-full bg-[#26292F]"></div>
+          <div class="w-3 h-3 rounded-full bg-[#26292F]"></div>
+          <div class="w-3 h-3 rounded-full bg-[#26292F]"></div>
+          <div class="ml-4 h-4 w-64 bg-[#1A1D21] rounded text-[10px] flex items-center px-2 text-text-muted font-mono">
+            app.spec10x.com/project/alpha</div>
+        </div>
+        <div class="flex-1 flex bg-[#0B0C0E]">
+          <div class="w-16 border-r border-border-subtle flex flex-col items-center py-4 gap-6">
+            <div class="w-8 h-8 rounded bg-primary/20 flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined text-lg">grid_view</span>
+            </div>
+            <div class="w-8 h-8 rounded hover:bg-white/5 flex items-center justify-center text-text-muted">
+              <span class="material-symbols-outlined text-lg">inbox</span>
+            </div>
+            <div class="w-8 h-8 rounded hover:bg-white/5 flex items-center justify-center text-text-muted">
+              <span class="material-symbols-outlined text-lg">analytics</span>
+            </div>
+          </div>
+          <div class="flex-1 p-8 relative overflow-hidden">
+            <img alt="Dashboard Interface" class="w-full h-full object-cover opacity-80 mix-blend-screen"
+              data-alt="Abstract data dashboard interface showing nodes connected by glowing lines representing data flow from user quotes to engineering tickets"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCC80bj3fcmDtMAvRZfbWwJ18A1OoNQn-nT8D8frox6AAnm5lYx05equosSfwCR34G9OPvDd__gDZyaMOTzBqv72OUFKv9Z3LZ785QOiX50e8La50JwuYSPk8xEMWdL-EqgvnBg0GRr_z0QuefICGNM0LzVctbbf5MqFn-Evld0NszaQ9bDqlm_VZfMst9MJnSBv-GiwqltQOeR2QsajAMiXqGymuYc0UvNGqQNIy6cjqu-3vx36PigZj4XJhYIow1bO-Soktw8boM" />
+            <div class="absolute inset-0 pointer-events-none">
+              <svg class="w-full h-full" fill="none" viewBox="0 0 800 450">
+                <path class="opacity-60" d="M100 225 C 250 225, 250 100, 400 100" stroke="#5E6AD2"
+                  stroke-dasharray="4 4" stroke-width="2">
+                  <animate attributeName="stroke-dashoffset" dur="2s" from="100" repeatCount="indefinite" to="0">
+                  </animate>
+                </path>
+                <path class="opacity-60" d="M100 225 C 250 225, 250 350, 400 350" stroke="#00C2FF" stroke-width="2">
+                </path>
+                <circle cx="100" cy="225" fill="#EDEDEF" r="4"></circle>
+                <circle cx="400" cy="100" fill="#5E6AD2" r="4"></circle>
+                <circle cx="400" cy="350" fill="#00C2FF" r="4"></circle>
+                <rect fill="#5E6AD2" fill-opacity="0.1" height="40" rx="4" stroke="#5E6AD2" width="80" x="360" y="80">
+                </rect>
+                <text fill="#5E6AD2" font-family="monospace" font-size="10" x="375" y="105">SPEC-102</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ========== ROI METRICS STRIP ========== -->
+    <div class="w-full max-w-[1200px] px-6 mb-20">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="flex flex-col items-center text-center p-6 rounded-xl border border-border-subtle bg-bg-surface/50">
+          <span class="text-4xl md:text-5xl font-mono font-bold text-primary mb-2">10×</span>
+          <span class="text-text-muted text-sm">Faster spec writing</span>
+        </div>
+        <div class="flex flex-col items-center text-center p-6 rounded-xl border border-border-subtle bg-bg-surface/50">
+          <span class="text-4xl md:text-5xl font-mono font-bold text-accent mb-2">90%</span>
+          <span class="text-text-muted text-sm">Intent capture accuracy</span>
+        </div>
+        <div class="flex flex-col items-center text-center p-6 rounded-xl border border-border-subtle bg-bg-surface/50">
+          <span class="text-4xl md:text-5xl font-mono font-bold text-green-500 mb-2">3 hrs</span>
+          <span class="text-text-muted text-sm">Discovery-to-spec (vs. 3 days)</span>
+        </div>
+      </div>
+    </div>
+    <!-- ========== PIPELINE ========== -->
+    <div class="w-full border-y border-border-subtle bg-bg-deep mb-32">
+      <div class="max-w-[1200px] mx-auto overflow-x-auto">
+        <div class="flex min-w-[600px] items-center justify-between py-8 px-6">
+          <div class="group flex flex-col items-center gap-3 cursor-default transition-all duration-300">
+            <div
+              class="w-12 h-12 rounded-lg bg-bg-surface border border-border-subtle flex items-center justify-center text-text-muted group-hover:text-primary group-hover:border-primary group-hover:shadow-neon transition-all">
+              <span class="font-mono text-xl">[↑]</span>
+            </div>
+            <span
+              class="font-mono text-xs uppercase tracking-wider text-text-muted group-hover:text-white">Discover</span>
+          </div>
+          <div class="h-[1px] flex-1 bg-border-subtle mx-3 relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-primary/40 to-transparent animate-pulse">
+            </div>
+          </div>
+          <div class="group flex flex-col items-center gap-3 cursor-default transition-all duration-300">
+            <div
+              class="w-12 h-12 rounded-lg bg-bg-surface border border-border-subtle flex items-center justify-center text-text-muted group-hover:text-accent group-hover:border-accent group-hover:shadow-neon-cyan transition-all">
+              <span class="font-mono text-xl">[⊕]</span>
+            </div>
+            <span
+              class="font-mono text-xs uppercase tracking-wider text-text-muted group-hover:text-white">Synthesize</span>
+          </div>
+          <div class="h-[1px] flex-1 bg-border-subtle mx-3 relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-r from-transparent via-accent/40 to-transparent animate-pulse">
+            </div>
+          </div>
+          <div class="group flex flex-col items-center gap-3 cursor-default transition-all duration-300">
+            <div
+              class="w-12 h-12 rounded-lg bg-bg-surface border border-border-subtle flex items-center justify-center text-text-muted group-hover:text-amber-400 group-hover:border-amber-400 group-hover:shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all">
+              <span class="font-mono text-xl">[⬡]</span>
+            </div>
+            <span
+              class="font-mono text-xs uppercase tracking-wider text-text-muted group-hover:text-white">Specify</span>
+          </div>
+          <div class="h-[1px] flex-1 bg-border-subtle mx-3 relative overflow-hidden">
+            <div
+              class="absolute inset-0 bg-gradient-to-r from-transparent via-amber-400/40 to-transparent animate-pulse">
+            </div>
+          </div>
+          <div class="group flex flex-col items-center gap-3 cursor-default transition-all duration-300">
+            <div
+              class="w-12 h-12 rounded-lg bg-bg-surface border border-border-subtle flex items-center justify-center text-text-muted group-hover:text-green-500 group-hover:border-green-500 group-hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all">
+              <span class="font-mono text-xl">[→]</span>
+            </div>
+            <span
+              class="font-mono text-xs uppercase tracking-wider text-text-muted group-hover:text-white">Deliver</span>
+          </div>
+          <div class="h-[1px] flex-1 bg-border-subtle mx-3 relative overflow-hidden">
+            <div
+              class="absolute inset-0 bg-gradient-to-r from-transparent via-green-500/40 to-transparent animate-pulse">
+            </div>
+          </div>
+          <div class="group flex flex-col items-center gap-3 cursor-default transition-all duration-300">
+            <div
+              class="w-12 h-12 rounded-lg bg-bg-surface border border-border-subtle flex items-center justify-center text-text-muted group-hover:text-rose-400 group-hover:border-rose-400 group-hover:shadow-[0_0_15px_rgba(251,113,133,0.3)] transition-all">
+              <span class="font-mono text-xl">[↻]</span>
+            </div>
+            <span class="font-mono text-xs uppercase tracking-wider text-text-muted group-hover:text-white">Learn</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ========== THE PROBLEM ========== -->
+    <div class="w-full max-w-[1200px] px-6 mb-32">
+      <h2 class="text-3xl font-display font-medium text-white mb-2 text-center">The PM Workflow is Broken</h2>
+      <p class="text-text-muted text-center mb-12">Sound familiar?</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          class="p-5 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
+          <span class="material-symbols-outlined text-2xl text-primary/60 mb-3 block">cloud_off</span>
+          <h3 class="text-white font-medium mb-1">Data is Scattered</h3>
+          <p class="text-text-muted text-sm leading-relaxed">Interviews in Docs, analytics in Mixpanel, tickets in
+            Zendesk — nothing talks to each other.</p>
+        </div>
+        <div
+          class="p-5 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
+          <span class="material-symbols-outlined text-2xl text-accent/60 mb-3 block">schedule</span>
+          <h3 class="text-white font-medium mb-1">Synthesis is Manual</h3>
+          <p class="text-text-muted text-sm leading-relaxed">Days spent re-reading transcripts, hand-tagging themes, and
+            building spreadsheets.</p>
+        </div>
+        <div
+          class="p-5 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-amber-400/30 transition-colors">
+          <span class="material-symbols-outlined text-2xl text-amber-400/60 mb-3 block">casino</span>
+          <h3 class="text-white font-medium mb-1">Prioritization is Gut-Driven</h3>
+          <p class="text-text-muted text-sm leading-relaxed">Without connected data, decisions rely on the loudest voice
+            in the room.</p>
+        </div>
+        <div
+          class="p-5 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-rose-400/30 transition-colors">
+          <span class="material-symbols-outlined text-2xl text-rose-400/60 mb-3 block">edit_note</span>
+          <h3 class="text-white font-medium mb-1">Specs are Labor-Intensive</h3>
+          <p class="text-text-muted text-sm leading-relaxed">Writing PRDs, creating mocks, breaking down tickets — all
+            manual, all immediately stale.</p>
+        </div>
+        <div
+          class="p-5 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
+          <span class="material-symbols-outlined text-2xl text-green-500/60 mb-3 block">link_off</span>
+          <h3 class="text-white font-medium mb-1">No Feedback Loop</h3>
+          <p class="text-text-muted text-sm leading-relaxed">After shipping, no systematic way to connect outcomes to
+            the original user signals.</p>
+        </div>
+        <div
+          class="p-5 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-purple-400/30 transition-colors">
+          <span class="material-symbols-outlined text-2xl text-purple-400/60 mb-3 block">smart_toy</span>
+          <h3 class="text-white font-medium mb-1">AI Agents Can't Read Your Specs</h3>
+          <p class="text-text-muted text-sm leading-relaxed">Traditional PRDs are prose. Coding agents need structured,
+            executable specifications.</p>
+        </div>
+      </div>
+    </div>
+    <!-- ========== HOW IT WORKS ========== -->
+    <div class="w-full max-w-[1200px] px-6 mb-32">
+      <h2 class="text-3xl font-display font-medium text-white mb-4 text-center">How It Works</h2>
+      <p class="text-text-muted text-center max-w-lg mx-auto mb-16">Five steps from raw customer signal to measured
+        impact — the complete loop.</p>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-6">
+        <div class="flex flex-col items-center text-center group">
+          <div
+            class="w-14 h-14 rounded-xl bg-bg-surface border border-border-subtle flex items-center justify-center mb-4 group-hover:border-primary group-hover:shadow-neon transition-all duration-300">
+            <span
+              class="material-symbols-outlined text-xl text-text-muted group-hover:text-primary transition-colors">upload_file</span>
+          </div>
+          <div class="font-mono text-[10px] text-primary uppercase tracking-widest mb-2">Step 01</div>
+          <h3 class="text-white font-medium text-sm mb-1">Discover</h3>
+          <p class="text-text-muted text-xs leading-relaxed">Upload interviews, connect Zendesk, Mixpanel, HubSpot, or
+            import surveys.</p>
+        </div>
+        <div class="flex flex-col items-center text-center group">
+          <div
+            class="w-14 h-14 rounded-xl bg-bg-surface border border-border-subtle flex items-center justify-center mb-4 group-hover:border-accent group-hover:shadow-neon-cyan transition-all duration-300">
+            <span
+              class="material-symbols-outlined text-xl text-text-muted group-hover:text-accent transition-colors">psychology</span>
+          </div>
+          <div class="font-mono text-[10px] text-accent uppercase tracking-widest mb-2">Step 02</div>
+          <h3 class="text-white font-medium text-sm mb-1">Synthesize</h3>
+          <p class="text-text-muted text-xs leading-relaxed">AI extracts themes, clusters across sources, scores by
+            impact × frequency × urgency.</p>
+        </div>
+        <div class="flex flex-col items-center text-center group">
+          <div
+            class="w-14 h-14 rounded-xl bg-bg-surface border border-border-subtle flex items-center justify-center mb-4 group-hover:border-amber-400 group-hover:shadow-[0_0_15px_rgba(251,191,36,0.3)] transition-all duration-300">
+            <span
+              class="material-symbols-outlined text-xl text-text-muted group-hover:text-amber-400 transition-colors">edit_document</span>
+          </div>
+          <div class="font-mono text-[10px] text-amber-400 uppercase tracking-widest mb-2">Step 03</div>
+          <h3 class="text-white font-medium text-sm mb-1">Specify</h3>
+          <p class="text-text-muted text-xs leading-relaxed">Generate feature briefs with UI mockups, acceptance
+            criteria, and codebase-aware suggestions.</p>
+        </div>
+        <div class="flex flex-col items-center text-center group">
+          <div
+            class="w-14 h-14 rounded-xl bg-bg-surface border border-border-subtle flex items-center justify-center mb-4 group-hover:border-green-500 group-hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all duration-300">
+            <span
+              class="material-symbols-outlined text-xl text-text-muted group-hover:text-green-500 transition-colors">rocket_launch</span>
+          </div>
+          <div class="font-mono text-[10px] text-green-500 uppercase tracking-widest mb-2">Step 04</div>
+          <h3 class="text-white font-medium text-sm mb-1">Deliver</h3>
+          <p class="text-text-muted text-xs leading-relaxed">Break specs into atomic tasks. Export to Cursor, Claude
+            Code, or sync with Linear/Jira.</p>
+        </div>
+        <div class="flex flex-col items-center text-center group col-span-2 md:col-span-1">
+          <div
+            class="w-14 h-14 rounded-xl bg-bg-surface border border-border-subtle flex items-center justify-center mb-4 group-hover:border-rose-400 group-hover:shadow-[0_0_15px_rgba(251,113,133,0.3)] transition-all duration-300">
+            <span
+              class="material-symbols-outlined text-xl text-text-muted group-hover:text-rose-400 transition-colors">insights</span>
+          </div>
+          <div class="font-mono text-[10px] text-rose-400 uppercase tracking-widest mb-2">Step 05</div>
+          <h3 class="text-white font-medium text-sm mb-1">Learn</h3>
+          <p class="text-text-muted text-xs leading-relaxed">Track post-launch impact. Did it move the needle? Close the
+            loop automatically.</p>
+        </div>
+      </div>
+    </div>
+    <div id="features-section" class="w-full max-w-[1200px] px-6 mb-32">
+      <div class="flex flex-col mb-16 text-center">
+        <h2 class="text-3xl font-display font-medium text-white mb-4">Everything You Need to Ship What Matters</h2>
+        <p class="text-text-muted max-w-2xl mx-auto">A single platform replacing your patchwork of spreadsheets, tagging
+          tools, and gut feeling.</p>
+      </div>
+      <!-- Phase: Discover -->
+      <div class="mb-16">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="font-mono text-[10px] text-primary uppercase tracking-widest bg-primary/10 px-2 py-1 rounded">01
+            Discover</span>
+        </div>
+        <h3 class="text-white font-medium text-xl mb-2">Ingest signals from everywhere</h3>
+        <p class="text-text-muted text-sm mb-6 max-w-xl">Centralize every customer voice — from raw audio to analytics
+          events — into one searchable library.</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-primary/30 transition-colors">
+            <span class="material-symbols-outlined text-primary/70 mb-3 block">mic</span>
+            <h4 class="text-white text-sm font-medium mb-1">Multi-Format Upload</h4>
+            <p class="text-text-muted text-xs leading-relaxed">Transcripts, audio, video — auto-transcribed and parsed.
+            </p>
+          </div>
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-primary/30 transition-colors">
+            <span class="material-symbols-outlined text-primary/70 mb-3 block">support_agent</span>
+            <h4 class="text-white text-sm font-medium mb-1">Support Ticket Import</h4>
+            <p class="text-text-muted text-xs leading-relaxed">Zendesk, Intercom, Freshdesk — auto-sync from your
+              support stack.</p>
+          </div>
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-primary/30 transition-colors">
+            <span class="material-symbols-outlined text-primary/70 mb-3 block">monitoring</span>
+            <h4 class="text-white text-sm font-medium mb-1">Analytics Connection</h4>
+            <p class="text-text-muted text-xs leading-relaxed">Mixpanel, Amplitude, PostHog — quantitative data
+              alongside qualitative.</p>
+          </div>
+        </div>
+      </div>
+      <!-- Phase: Synthesize -->
+      <div class="mb-16">
+        <div class="flex items-center gap-3 mb-3">
+          <span class="font-mono text-[10px] text-accent uppercase tracking-widest bg-accent/10 px-2 py-1 rounded">02
+            Synthesize</span>
+        </div>
+        <h3 class="text-white font-medium text-xl mb-2">AI finds patterns &amp; priorities</h3>
+        <p class="text-text-muted text-sm mb-6 max-w-xl">Stop tagging by hand. AI identifies themes, correlates signals,
+          and scores everything automatically.</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-accent/30 transition-colors">
+            <span class="material-symbols-outlined text-accent/70 mb-3 block">auto_awesome</span>
+            <h4 class="text-white text-sm font-medium mb-1">Auto Theme Extraction</h4>
+            <p class="text-text-muted text-xs leading-relaxed">AI reads every line and clusters feedback into themes —
+              no manual tagging.</p>
+          </div>
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-accent/30 transition-colors">
+            <span class="material-symbols-outlined text-accent/70 mb-3 block">join</span>
+            <h4 class="text-white text-sm font-medium mb-1">Cross-Source Correlation</h4>
+            <p class="text-text-muted text-xs leading-relaxed">"Users complain about slow search" + "40% drop-off on
+              search results." Connected automatically.</p>
+          </div>
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-accent/30 transition-colors">
+            <span class="material-symbols-outlined text-accent/70 mb-3 block">speed</span>
+            <h4 class="text-white text-sm font-medium mb-1">Impact Scoring</h4>
+            <p class="text-text-muted text-xs leading-relaxed">Every theme gets an evidence-backed score: frequency ×
+              urgency × revenue impact.</p>
+          </div>
+        </div>
+      </div>
+      <!-- Phase: Specify -->
+      <div class="mb-16">
+        <div class="flex items-center gap-3 mb-3">
+          <span
+            class="font-mono text-[10px] text-amber-400 uppercase tracking-widest bg-amber-400/10 px-2 py-1 rounded">03
+            Specify</span>
+        </div>
+        <h3 class="text-white font-medium text-xl mb-2">Generate engineering-ready specs</h3>
+        <p class="text-text-muted text-sm mb-6 max-w-xl">From problem to PRD in minutes — with mockups, acceptance
+          criteria, and risk flags.</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-amber-400/30 transition-colors">
+            <span class="material-symbols-outlined text-amber-400/70 mb-3 block">description</span>
+            <h4 class="text-white text-sm font-medium mb-1">Feature Brief Generator</h4>
+            <p class="text-text-muted text-xs leading-relaxed">Problem statement, solution, evidence trail, and user
+              stories — generated from your data.</p>
+          </div>
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-amber-400/30 transition-colors">
+            <span class="material-symbols-outlined text-amber-400/70 mb-3 block">dashboard</span>
+            <h4 class="text-white text-sm font-medium mb-1">UI Mockups &amp; Flows</h4>
+            <p class="text-text-muted text-xs leading-relaxed">AI-suggested wireframes and user flows based on the
+              problem being solved.</p>
+          </div>
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-amber-400/30 transition-colors">
+            <span class="material-symbols-outlined text-amber-400/70 mb-3 block">verified</span>
+            <h4 class="text-white text-sm font-medium mb-1">Acceptance Criteria</h4>
+            <p class="text-text-muted text-xs leading-relaxed">Testable requirements with edge cases and risk flags —
+              ready for QA from day one.</p>
+          </div>
+        </div>
+      </div>
+      <!-- Phase: Deliver -->
+      <div class="mb-16">
+        <div class="flex items-center gap-3 mb-3">
+          <span
+            class="font-mono text-[10px] text-green-500 uppercase tracking-widest bg-green-500/10 px-2 py-1 rounded">04
+            Deliver</span>
+        </div>
+        <h3 class="text-white font-medium text-xl mb-2">Ship to agents &amp; PM tools</h3>
+        <p class="text-text-muted text-sm mb-6 max-w-xl">Break specs into atomic, context-rich tasks — ready for coding
+          agents or your existing PM stack.</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-green-500/30 transition-colors">
+            <span class="material-symbols-outlined text-green-500/70 mb-3 block">smart_toy</span>
+            <h4 class="text-white text-sm font-medium mb-1">Agent-Ready Export</h4>
+            <p class="text-text-muted text-xs leading-relaxed">Structured tasks for Cursor, Claude Code, and Devin —
+              including context bundles.</p>
+          </div>
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-green-500/30 transition-colors">
+            <span class="material-symbols-outlined text-green-500/70 mb-3 block">sync</span>
+            <h4 class="text-white text-sm font-medium mb-1">PM Tool Sync</h4>
+            <p class="text-text-muted text-xs leading-relaxed">2-way sync with Linear, Jira, GitHub Issues, and Asana.
+              Specs update tickets automatically.</p>
+          </div>
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-green-500/30 transition-colors">
+            <span class="material-symbols-outlined text-green-500/70 mb-3 block">inventory_2</span>
+            <h4 class="text-white text-sm font-medium mb-1">Context Bundles</h4>
+            <p class="text-text-muted text-xs leading-relaxed">Each task ships with supporting quotes, design refs, and
+              acceptance criteria attached.</p>
+          </div>
+        </div>
+      </div>
+      <!-- Phase: Learn -->
+      <div class="mb-0">
+        <div class="flex items-center gap-3 mb-3">
+          <span
+            class="font-mono text-[10px] text-rose-400 uppercase tracking-widest bg-rose-400/10 px-2 py-1 rounded">05
+            Learn</span>
+        </div>
+        <h3 class="text-white font-medium text-xl mb-2">Close the loop</h3>
+        <p class="text-text-muted text-sm mb-6 max-w-xl">After shipping, track what happened. Did the feature move the
+          needle? Know before your next sprint.</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-rose-400/30 transition-colors">
+            <span class="material-symbols-outlined text-rose-400/70 mb-3 block">trending_up</span>
+            <h4 class="text-white text-sm font-medium mb-1">Impact Tracking</h4>
+            <p class="text-text-muted text-xs leading-relaxed">Track adoption, satisfaction, and metric changes
+              post-launch — automatically.</p>
+          </div>
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-rose-400/30 transition-colors">
+            <span class="material-symbols-outlined text-rose-400/70 mb-3 block">check_circle</span>
+            <h4 class="text-white text-sm font-medium mb-1">Auto-Close Feedback</h4>
+            <p class="text-text-muted text-xs leading-relaxed">Resolved user complaints are automatically closed and
+              linked to the shipped feature.</p>
+          </div>
+          <div
+            class="p-5 rounded-xl border border-border-subtle bg-bg-surface hover:border-rose-400/30 transition-colors">
+            <span class="material-symbols-outlined text-rose-400/70 mb-3 block">school</span>
+            <h4 class="text-white text-sm font-medium mb-1">Team Learnings</h4>
+            <p class="text-text-muted text-xs leading-relaxed">"What we learned" summaries generated per feature —
+              shared across your product team.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ========== INTEGRATIONS ECOSYSTEM ========== -->
+    <div class="w-full max-w-[1200px] px-6 mb-32">
+      <h2 class="text-3xl font-display font-medium text-white mb-2 text-center">Connects to Your Entire Stack</h2>
+      <p class="text-text-muted text-center mb-12">Import from anywhere. Export to everything.</p>
+      <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
+          <span class="material-symbols-outlined text-xl text-text-muted">support_agent</span>
+          <span class="text-xs text-text-muted">Zendesk</span>
+        </div>
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
+          <span class="material-symbols-outlined text-xl text-text-muted">chat</span>
+          <span class="text-xs text-text-muted">Intercom</span>
+        </div>
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
+          <span class="material-symbols-outlined text-xl text-text-muted">monitoring</span>
+          <span class="text-xs text-text-muted">Mixpanel</span>
+        </div>
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
+          <span class="material-symbols-outlined text-xl text-text-muted">analytics</span>
+          <span class="text-xs text-text-muted">Amplitude</span>
+        </div>
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
+          <span class="material-symbols-outlined text-xl text-text-muted">hub</span>
+          <span class="text-xs text-text-muted">HubSpot</span>
+        </div>
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
+          <span class="material-symbols-outlined text-xl text-text-muted">linear_scale</span>
+          <span class="text-xs text-text-muted">Linear</span>
+        </div>
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
+          <span class="material-symbols-outlined text-xl text-text-muted">bug_report</span>
+          <span class="text-xs text-text-muted">Jira</span>
+        </div>
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
+          <span class="material-symbols-outlined text-xl text-text-muted">code</span>
+          <span class="text-xs text-text-muted">GitHub</span>
+        </div>
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-rose-400/30 transition-colors">
+          <span class="material-symbols-outlined text-xl text-text-muted">smart_toy</span>
+          <span class="text-xs text-text-muted">Cursor</span>
+        </div>
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-rose-400/30 transition-colors">
+          <span class="material-symbols-outlined text-xl text-text-muted">terminal</span>
+          <span class="text-xs text-text-muted">Claude Code</span>
+        </div>
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
+          <span class="material-symbols-outlined text-xl text-text-muted">mouse</span>
+          <span class="text-xs text-text-muted">Hotjar</span>
+        </div>
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
+          <span class="material-symbols-outlined text-xl text-text-muted">screen_search_desktop</span>
+          <span class="text-xs text-text-muted">FullStory</span>
+        </div>
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-amber-400/30 transition-colors">
+          <span class="material-symbols-outlined text-xl text-text-muted">task_alt</span>
+          <span class="text-xs text-text-muted">Asana</span>
+        </div>
+        <div
+          class="flex flex-col items-center gap-2 p-4 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
+          <span class="material-symbols-outlined text-xl text-text-muted">cloud_sync</span>
+          <span class="text-xs text-text-muted">PostHog</span>
+        </div>
+      </div>
+    </div>
+    <!-- ========== SOCIAL PROOF ========== -->
+
+    <div class="w-full max-w-[1200px] px-6 mb-32">
+      <div class="text-center mb-12">
+        <p class="text-text-muted text-sm font-mono uppercase tracking-widest">Trusted by product teams at</p>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div
+          class="bg-bg-surface border border-border-subtle rounded-xl p-6 flex flex-col gap-4 hover:border-primary/30 transition-colors">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-semibold text-sm">
+              AK</div>
+            <div>
+              <p class="text-white text-sm font-medium">Arjun K.</p>
+              <p class="text-text-muted text-xs">Head of Product, Synapse</p>
+            </div>
+          </div>
+          <p class="text-text-muted text-sm leading-relaxed">"We went from 3-week spec cycles to <span
+              class="text-white">3-day turnarounds</span>. Spec10x is the biggest unlock we've had this year."</p>
+        </div>
+        <div
+          class="bg-bg-surface border border-border-subtle rounded-xl p-6 flex flex-col gap-4 hover:border-accent/30 transition-colors">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center text-accent font-semibold text-sm">
+              ML</div>
+            <div>
+              <p class="text-white text-sm font-medium">Maya L.</p>
+              <p class="text-text-muted text-xs">Founder & CEO, Stackline</p>
+            </div>
+          </div>
+          <p class="text-text-muted text-sm leading-relaxed">"Finally, a tool that bridges the gap between <span
+              class="text-white">what users say and what engineers need</span>. It's become essential."</p>
+        </div>
+        <div
+          class="bg-bg-surface border border-border-subtle rounded-xl p-6 flex flex-col gap-4 hover:border-green-500/30 transition-colors">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 font-semibold text-sm">
+              DS</div>
+            <div>
+              <p class="text-white text-sm font-medium">David S.</p>
+              <p class="text-text-muted text-xs">VP Engineering, Clearbit</p>
+            </div>
+          </div>
+          <p class="text-text-muted text-sm leading-relaxed">"The specs Spec10x generates are <span
+              class="text-white">better than what most PMs write manually</span>. Adoption was instant across our team."
+          </p>
+        </div>
+      </div>
+      <div class="flex justify-center gap-8 text-text-muted">
+        <div class="flex flex-col items-center">
+          <span class="text-2xl font-mono font-bold text-white">200+</span>
+          <span class="text-xs">Teams</span>
+        </div>
+        <div class="w-[1px] bg-border-subtle"></div>
+        <div class="flex flex-col items-center">
+          <span class="text-2xl font-mono font-bold text-white">50k+</span>
+          <span class="text-xs">Specs Generated</span>
+        </div>
+        <div class="w-[1px] bg-border-subtle"></div>
+        <div class="flex flex-col items-center">
+          <span class="text-2xl font-mono font-bold text-white">4.9/5</span>
+          <span class="text-xs">Satisfaction</span>
+        </div>
+      </div>
+    </div>
+    <!-- ========== WHY SPEC10X ========== -->
+    <div class="w-full max-w-[1200px] px-6 mb-32">
+      <h2 class="text-3xl font-display font-medium text-white mb-2 text-center">Why Teams Choose Spec10x</h2>
+      <p class="text-text-muted text-center mb-12">Not another generic tool — a purpose-built product intelligence
+        platform.</p>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm border-collapse">
+          <thead>
+            <tr class="border-b border-border-subtle">
+              <th class="text-left text-text-muted font-mono uppercase tracking-widest text-xs py-3 px-4">Tool</th>
+              <th class="text-left text-text-muted font-mono uppercase tracking-widest text-xs py-3 px-4">What It Does
+              </th>
+              <th class="text-left text-primary font-mono uppercase tracking-widest text-xs py-3 px-4">Spec10x Advantage
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="border-b border-border-subtle/50 hover:bg-bg-surface/50 transition-colors">
+              <td class="py-3 px-4 text-white font-medium">Dovetail</td>
+              <td class="py-3 px-4 text-text-muted">Interview analysis</td>
+              <td class="py-3 px-4 text-text-main">+ quantitative data fusion, spec generation, agent-ready output</td>
+            </tr>
+            <tr class="border-b border-border-subtle/50 hover:bg-bg-surface/50 transition-colors">
+              <td class="py-3 px-4 text-white font-medium">Productboard</td>
+              <td class="py-3 px-4 text-text-muted">Feedback management</td>
+              <td class="py-3 px-4 text-text-main">AI-native synthesis (no manual tagging), generates specifications
+              </td>
+            </tr>
+            <tr class="border-b border-border-subtle/50 hover:bg-bg-surface/50 transition-colors">
+              <td class="py-3 px-4 text-white font-medium">Notion AI</td>
+              <td class="py-3 px-4 text-text-muted">AI-assisted docs</td>
+              <td class="py-3 px-4 text-text-main">Purpose-built for product discovery, not general-purpose</td>
+            </tr>
+            <tr class="border-b border-border-subtle/50 hover:bg-bg-surface/50 transition-colors">
+              <td class="py-3 px-4 text-white font-medium">Jira / Linear</td>
+              <td class="py-3 px-4 text-text-muted">Task management</td>
+              <td class="py-3 px-4 text-text-main">Starts upstream from user evidence, not engineer tasks</td>
+            </tr>
+            <tr class="hover:bg-bg-surface/50 transition-colors">
+              <td class="py-3 px-4 text-white font-medium">ChatGPT / Claude</td>
+              <td class="py-3 px-4 text-text-muted">General AI</td>
+              <td class="py-3 px-4 text-text-main">Persistent product context, multi-source ingestion, structured output
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div id="pricing-section" class="w-full max-w-[1200px] px-6 mb-32">
+      <h2 class="text-3xl font-display font-medium text-white mb-12 text-center">Transparent Pricing</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+        <div class="p-8 bg-bg-surface border border-border-subtle rounded-xl flex flex-col gap-6">
+          <div>
+            <h3 class="text-text-muted font-mono uppercase tracking-widest text-xs mb-2">Starter</h3>
+            <div class="flex items-baseline gap-1">
+              <span class="text-4xl font-mono font-bold text-white">$0</span>
+              <span class="text-text-muted text-sm">/mo</span>
+            </div>
+          </div>
+          <ul class="space-y-3 text-sm text-text-muted">
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base">check</span> Up to 3
+              projects</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base">check</span> 50
+              uploads/month</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base">check</span> Basic
+              theme extraction</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base">check</span> Markdown
+              export</li>
+          </ul>
+          <button
+            class="w-full py-2 border border-border-subtle rounded text-sm text-text-main hover:bg-white/5 transition-colors">Start
+            Free</button>
+        </div>
+        <div
+          class="p-8 bg-[#0F1115] border border-primary rounded-xl flex flex-col gap-6 relative shadow-neon transform md:scale-105 z-10">
+          <div
+            class="absolute top-0 right-0 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg uppercase tracking-wide">
+            Most Popular</div>
+          <div>
+            <h3 class="text-primary font-mono uppercase tracking-widest text-xs mb-2">Pro</h3>
+            <div class="flex items-baseline gap-1">
+              <span class="text-4xl font-mono font-bold text-white">$49</span>
+              <span class="text-text-muted text-sm">/mo</span>
+            </div>
+          </div>
+          <ul class="space-y-3 text-sm text-text-main">
+            <li class="flex items-center gap-2"><span
+                class="material-symbols-outlined text-base text-primary">check</span> Unlimited projects</li>
+            <li class="flex items-center gap-2"><span
+                class="material-symbols-outlined text-base text-primary">check</span> All integrations</li>
+            <li class="flex items-center gap-2"><span
+                class="material-symbols-outlined text-base text-primary">check</span> Impact scoring &amp; priority
+              board</li>
+            <li class="flex items-center gap-2"><span
+                class="material-symbols-outlined text-base text-primary">check</span> Spec generation + agent export
+            </li>
+            <li class="flex items-center gap-2"><span
+                class="material-symbols-outlined text-base text-primary">check</span> Team collaboration (10 seats)</li>
+          </ul>
+          <button
+            class="w-full py-2 bg-primary text-white font-medium rounded hover:bg-primary-glow transition-colors shadow-[0_0_10px_rgba(94,106,210,0.3)]">Get
+            Pro</button>
+        </div>
+        <div class="p-8 bg-bg-surface border border-border-subtle rounded-xl flex flex-col gap-6">
+          <div>
+            <h3 class="text-text-muted font-mono uppercase tracking-widest text-xs mb-2">Enterprise</h3>
+            <div class="flex items-baseline gap-1">
+              <span class="text-4xl font-mono font-bold text-white">Custom</span>
+            </div>
+          </div>
+          <ul class="space-y-3 text-sm text-text-muted">
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base">check</span>
+              Everything in Pro</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base">check</span> Unlimited
+              seats, SSO/SAML</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base">check</span> Custom
+              API + webhooks</li>
+            <li class="flex items-center gap-2"><span class="material-symbols-outlined text-base">check</span> Dedicated
+              CSM + SLA</li>
+          </ul>
+          <button
+            class="w-full py-2 border border-border-subtle rounded text-sm text-text-main hover:bg-white/5 transition-colors">Contact
+            Sales</button>
+        </div>
+      </div>
+    </div>
+    <div class="w-full max-w-[800px] px-6 mb-24">
+      <h2 class="text-2xl font-display font-medium text-white mb-8">Frequently Asked Questions</h2>
+      <div class="space-y-4">
+        <details class="group border-b border-border-subtle pb-4">
+          <summary
+            class="flex justify-between items-center font-medium cursor-pointer list-none text-text-main group-open:text-primary transition-colors">
+            <span>How accurate is the spec generation?</span>
+            <span class="transition group-open:rotate-180">
+              <span class="material-symbols-outlined">expand_more</span>
+            </span>
+          </summary>
+          <div class="text-text-muted mt-3 text-sm leading-relaxed">
+            Our models are fine-tuned on thousands of engineering specs. While we recommend a human review, users report
+            90% accuracy in capturing intent and requirements.
+          </div>
+        </details>
+        <details class="group border-b border-border-subtle pb-4">
+          <summary
+            class="flex justify-between items-center font-medium cursor-pointer list-none text-text-main group-open:text-primary transition-colors">
+            <span>Is my data secure?</span>
+            <span class="transition group-open:rotate-180">
+              <span class="material-symbols-outlined">expand_more</span>
+            </span>
+          </summary>
+          <div class="text-text-muted mt-3 text-sm leading-relaxed">
+            Absolutely. We are SOC2 Type II compliant and encrypt all data at rest and in transit. We do not train our
+            public models on your proprietary data.
+          </div>
+        </details>
+        <details class="group border-b border-border-subtle pb-4">
+          <summary
+            class="flex justify-between items-center font-medium cursor-pointer list-none text-text-main group-open:text-primary transition-colors">
+            <span>Does it integrate with Linear?</span>
+            <span class="transition group-open:rotate-180">
+              <span class="material-symbols-outlined">expand_more</span>
+            </span>
+          </summary>
+          <div class="text-text-muted mt-3 text-sm leading-relaxed">
+            Yes. Spec10x has a native 2-way sync with Linear, Jira, and GitHub Issues. Changes in specs automatically
+            update ticket descriptions.
+          </div>
+        </details>
+        <details class="group border-b border-border-subtle pb-4">
+          <summary
+            class="flex justify-between items-center font-medium cursor-pointer list-none text-text-main group-open:text-primary transition-colors">
+            <span>What data sources can I connect?</span>
+            <span class="transition group-open:rotate-180">
+              <span class="material-symbols-outlined">expand_more</span>
+            </span>
+          </summary>
+          <div class="text-text-muted mt-3 text-sm leading-relaxed">
+            Interviews (upload), Zendesk, Intercom, Mixpanel, Amplitude, PostHog, HubSpot, Salesforce, Hotjar,
+            FullStory, NPS surveys, and more via API.
+          </div>
+        </details>
+        <details class="group border-b border-border-subtle pb-4">
+          <summary
+            class="flex justify-between items-center font-medium cursor-pointer list-none text-text-main group-open:text-primary transition-colors">
+            <span>Can I export tasks to coding agents?</span>
+            <span class="transition group-open:rotate-180">
+              <span class="material-symbols-outlined">expand_more</span>
+            </span>
+          </summary>
+          <div class="text-text-muted mt-3 text-sm leading-relaxed">
+            Yes — Spec10x generates structured, atomic task definitions with context bundles (supporting quotes, design
+            refs, acceptance criteria) compatible with Cursor, Claude Code, and Devin.
+          </div>
+        </details>
+        <details class="group border-b border-border-subtle pb-4">
+          <summary
+            class="flex justify-between items-center font-medium cursor-pointer list-none text-text-main group-open:text-primary transition-colors">
+            <span>How does the feedback loop work?</span>
+            <span class="transition group-open:rotate-180">
+              <span class="material-symbols-outlined">expand_more</span>
+            </span>
+          </summary>
+          <div class="text-text-muted mt-3 text-sm leading-relaxed">
+            After shipping, Spec10x tracks adoption and satisfaction metrics. It auto-connects outcomes to original user
+            signals and generates impact summaries for your team.
+          </div>
+        </details>
+        <details class="group border-b border-border-subtle pb-4">
+          <summary
+            class="flex justify-between items-center font-medium cursor-pointer list-none text-text-main group-open:text-primary transition-colors">
+            <span>Can my whole team use it?</span>
+            <span class="transition group-open:rotate-180">
+              <span class="material-symbols-outlined">expand_more</span>
+            </span>
+          </summary>
+          <div class="text-text-muted mt-3 text-sm leading-relaxed">
+            Absolutely — comments, @mentions, spec review workflows, role-based access, and shareable roadmaps and
+            reports for stakeholders.
+          </div>
+        </details>
+      </div>
+    </div>
+    <!-- ========== FINAL CTA ========== -->
+    <div class="w-full max-w-[1200px] px-6 mb-32">
+      <div class="relative rounded-2xl overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-primary/10 via-bg-surface to-accent/5"></div>
+        <div class="absolute inset-[1px] rounded-2xl bg-bg-deep"></div>
+        <div class="relative py-20 px-8 flex flex-col items-center text-center">
+          <span class="material-symbols-outlined text-4xl text-primary mb-6 opacity-60">auto_awesome</span>
+          <h2 class="text-3xl md:text-4xl font-display font-medium text-white mb-4 max-w-lg">Ready to Build with
+            Precision?</h2>
+          <p class="text-text-muted max-w-md mb-8 leading-relaxed">Join hundreds of product teams shipping better specs,
+            faster. Get early access to Spec10x today.</p>
+          <div class="flex flex-col sm:flex-row items-center gap-4">
+            <button
+              class="h-12 px-8 bg-primary text-white text-base font-semibold rounded shadow-neon hover:bg-primary-glow transition-all duration-300 flex items-center gap-2">
+              Get Early Access
+              <span class="material-symbols-outlined text-sm">arrow_forward</span>
+            </button>
+            <span class="text-text-muted text-xs">Free to start · No credit card required</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer class="w-full border-t border-border-subtle bg-bg-surface py-12">
+      <div class="max-w-[1200px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 relative flex items-center justify-center grayscale opacity-50">
+            <svg fill="none" height="24" viewBox="0 0 32 32" width="24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M16 2L28.1244 9V23L16 30L3.87564 23V9L16 2Z" stroke="currentColor" stroke-width="2"></path>
+            </svg>
+          </div>
+          <span class="text-text-muted text-sm">© 2024 Spec10x Inc.</span>
+        </div>
+        <div class="flex gap-6 text-sm text-text-muted">
+          <a class="hover:text-white transition-colors" href="#">Privacy</a>
+          <a class="hover:text-white transition-colors" href="#">Terms</a>
+          <a class="hover:text-white transition-colors" href="#">Twitter</a>
+          <a class="hover:text-white transition-colors" href="#">GitHub</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
