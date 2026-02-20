@@ -31,7 +31,7 @@ Product Managers today operate in a fragmented, high-friction environment:
 
 ## 2. The End Product Vision (v1.0)
 
-ProductPilot is an **AI-native product intelligence platform** that creates a continuous loop:
+Spec10x is an **AI-native product intelligence platform** that creates a continuous loop:
 
 ```
   ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
@@ -248,7 +248,7 @@ ProductPilot is an **AI-native product intelligence platform** that creates a co
 | Feature | Description |
 |---|---|
 | **Agent-Ready Task Export** | Break approved specs into atomic, scoped tasks with structured output for Cursor, Claude Code, Devin, or any AI coding agent — includes context bundles (relevant user quotes, design references, acceptance criteria) |
-| **Project Management Sync** | Two-way sync with Linear, Jira, GitHub Issues, Asana — tasks created in ProductPilot appear in your PM tool and vice versa |
+| **Project Management Sync** | Two-way sync with Linear, Jira, GitHub Issues, Asana — tasks created in Spec10x appear in your PM tool and vice versa |
 | **Post-Launch Impact Tracker** | After shipping, connect outcomes (metrics movement, new feedback) back to the original user signals and spec |
 | **Outcome Dashboard** | Did the feature work? Track adoption, satisfaction changes, and whether the original pain points decreased |
 | **Auto-Close Loop** | When a shipped feature addresses a pain point, auto-update related feedback items and notify stakeholders |
@@ -319,7 +319,7 @@ ProductPilot is an **AI-native product intelligence platform** that creates a co
 ## 5. Design System DNA (Consistent Across All Versions)
 
 ### Visual Identity
-- **Name:** ProductPilot (working title)
+- **Name:** Spec10x
 - **Palette:** Deep navy/charcoal base with vibrant accent colors (electric blue for actions, amber for warnings, emerald for success)
 - **Typography:** Inter for UI, JetBrains Mono for code/data elements
 - **Spacing:** 4px grid system, generous whitespace
@@ -337,7 +337,7 @@ ProductPilot is an **AI-native product intelligence platform** that creates a co
 
 ## 6. Key Differentiators vs. Existing Tools
 
-| Tool | What It Does | What ProductPilot Does Differently |
+| Tool | What It Does | What Spec10x Does Differently |
 |---|---|---|
 | Dovetail | Interview analysis | Adds quantitative data fusion, spec generation, agent-ready output |
 | Productboard | Feedback management | AI-native synthesis (not manual tagging), generates specifications |

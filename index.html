@@ -43,12 +43,12 @@
             'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
           },
           animation: {
-            'marquee': 'marquee 25s linear infinite',
+            'marquee': 'marquee 50s linear infinite',
           },
           keyframes: {
             marquee: {
               '0%': { transform: 'translateX(0%)' },
-              '100%': { transform: 'translateX(-100%)' },
+              '100%': { transform: 'translateX(-50%)' },
             }
           },
           boxShadow: {
@@ -594,153 +594,126 @@
         <div class="absolute inset-y-0 left-0 w-20 bg-gradient-to-r from-bg-deep to-transparent z-10"></div>
         <div class="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-bg-deep to-transparent z-10"></div>
 
-        <div class="flex gap-4 w-max animate-marquee hover:[animation-play-state:paused]">
+                <div class="flex w-max animate-marquee hover:[animation-play-state:paused]">
           <!-- Original Set -->
-          <div class="flex gap-4">
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">support_agent</span>
-              <span class="text-xs text-text-muted">Zendesk</span>
+          <div class="flex gap-4 pr-4">
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/zendesk" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Zendesk" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Zendesk</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">chat</span>
-              <span class="text-xs text-text-muted">Intercom</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/intercom" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Intercom" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Intercom</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">monitoring</span>
-              <span class="text-xs text-text-muted">Mixpanel</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/mixpanel" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Mixpanel" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Mixpanel</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">analytics</span>
-              <span class="text-xs text-text-muted">Amplitude</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
+              <span class="material-symbols-outlined text-[24px] text-text-muted group-hover:text-[#20CE99] transition-colors duration-300">analytics</span>
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Amplitude</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">hub</span>
-              <span class="text-xs text-text-muted">HubSpot</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/hubspot" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="HubSpot" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">HubSpot</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">linear_scale</span>
-              <span class="text-xs text-text-muted">Linear</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/linear/white" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Linear" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Linear</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">bug_report</span>
-              <span class="text-xs text-text-muted">Jira</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/jira" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Jira" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Jira</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">code</span>
-              <span class="text-xs text-text-muted">GitHub</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/github/white" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="GitHub" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">GitHub</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-rose-400/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">smart_toy</span>
-              <span class="text-xs text-text-muted">Cursor</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-rose-400/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/cursor/white" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Cursor" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Cursor</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-rose-400/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">terminal</span>
-              <span class="text-xs text-text-muted">Claude Code</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-rose-400/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/anthropic/white" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Claude Code" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Claude Code</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">mouse</span>
-              <span class="text-xs text-text-muted">Hotjar</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/hotjar" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Hotjar" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Hotjar</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">screen_search_desktop</span>
-              <span class="text-xs text-text-muted">FullStory</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
+              <span class="material-symbols-outlined text-[24px] text-text-muted group-hover:text-[#E0F2FE] transition-colors duration-300">screen_search_desktop</span>
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">FullStory</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-amber-400/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">task_alt</span>
-              <span class="text-xs text-text-muted">Asana</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-amber-400/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/asana" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Asana" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Asana</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">cloud_sync</span>
-              <span class="text-xs text-text-muted">PostHog</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/posthog" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="PostHog" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">PostHog</span>
             </div>
           </div>
           <!-- Duplicate Set for Marquee -->
-          <div class="flex gap-4" aria-hidden="true">
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">support_agent</span>
-              <span class="text-xs text-text-muted">Zendesk</span>
+          <div class="flex gap-4 pr-4" aria-hidden="true">
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/zendesk" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Zendesk" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Zendesk</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">chat</span>
-              <span class="text-xs text-text-muted">Intercom</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/intercom" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Intercom" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Intercom</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">monitoring</span>
-              <span class="text-xs text-text-muted">Mixpanel</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/mixpanel" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Mixpanel" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Mixpanel</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">analytics</span>
-              <span class="text-xs text-text-muted">Amplitude</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
+              <span class="material-symbols-outlined text-[24px] text-text-muted group-hover:text-[#20CE99] transition-colors duration-300">analytics</span>
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Amplitude</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">hub</span>
-              <span class="text-xs text-text-muted">HubSpot</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/hubspot" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="HubSpot" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">HubSpot</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">linear_scale</span>
-              <span class="text-xs text-text-muted">Linear</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/linear/white" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Linear" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Linear</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">bug_report</span>
-              <span class="text-xs text-text-muted">Jira</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/jira" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Jira" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Jira</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">code</span>
-              <span class="text-xs text-text-muted">GitHub</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-green-500/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/github/white" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="GitHub" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">GitHub</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-rose-400/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">smart_toy</span>
-              <span class="text-xs text-text-muted">Cursor</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-rose-400/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/cursor/white" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Cursor" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Cursor</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-rose-400/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">terminal</span>
-              <span class="text-xs text-text-muted">Claude Code</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-rose-400/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/anthropic/white" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Claude Code" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Claude Code</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">mouse</span>
-              <span class="text-xs text-text-muted">Hotjar</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/hotjar" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Hotjar" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Hotjar</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">screen_search_desktop</span>
-              <span class="text-xs text-text-muted">FullStory</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-accent/30 transition-colors">
+              <span class="material-symbols-outlined text-[24px] text-text-muted group-hover:text-[#E0F2FE] transition-colors duration-300">screen_search_desktop</span>
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">FullStory</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-amber-400/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">task_alt</span>
-              <span class="text-xs text-text-muted">Asana</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-amber-400/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/asana" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="Asana" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">Asana</span>
             </div>
-            <div
-              class="flex flex-col items-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
-              <span class="material-symbols-outlined text-xl text-text-muted">cloud_sync</span>
-              <span class="text-xs text-text-muted">PostHog</span>
+            <div class="group flex flex-col items-center justify-center gap-2 p-4 w-32 rounded-xl border border-border-subtle bg-bg-surface/50 hover:border-primary/30 transition-colors">
+              <img src="https://cdn.simpleicons.org/posthog" class="h-6 w-6 opacity-60 grayscale group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300" alt="PostHog" />
+              <span class="text-xs text-text-muted group-hover:text-text-main transition-colors duration-300">PostHog</span>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
