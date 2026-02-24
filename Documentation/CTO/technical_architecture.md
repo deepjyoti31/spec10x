@@ -56,7 +56,7 @@
 | **Frontend** | Next.js 16.1 (React 19 + TypeScript) | SSR for landing page SEO, SPA for the app, Turbopack stable, huge ecosystem | ✅ |
 | **Backend** | FastAPI (Python 3.12+) | Best AI/ML ecosystem, async-native, type-safe, first-class Vertex AI SDK | ✅ |
 | **Database** | PostgreSQL 18 + pgvector 0.8 | One DB for relational data AND vector search. No separate vector DB needed | ✅ |
-| **Cache / Queue** | Redis 8.x | Job queue (via `arq` or `Celery`), caching, pub/sub for WebSocket coordination | ✅ |
+| **Cache / Queue** | Redis 8.x | Job queue (via `arq`), caching, pub/sub for WebSocket coordination | ✅ |
 | **File Storage** | Google Cloud Storage | Cheap, reliable, direct upload from browser via signed URLs | GCP |
 | **Video → Audio** | FFmpeg (open-source) | Extract audio track from video files before transcription | ✅ |
 | **AI — Extraction** | Gemini 2.5 Flash-Lite (via Vertex AI) | $0.10/1M input tokens — 5x cheaper than Gemini 3 Flash. Sufficient quality for theme extraction | GCP |

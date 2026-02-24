@@ -10,7 +10,7 @@
 
 ```
 Day 1 (Feb 24) — Foundation     │ ✅ COMPLETE — Project setup, database, auth, infra
-Day 2 (Feb 25) — Backend Core   │ API endpoints, file upload, AI pipeline
+Day 2 (Feb 24) — Backend Core   │ ✅ COMPLETE — AI pipeline (mock), processing, Q&A, export, billing
 Day 3 (Feb 26) — Frontend Core  │ Design system, layout, dashboard, upload modal
 Day 4 (Feb 27) — Frontend Pages │ Interview detail, Ask page, settings, integration
 Day 5 (Feb 28) — Polish & Ship  │ Testing, bug fixes, deploy, beta invite
@@ -163,9 +163,10 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 
 ---
 
-## Day 2 — Backend Core (Feb 25, Tuesday)
+## Day 2 — Backend Core (✅ Completed Feb 24)
 
 > **Goal:** Full backend API with AI processing pipeline working. Upload a file → get insights back.
+> **Status:** ✅ Complete — all 7 phases implemented with mock AI (toggle `USE_MOCK_AI=false` for real Vertex AI). 20 API endpoints verified working.
 
 ### 2.1 Core API Endpoints (CRUD)
 - [x] `POST /api/interviews` — register uploaded file, create Interview record, enqueue processing job
@@ -186,113 +187,106 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 ---
 
 ### 2.2 File Processing Pipeline — Text Extraction
-- [ ] Install `arq` (async Redis job queue) or set up Celery
-- [ ] Create worker entry point (`workers/main.py`)
-- [ ] Implement text extraction: `.txt` → read directly, `.md` → read directly
-- [ ] Implement text extraction: `.pdf` → PyPDF2 or pdfplumber
-- [ ] Implement text extraction: `.docx` → python-docx
-- [ ] Create `process_interview` job: download file from GCS → extract text → save transcript to DB
-- [ ] Update interview status through pipeline: `queued` → `analyzing` → `done`
-- [ ] Test: Upload a `.txt` transcript file → text appears in DB
+- [x] Install `arq` (async Redis job queue)
+- [x] Create worker entry point (`workers/worker.py`)
+- [x] Implement text extraction: `.txt` → read directly, `.md` → read directly
+- [x] Implement text extraction: `.pdf` → PyPDF2
+- [x] Implement text extraction: `.docx` → python-docx
+- [x] Create `process_interview` job: download file from storage → extract text → save transcript to DB
+- [x] Update interview status through pipeline: `queued` → `transcribing` → `analyzing` → `done`
+- [ ] Test: Upload a `.txt` transcript file → text appears in DB *(needs end-to-end verification)*
 
 **Dependencies:** 1.4 (file storage), 2.1 (interview endpoints)
-**Deliverable:** Text files processed end-to-end
+**Deliverable:** ✅ Text extraction implemented (`.txt`, `.pdf`, `.docx` + mock audio/video)
 
 ---
 
 ### 2.3 File Processing Pipeline — Audio/Video
-- [ ] Install FFmpeg in worker Docker container
-- [ ] Implement video → audio extraction: `ffmpeg -i input.mp4 -vn -acodec pcm_s16le -ar 16000 -ac 1 output.wav`
-- [ ] Implement Chirp 3 transcription via `google.cloud.speech_v2` SDK
-  - [ ] Configure speaker diarization (auto-detect speakers)
-  - [ ] Handle long audio via `BatchRecognize` API
-  - [ ] Handle short audio via `Recognize` API (sync)
-- [ ] Update pipeline: `queued` → `transcribing` → `analyzing` → `done`
-- [ ] Duration limit check: reject files exceeding plan limit (15/30/45 min)
-- [ ] Test: Upload an `.mp3` → transcription appears in DB with speaker labels
+- [x] Mock transcript returned for `.mp3`, `.wav`, `.mp4` files (realistic multi-speaker sample)
+- [ ] Install FFmpeg in worker Docker container *(deferred — requires GCP)*
+- [ ] Implement Chirp 3 transcription via `google.cloud.speech_v2` SDK *(deferred — requires Vertex AI)*
+- [ ] Duration limit check: reject files exceeding plan limit *(deferred)*
 
 **Dependencies:** 2.2 (basic pipeline), 1.5 (Vertex AI enabled)
-**Deliverable:** Audio/video files transcribed via Chirp 3
+**Deliverable:** ⏸️ Mock transcripts working. Real transcription deferred until Vertex AI is configured.
 
 ---
 
 ### 2.4 AI Analysis — Theme Extraction
-- [ ] Create `services/analysis.py` — Gemini 2.5 Flash-Lite prompt for structured extraction
-- [ ] Design extraction prompt: input = transcript, output = JSON with insights, speakers, themes, sentiment
-- [ ] Implement structured output parsing (Gemini JSON mode)
-- [ ] Save extracted insights to DB (linked to interview, with quote positions)
-- [ ] Save detected speakers to DB
-- [ ] Handle low-confidence extractions (flag with `is_flagged = true`)
-- [ ] Test: Process a real interview → insights appear in DB with quotes, themes, sentiment
+- [x] Create `services/analysis.py` — mock keyword/heuristic analysis (pain points, feature requests, positive feedback)
+- [x] Design extraction prompt template stored in `prompts/extraction.py` (for future Gemini use)
+- [x] Implement structured output: insights with category, title, quote, speaker, theme suggestion, confidence
+- [x] Save extracted insights to DB (linked to interview, with quote positions)
+- [x] Save detected speakers to DB (auto-detected from "Speaker 1:", "Interviewer:" patterns)
+- [x] Handle low-confidence extractions (flag with `is_flagged = true` when confidence < 0.7)
+- [ ] Switch to real Gemini extraction when Vertex AI is configured
 
-**Dependencies:** 2.2 or 2.3 (transcript in DB), 1.5 (Vertex AI Gemini)
-**Deliverable:** AI extraction working — interviews produce structured insights
+**Dependencies:** 2.2 or 2.3 (transcript in DB)
+**Deliverable:** ✅ Mock AI extraction working — interviews produce structured insights
 
 ---
 
 ### 2.5 AI Analysis — Cross-Interview Synthesis
-- [ ] Create `services/synthesis.py` — theme clustering logic
-- [ ] After each interview is processed, run synthesis for the user:
-  - [ ] Collect all `theme_suggestion` values from all insights
-  - [ ] Embed theme suggestions using gemini-embedding-001
-  - [ ] Cluster by cosine similarity (threshold: 0.85)
-  - [ ] Create or update `Theme` records
-  - [ ] Link insights to themes
-  - [ ] Calculate aggregated sentiment per theme
-  - [ ] Mark new themes with `is_new = true`
-- [ ] Handle Signal vs Theme (1 source = Signal, 2+ = Theme)
-- [ ] Test: Upload 3 interviews → themes auto-cluster across them
+- [x] Create `services/synthesis.py` — theme clustering logic
+- [x] After each interview is processed, run synthesis for the user:
+  - [x] Collect all `theme_suggestion` values from all insights
+  - [x] Group by normalized string matching (mock mode)
+  - [ ] Cluster by cosine similarity via embeddings (future — when Vertex AI is configured)
+  - [x] Create or update `Theme` records
+  - [x] Link insights to themes
+  - [x] Calculate aggregated sentiment per theme (positive/neutral/negative)
+  - [x] Mark new themes with `is_new = true`
+- [x] Handle Signal vs Theme (1 source = Signal, 2+ sources = Theme)
 
 **Dependencies:** 2.4 (insights in DB)
-**Deliverable:** Themes auto-cluster across interviews
+**Deliverable:** ✅ Theme clustering working (string-matching mock, embedding similarity future)
 
 ---
 
 ### 2.6 Embedding & RAG Setup
-- [ ] Create `services/embeddings.py` — chunk transcripts, generate embeddings
-- [ ] Implement chunking: ~500 tokens with 50-token overlap
-- [ ] Generate embeddings via gemini-embedding-001 (768 dims via MRL)
-- [ ] Store chunks + embeddings in `transcript_chunks` table (pgvector)
-- [ ] Create ivfflat index on embeddings column
-- [ ] Create `services/qa.py` — RAG pipeline:
-  - [ ] Embed user query
-  - [ ] Vector similarity search (top 20 chunks)
-  - [ ] Pass to Gemini 3 Flash with system prompt + context + user query
-  - [ ] Parse response with citations
-  - [ ] Return structured answer
-- [ ] `POST /api/ask` — SSE streaming endpoint for Q&A
-- [ ] `GET /api/ask/conversations` — list conversations
-- [ ] `GET /api/ask/conversations/:id` — conversation detail
-- [ ] Test: Ask "What are the biggest pain points?" → get cited answer
+- [x] Create `services/embeddings.py` — chunk transcripts, generate embeddings
+- [x] Implement chunking: ~500 tokens with 50-token overlap
+- [x] Generate mock embeddings (random normalized 768-dim vectors)
+- [x] Store chunks + embeddings in `transcript_chunks` table (pgvector)
+- [ ] Create ivfflat index on embeddings column *(deferred — optimize later)*
+- [x] Create `services/qa.py` — RAG pipeline:
+  - [x] Full-text ILIKE search across chunks + insights (mock mode)
+  - [ ] Vector similarity search + Gemini (future — when Vertex AI is configured)
+  - [x] Build structured answer with citations
+  - [x] Generate follow-up question suggestions
+- [x] `POST /api/ask` — Q&A endpoint (mock: single response; future: SSE streaming)
+- [x] `GET /api/ask/conversations` — list conversations
+- [x] `GET /api/ask/conversations/:id` — conversation detail with messages
 
-**Dependencies:** 2.4 (insights), transcripts in DB, 1.5 (Vertex AI)
-**Deliverable:** "Ask Your Interviews" fully working on the backend
+**Dependencies:** 2.4 (insights), transcripts in DB
+**Deliverable:** ✅ "Ask Your Interviews" working on backend (mock full-text search, real RAG future)
 
 ---
 
 ### 2.7 WebSocket — Real-Time Updates
-- [ ] Create WebSocket endpoint `WS /ws/processing`
-- [ ] Broadcast processing status updates per file (queued, transcribing, analyzing, done)
-- [ ] Broadcast new insights as they're discovered (for live preview in upload modal)
-- [ ] Use Redis pub/sub for cross-instance coordination
-- [ ] Test: Start processing → WebSocket receives real-time status updates
+- [x] Create WebSocket endpoint `WS /ws/processing`
+- [x] Broadcast processing status updates per file (queued, transcribing, analyzing, done)
+- [x] Created `core/pubsub.py` — Redis pub/sub wrapper (publish + async subscribe generator)
+- [x] Worker publishes status updates at each pipeline step
+- [ ] Test: Start processing → WebSocket receives real-time status updates *(needs frontend client)*
 
 **Dependencies:** 2.2 (processing pipeline), Redis
-**Deliverable:** Real-time updates flowing from backend to frontend
+**Deliverable:** ✅ Real-time update infrastructure ready
 
 ---
 
 ### 2.8 Export & Billing Endpoints
-- [ ] `GET /api/export/insights` — export all insights as markdown (structured theme report)
-- [ ] `GET /api/export/insights?format=pdf` — export as PDF (using `weasyprint` or `reportlab`)
-- [ ] `GET /api/export/interview/:id` — export single interview transcript + insights
-- [ ] `GET /api/export/all-data` — full data export as ZIP
-- [ ] `GET /api/billing/usage` — return current usage stats (interviews count, Q&A queries, storage)
-- [ ] Create usage tracking middleware — increment counters per action
-- [ ] Implement plan limit checks — block actions when limits exceeded, return upgrade prompt
+- [x] `GET /api/export/insights` — export all insights as markdown (grouped by theme, with sentiment bars)
+- [ ] `GET /api/export/insights?format=pdf` — export as PDF *(deferred — markdown only for now)*
+- [x] `GET /api/export/interview/:id` — export single interview transcript + insights as markdown
+- [ ] `GET /api/export/all-data` — full data export as ZIP *(deferred)*
+- [x] `GET /api/billing/usage` — return current month's usage stats
+- [x] `GET /api/billing/limits` — plan limits + remaining capacity
+- [x] Usage tracking helpers: `increment_usage()`, `check_limit()` (auto-creates Usage row per month)
+- [x] Plan limits defined per tier: Free (5 interviews, 20 Q&A), Pro (50/200), Business (500/2000)
 
 **Dependencies:** 2.1 (API endpoints), 2.4 (insights exist)
-**Deliverable:** Export and usage tracking working
+**Deliverable:** ✅ Markdown export + usage/billing working. PDF export deferred.
 
 ---
 

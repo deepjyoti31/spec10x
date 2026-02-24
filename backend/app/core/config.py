@@ -39,6 +39,7 @@ class Settings(BaseSettings):
     google_api_key: str = ""
     gcp_project_id: str = ""
     gcp_location: str = "us-central1"
+    use_mock_ai: bool = True  # Set to False when Vertex AI is configured
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

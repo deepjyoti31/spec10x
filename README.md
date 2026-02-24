@@ -49,12 +49,12 @@ spec10x/
 ├── backend/                     # FastAPI app
 │   └── app/
 │       ├── main.py             # App entry point
-│       ├── api/                # Route modules (auth, interviews, themes, insights)
+│       ├── api/                # Route modules (auth, interviews, themes, insights, ask, export, billing, websocket)
 │       ├── models/             # SQLAlchemy ORM models (10 tables)
 │       ├── schemas/            # Pydantic request/response schemas
-│       ├── core/               # Config, database, auth, storage
-│       ├── services/           # Business logic (AI pipeline, RAG, synthesis)
-│       ├── workers/            # Background job definitions
+│       ├── core/               # Config, database, auth, storage, pubsub
+│       ├── services/           # Business logic (processing, extraction, analysis, synthesis, embeddings, Q&A)
+│       ├── workers/            # Background job worker (arq)
 │       └── prompts/            # Gemini prompt templates
 │   ├── alembic/                # Database migrations
 │   └── requirements.txt
@@ -178,7 +178,18 @@ cd backend
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Terminal 2 — Frontend
+### Terminal 2 — Background Worker
+
+```powershell
+# From the project root (spec10x/)
+cd backend
+.\.venv\Scripts\Activate.ps1
+python -m arq app.workers.worker.WorkerSettings
+```
+
+> The worker processes uploaded interviews in the background. Without it, uploads stay in "queued" status.
+
+### Terminal 3 — Frontend
 
 ```powershell
 # From the project root (spec10x/)
@@ -198,7 +209,8 @@ npm run dev
 
 ```powershell
 # Stop backend: Ctrl+C in Terminal 1
-# Stop frontend: Ctrl+C in Terminal 2
+# Stop worker: Ctrl+C in Terminal 2
+# Stop frontend: Ctrl+C in Terminal 3
 
 # Stop Docker services (from project root)
 docker compose down
@@ -259,16 +271,19 @@ See `.env.example` for all available variables and their descriptions.
 | `MINIO_*` | Backend | Pre-configured for local MinIO |
 | `FIREBASE_*` | Auth (optional in dev) | Empty (dev-mode fallback) |
 | `GOOGLE_API_KEY` | AI features | Required for Gemini/Chirp |
+| `USE_MOCK_AI` | AI pipeline | `true` — set to `false` for real Vertex AI |
 
 ---
 
 ## 🧪 Running Tests
 
+See [Testing Strategy](Documentation/CTO/testing_strategy.md) for full details.
+
 ```powershell
-# Backend
+# Backend (requires Docker services running)
 cd backend
 .\.venv\Scripts\Activate.ps1
-pytest
+pytest tests/ -v
 
 # Frontend
 cd frontend
@@ -286,6 +301,7 @@ npm test
 | Technical Architecture | `Documentation/CTO/technical_architecture.md` |
 | Product Specification | `Documentation/CTO/v0.1_product_specification.md` |
 | Project Tracker | `Documentation/CTO/project_tracker_v0.1.md` |
+| Testing Strategy | `Documentation/CTO/testing_strategy.md` |
 
 ---
 
