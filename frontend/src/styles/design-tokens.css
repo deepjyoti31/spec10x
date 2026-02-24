@@ -1,0 +1,155 @@
+/*
+ * Spec10x — Design Tokens
+ * Based on the product spec design system:
+ * Linear meets Notion — dark mode default, clean, fast
+ */
+
+:root {
+  /* === Colors === */
+  --color-bg-page: #0F1117;
+  --color-bg-card: #161820;
+  --color-bg-elevated: #1C1E28;
+  --color-bg-hover: #22242E;
+
+  /* Text */
+  --color-text-primary: #F0F0F3;
+  --color-text-secondary: #8B8D97;
+  --color-text-muted: #5A5C66;
+
+  /* Accent */
+  --color-accent: #4F8CFF;
+  --color-accent-hover: #6B9FFF;
+  --color-accent-subtle: rgba(79, 140, 255, 0.1);
+  --color-accent-border: rgba(79, 140, 255, 0.3);
+
+  /* Semantic */
+  --color-success: #34D399;
+  --color-success-subtle: rgba(52, 211, 153, 0.1);
+  --color-warning: #FBBF24;
+  --color-warning-subtle: rgba(251, 191, 36, 0.1);
+  --color-danger: #F87171;
+  --color-danger-subtle: rgba(248, 113, 113, 0.1);
+
+  /* Borders */
+  --color-border: #1E2028;
+  --color-border-hover: #2A2C38;
+
+  /* Insight categories */
+  --color-pain-point: #F87171;
+  --color-pain-point-bg: rgba(248, 113, 113, 0.1);
+  --color-feature-request: #4F8CFF;
+  --color-feature-request-bg: rgba(79, 140, 255, 0.1);
+  --color-positive: #34D399;
+  --color-positive-bg: rgba(52, 211, 153, 0.1);
+  --color-suggestion: #FBBF24;
+  --color-suggestion-bg: rgba(251, 191, 36, 0.1);
+
+  /* === Typography === */
+  --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-data: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  --text-xs: 0.75rem;     /* 12px */
+  --text-sm: 0.875rem;    /* 14px */
+  --text-base: 1rem;      /* 16px */
+  --text-lg: 1.125rem;    /* 18px */
+  --text-xl: 1.25rem;     /* 20px */
+  --text-2xl: 1.5rem;     /* 24px */
+  --text-3xl: 1.875rem;   /* 30px */
+
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+
+  /* === Spacing (4px grid) === */
+  --space-1: 0.25rem;     /* 4px */
+  --space-2: 0.5rem;      /* 8px */
+  --space-3: 0.75rem;     /* 12px */
+  --space-4: 1rem;        /* 16px */
+  --space-5: 1.25rem;     /* 20px */
+  --space-6: 1.5rem;      /* 24px */
+  --space-8: 2rem;        /* 32px */
+  --space-10: 2.5rem;     /* 40px */
+  --space-12: 3rem;       /* 48px */
+  --space-16: 4rem;       /* 64px */
+
+  /* === Layout === */
+  --nav-height: 64px;
+  --sidebar-width: 240px;
+  --detail-panel-width: 320px;
+
+  /* === Effects === */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.3);
+  --shadow-glow: 0 0 20px rgba(79, 140, 255, 0.15);
+
+  --transition-fast: 150ms ease-out;
+  --transition-base: 200ms ease-out;
+  --transition-slow: 300ms ease-out;
+}
+
+/* === Global Reset & Base Styles === */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-weight: var(--font-normal);
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-page);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-accent-hover);
+}
+
+/* === Scrollbar === */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-hover);
+}
+
+/* === Utility Classes === */
+.text-muted { color: var(--color-text-secondary); }
+.text-accent { color: var(--color-accent); }
+.text-danger { color: var(--color-danger); }
+.text-success { color: var(--color-success); }
+.font-mono { font-family: var(--font-data); }

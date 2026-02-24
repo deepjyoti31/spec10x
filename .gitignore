@@ -1,0 +1,43 @@
+# Spec10x — Git Ignore
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.egg
+.pytest_cache/
+
+# === Node.js ===
+node_modules/
+.next/
+out/
+.turbo/
+
+# === Environment ===
+.env
+.env.local
+.env.*.local
+firebase-service-account.json
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Docker ===
+docker-compose.override.yml
+
+# === Misc ===
+*.log
+coverage/
+.coverage
+htmlcov/
