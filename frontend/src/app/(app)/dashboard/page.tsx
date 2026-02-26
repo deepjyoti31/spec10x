@@ -1,75 +1,106 @@
 /**
- * Spec10x — Dashboard Page (placeholder)
- * Full implementation in Day 3 (Frontend Core)
+ * Spec10x — Dashboard Page
+ *
+ * Three-panel Insight Dashboard:
+ * Left sidebar (interview library) + Center (theme cards) + Right (detail panel)
  */
 
 'use client';
 
+import React, { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useInterviews } from '@/hooks/useInterviews';
+import { useThemes } from '@/hooks/useThemes';
+import { api, ThemeResponse, InterviewResponse } from '@/lib/api';
+import InterviewSidebar from '@/components/dashboard/InterviewSidebar';
+import ThemeArea from '@/components/dashboard/ThemeArea';
+import DetailPanel from '@/components/dashboard/DetailPanel';
+import UploadModal from '@/components/upload/UploadModal';
+import styles from './dashboard.module.css';
 
 export default function DashboardPage() {
-    const { user, loading, logout } = useAuth();
-    const router = useRouter();
+    const { token } = useAuth();
+    const { interviews, loading: interviewsLoading, sort: interviewSort, setSort: setInterviewSort, refetch: refetchInterviews } = useInterviews();
+    const { activeThemes, previousThemes, loading: themesLoading, sort: themeSort, setSort: setThemeSort, refetch: refetchThemes } = useThemes();
 
-    useEffect(() => {
-        if (!loading && !user) {
-            router.push('/login');
+    const [selectedTheme, setSelectedTheme] = useState<ThemeResponse | null>(null);
+    const [selectedInterview, setSelectedInterview] = useState<InterviewResponse | null>(null);
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+    const handleThemeSelect = useCallback((theme: ThemeResponse) => {
+        setSelectedTheme(theme);
+        setSelectedInterview(null);
+    }, []);
+
+    const handleInterviewSelect = useCallback((interview: InterviewResponse) => {
+        setSelectedInterview(interview);
+        setSelectedTheme(null);
+    }, []);
+
+    const handleThemeRename = useCallback(async (id: string, name: string) => {
+        if (!token) return;
+        try {
+            await api.renameTheme(token, id, name);
+            refetchThemes();
+            if (selectedTheme?.id === id) {
+                setSelectedTheme((prev) => prev ? { ...prev, name } : null);
+            }
+        } catch (err) {
+            console.error('Failed to rename theme:', err);
         }
-    }, [user, loading, router]);
+    }, [token, selectedTheme, refetchThemes]);
 
-    if (loading) {
-        return (
-            <div style={{
-                minHeight: '100vh',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'var(--color-bg-page)',
-                color: 'var(--color-text-secondary)',
-            }}>
-                Loading...
-            </div>
-        );
-    }
-
-    if (!user) return null;
+    const handleUploadComplete = useCallback(() => {
+        setIsUploadModalOpen(false);
+        refetchInterviews();
+        refetchThemes();
+    }, [refetchInterviews, refetchThemes]);
 
     return (
-        <div style={{
-            minHeight: '100vh',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'var(--color-bg-page)',
-            gap: '16px',
-        }}>
-            <h1 style={{ color: 'var(--color-accent)', fontSize: '28px' }}>
-                🎉 Spec10x Dashboard
-            </h1>
-            <p style={{ color: 'var(--color-text-secondary)' }}>
-                Welcome, <strong style={{ color: 'var(--color-text-primary)' }}>{user.name}</strong>!
-            </p>
-            <p style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>
-                Plan: {user.plan} · Full dashboard coming in Day 3
-            </p>
-            <button
-                onClick={logout}
-                style={{
-                    marginTop: '16px',
-                    padding: '8px 24px',
-                    background: 'transparent',
-                    border: '1px solid var(--color-border)',
-                    color: 'var(--color-text-secondary)',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-ui)',
-                }}
-            >
-                Sign Out
-            </button>
-        </div>
+        <>
+            <div className={styles.dashboard}>
+                {/* Left Sidebar — Interview Library */}
+                <InterviewSidebar
+                    interviews={interviews}
+                    loading={interviewsLoading}
+                    selectedId={selectedInterview?.id || null}
+                    onSelect={handleInterviewSelect}
+                    onUploadClick={() => setIsUploadModalOpen(true)}
+                    sort={interviewSort}
+                    onSortChange={setInterviewSort}
+                    totalInsights={0}
+                    totalThemes={activeThemes.length + previousThemes.length}
+                />
+
+                {/* Center — Theme Area */}
+                <ThemeArea
+                    activeThemes={activeThemes}
+                    previousThemes={previousThemes}
+                    loading={themesLoading}
+                    sort={themeSort}
+                    onSortChange={setThemeSort}
+                    selectedThemeId={selectedTheme?.id || null}
+                    onThemeSelect={handleThemeSelect}
+                    onThemeRename={handleThemeRename}
+                    onUploadClick={() => setIsUploadModalOpen(true)}
+                    interviewCount={interviews.length}
+                />
+
+                {/* Right — Detail Panel */}
+                <DetailPanel
+                    selectedTheme={selectedTheme}
+                    selectedInterview={selectedInterview}
+                    totalInterviews={interviews.length}
+                    totalThemes={activeThemes.length}
+                />
+            </div>
+
+            {/* Upload Modal */}
+            <UploadModal
+                isOpen={isUploadModalOpen}
+                onClose={() => setIsUploadModalOpen(false)}
+                onComplete={handleUploadComplete}
+            />
+        </>
     );
 }

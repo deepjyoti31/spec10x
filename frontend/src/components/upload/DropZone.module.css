@@ -1,0 +1,103 @@
+.dropZone {
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-10) var(--space-6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    background: var(--color-bg-card);
+}
+
+.dropZone:hover {
+    border-color: var(--color-accent-border);
+    background: var(--color-accent-subtle);
+}
+
+.dropZoneActive {
+    border-color: var(--color-accent);
+    border-style: solid;
+    background: var(--color-accent-subtle);
+    box-shadow: var(--shadow-glow);
+}
+
+.uploadIcon {
+    font-size: 48px;
+    color: var(--color-accent);
+    margin-bottom: var(--space-4);
+}
+
+.primaryText {
+    font-size: var(--text-lg);
+    font-weight: var(--font-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: var(--space-1);
+}
+
+.secondaryText {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    text-decoration: underline;
+    margin-bottom: var(--space-4);
+}
+
+.formats {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: var(--space-3);
+}
+
+.formatPill {
+    padding: 2px 8px;
+    background: var(--color-bg-hover);
+    color: var(--color-text-muted);
+    font-size: 11px;
+    font-family: var(--font-data);
+    border-radius: var(--radius-full);
+}
+
+.batchNote {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-2);
+}
+
+.transcriptHint {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--color-accent);
+    background: var(--color-accent-subtle);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    margin-top: var(--space-2);
+    max-width: 400px;
+}
+
+/* Compact mode */
+.dropZoneCompact {
+    padding: var(--space-3) var(--space-4);
+    flex-direction: row;
+    gap: var(--space-3);
+    border-radius: var(--radius-md);
+}
+
+.dropZoneCompact .uploadIcon {
+    font-size: 20px;
+    margin-bottom: 0;
+}
+
+.dropZoneCompact .primaryText {
+    font-size: var(--text-sm);
+    margin-bottom: 0;
+}
+
+.hiddenInput {
+    display: none;
+}

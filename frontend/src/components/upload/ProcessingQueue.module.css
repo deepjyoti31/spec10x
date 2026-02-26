@@ -1,0 +1,155 @@
+.queue {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.fileRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+    position: relative;
+}
+
+.fileRow:last-child {
+    border-bottom: none;
+}
+
+.fileIcon {
+    font-size: 18px;
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+}
+
+.fileInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.fileName {
+    font-size: var(--text-sm);
+    font-family: var(--font-data);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fileMeta {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+
+.fileStatus {
+    font-size: var(--text-xs);
+    font-weight: var(--font-medium);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+}
+
+.statusQueued {
+    background: var(--color-bg-hover);
+    color: var(--color-text-muted);
+}
+
+.statusTranscribing {
+    background: var(--color-warning-subtle);
+    color: var(--color-warning);
+}
+
+.statusAnalyzing {
+    background: var(--color-accent-subtle);
+    color: var(--color-accent);
+}
+
+.statusDone {
+    background: var(--color-success-subtle);
+    color: var(--color-success);
+}
+
+.statusError {
+    background: var(--color-danger-subtle);
+    color: var(--color-danger);
+}
+
+/* Progress bar */
+.progressTrack {
+    height: 2px;
+    background: var(--color-bg-elevated);
+    border-radius: 1px;
+    margin-top: var(--space-1);
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    background: var(--color-accent);
+    border-radius: 1px;
+    transition: width 0.3s ease-out;
+}
+
+.progressFillDone {
+    background: var(--color-success);
+}
+
+.progressFillError {
+    background: var(--color-danger);
+}
+
+/* Remove button */
+.removeBtn {
+    position: absolute;
+    top: 50%;
+    right: var(--space-2);
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    opacity: 0;
+    transition: all var(--transition-fast);
+}
+
+.fileRow:hover .removeBtn {
+    opacity: 1;
+}
+
+.removeBtn:hover {
+    color: var(--color-danger);
+    background: var(--color-danger-subtle);
+}
+
+/* Overall status */
+.overallStatus {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3);
+    border-top: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+}
+
+.overallProgress {
+    height: 3px;
+    background: var(--color-bg-elevated);
+    border-radius: 2px;
+    overflow: hidden;
+    flex: 1;
+    margin-left: var(--space-3);
+    max-width: 120px;
+}
+
+.overallFill {
+    height: 100%;
+    background: var(--color-accent);
+    border-radius: 2px;
+    transition: width 0.3s ease-out;
+}

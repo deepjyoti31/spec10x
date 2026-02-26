@@ -1,0 +1,21 @@
+.card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    transition: all var(--transition-base);
+}
+
+.interactive {
+    cursor: pointer;
+}
+
+.interactive:hover {
+    border-color: var(--color-accent-border);
+    box-shadow: var(--shadow-glow);
+}
+
+.selected {
+    border-color: var(--color-accent);
+    box-shadow: var(--shadow-glow);
+}
