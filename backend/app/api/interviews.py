@@ -37,6 +37,13 @@ _arq_pool = None
 async def _get_arq_pool():
     """Get or create the arq Redis pool for enqueuing jobs."""
     global _arq_pool
+    if _arq_pool is not None:
+        # Check if the pool's connection is still usable (event loop may have changed in tests)
+        try:
+            import asyncio
+            asyncio.get_running_loop()
+        except RuntimeError:
+            _arq_pool = None
     if _arq_pool is None:
         _arq_pool = await create_pool(
             RedisSettings.from_dsn(settings.redis_url),

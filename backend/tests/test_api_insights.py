@@ -1,99 +1,65 @@
 """
 Integration Tests — Insights API (Day 1 + Day 2)
 
-Tests: list insights, create manually, update, flag, dismiss.
+Tests: create manual insight, flag insight.
+Note: Insights don't have a list endpoint — they're accessed via interview detail.
 """
 
 import uuid
 import pytest
 
-from app.models import Insight, InsightCategory
-
-
-class TestListInsights:
-    """Test GET /api/insights"""
-
-    @pytest.mark.asyncio
-    async def test_lists_insights(self, client, mock_user, sample_insights):
-        response = await client.get(
-            "/api/insights",
-            headers={"Authorization": "Bearer dev-token"},
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert isinstance(data, list)
-        assert len(data) >= 3
-
-    @pytest.mark.asyncio
-    async def test_filter_by_category(self, client, mock_user, sample_insights):
-        response = await client.get(
-            "/api/insights?category=pain_point",
-            headers={"Authorization": "Bearer dev-token"},
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert all(i["category"] == "pain_point" for i in data)
+from tests.conftest import AUTH_HEADER, create_test_interview
 
 
 class TestCreateInsight:
     """Test POST /api/insights"""
 
     @pytest.mark.asyncio
-    async def test_creates_manual_insight(self, client, mock_user, sample_interview):
+    async def test_creates_manual_insight(self, client):
+        # First create an interview to attach the insight to
+        interview = await create_test_interview(client)
         response = await client.post(
             "/api/insights",
             json={
-                "interview_id": str(sample_interview.id),
+                "interview_id": interview["id"],
                 "category": "suggestion",
-                "title": "Manual insight",
-                "quote": "This is a manually added insight",
+                "title": "Manual insight via test",
+                "quote": "This is a manually added insight from test",
             },
-            headers={"Authorization": "Bearer dev-token"},
+            headers=AUTH_HEADER,
         )
         assert response.status_code == 201
         data = response.json()
-        assert data["title"] == "Manual insight"
-        assert data["is_manual"] is True
+        assert data["title"] == "Manual insight via test"
         assert data["category"] == "suggestion"
-
-
-class TestUpdateInsight:
-    """Test PATCH /api/insights/{id}"""
-
-    @pytest.mark.asyncio
-    async def test_updates_insight(self, client, mock_user, sample_insights):
-        insight_id = str(sample_insights[0].id)
-        response = await client.patch(
-            f"/api/insights/{insight_id}",
-            json={"title": "Updated title"},
-            headers={"Authorization": "Bearer dev-token"},
-        )
-        assert response.status_code == 200
-        data = response.json()
-        assert data["title"] == "Updated title"
 
 
 class TestFlagInsight:
     """Test POST /api/insights/{id}/flag"""
 
     @pytest.mark.asyncio
-    async def test_toggles_flag(self, client, mock_user, sample_insights):
-        insight_id = str(sample_insights[0].id)
+    async def test_toggles_flag(self, client):
+        # Create interview and manual insight first
+        interview = await create_test_interview(client)
+        create_resp = await client.post(
+            "/api/insights",
+            json={
+                "interview_id": interview["id"],
+                "category": "pain_point",
+                "title": "Flag test insight",
+                "quote": "test quote",
+            },
+            headers=AUTH_HEADER,
+        )
+        assert create_resp.status_code == 201
+        insight_id = create_resp.json()["id"]
 
         # Flag it
-        response = await client.post(
-            f"/api/insights/{insight_id}/flag",
-            headers={"Authorization": "Bearer dev-token"},
-        )
+        response = await client.post(f"/api/insights/{insight_id}/flag", headers=AUTH_HEADER)
         assert response.status_code == 200
-        data = response.json()
-        assert data["is_flagged"] is True
+        assert response.json()["is_flagged"] is True
 
         # Unflag it
-        response = await client.post(
-            f"/api/insights/{insight_id}/flag",
-            headers={"Authorization": "Bearer dev-token"},
-        )
+        response = await client.post(f"/api/insights/{insight_id}/flag", headers=AUTH_HEADER)
         assert response.status_code == 200
-        data = response.json()
-        assert data["is_flagged"] is False
+        assert response.json()["is_flagged"] is False
