@@ -13,7 +13,7 @@ Day 1 (Feb 24) — Foundation     │ ✅ COMPLETE — Project setup, database, 
 Day 2 (Feb 24) — Backend Core   │ ✅ COMPLETE — AI pipeline (mock), processing, Q&A, export, billing
 Day 3 (Feb 26) — Frontend Core  │ ✅ COMPLETE — Design system, layout, 3-panel dashboard, upload modal
 Day 4 (Feb 26) — Frontend Pages │ ✅ COMPLETE — Interview detail, Ask page, settings, sample data, Cmd+K
-Day 5 (Feb 28) — Polish & Ship  │ Testing, bug fixes, deploy, beta invite
+Day 5 (Feb 26) — Polish & Ship  │ 🔄 IN PROGRESS — Dockerfiles done, toasts, meta tags, quick-start guide done. Deployment pending.
 ```
 
 ---
@@ -283,7 +283,7 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 - [x] `GET /api/billing/usage` — return current month's usage stats
 - [x] `GET /api/billing/limits` — plan limits + remaining capacity
 - [x] Usage tracking helpers: `increment_usage()`, `check_limit()` (auto-creates Usage row per month)
-- [x] Plan limits defined per tier: Free (5 interviews, 20 Q&A), Pro (50/200), Business (500/2000)
+- [x] Plan limits defined per tier: Free (10 interviews total, 20 Q&A/mo, 100 MB), Pro (100/mo, 500 Q&A/mo, 5 GB), Business (unlimited)
 
 **Dependencies:** 2.1 (API endpoints), 2.4 (insights exist)
 **Deliverable:** ✅ Markdown export + usage/billing working. PDF export deferred.
@@ -513,9 +513,10 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 
 ---
 
-## Day 5 — Polish & Ship (Feb 28, Saturday)
+## Day 5 — Polish & Ship (🔄 In Progress Feb 26)
 
 > **Goal:** Testing, bug fixes, performance, deploy to production. Ready for beta.
+> **Status:** 🔄 Partial — Dockerfiles, toasts, meta tags, quick-start guide done. Deployment and integration testing pending.
 
 ### 5.1 Integration Testing
 - [ ] Full flow test: Sign up → upload 3 files (1 txt, 1 pdf, 1 mp3) → watch processing → see insights
@@ -527,6 +528,8 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 - [ ] Test plan limits: free tier (10 interviews, 20 Q&A queries)
 - [ ] Test duplicate file detection (upload same file twice)
 - [ ] Test edge cases: empty transcript, very long transcript, non-English content
+- [x] Backend unit/integration tests: 76 tests all passing (verified Feb 26)
+- [x] Frontend build: Next.js compiles cleanly, all 7 routes generated (verified Feb 26)
 
 **Dependencies:** Everything above
 **Deliverable:** All critical paths tested and working
@@ -539,8 +542,8 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 - [ ] Add error boundaries and empty states for all pages
 - [ ] Check responsive behavior (minimum: 1280px+ desktop)
 - [ ] Verify dark mode consistency across all pages
-- [ ] Add toast notifications (success, error messages)
-- [ ] Add page title/meta tags for each route
+- [x] Add toast notifications (success, error messages) — `components/ui/Toast.tsx` + `Toast.module.css`, wired into root layout via `ToastProvider`
+- [x] Add page title/meta tags for each route — 6 `metadata.ts` files created (dashboard, ask, settings, interview, login, signup)
 - [ ] Review transition animations (200ms ease-out on all hover effects)
 
 **Dependencies:** 5.1 (tested)
@@ -549,10 +552,16 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 ---
 
 ### 5.3 Deployment
-- [ ] Create `Dockerfile.frontend` (Next.js production build)
-- [ ] Create `Dockerfile.backend` (FastAPI + FFmpeg + dependencies)
-- [ ] Create `Dockerfile.worker` (same as backend, optimized for background jobs)
-- [ ] Manually deploy to Cloud Run (frontend, backend, worker)
+- [x] Create `Dockerfile` for frontend — `frontend/Dockerfile` (multi-stage: deps → build → standalone runner with non-root user)
+- [x] Create `Dockerfile` for backend — `backend/Dockerfile` (Python 3.12-slim, uvicorn, 2 workers)
+- [x] Create `Dockerfile.worker` — `backend/Dockerfile.worker` (same as backend + FFmpeg, runs arq worker)
+- [x] Create `.dockerignore` files for frontend and backend
+- [x] Enable Next.js `standalone` output mode in `next.config.ts` (optimal Docker images)
+- [ ] Create GCP project and enable required APIs *(requires GCP Console)*
+- [ ] Create Cloud SQL, Memorystore Redis, GCS bucket *(requires GCP Console)*
+- [ ] Create Firebase project and enable auth providers *(requires Firebase Console)*
+- [ ] Build and push Docker images to Artifact Registry
+- [ ] Deploy to Cloud Run (frontend, backend, worker)
 - [ ] Run Alembic migration on Cloud SQL
 - [ ] Configure Cloud Run custom domain mapping (spec10x.com via GoDaddy CNAME)
 - [ ] Verify SSL certificate auto-provisioned
@@ -567,7 +576,7 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 
 ### 5.4 Beta Launch Prep
 - [ ] Create first beta user accounts or whitelist
-- [ ] Write quick-start guide (1-page: sign up → upload → explore)
+- [x] Write quick-start guide — `Documentation/quick_start_guide.md` (1-page: sign up → upload → explore)
 - [ ] Send beta invite emails to first 5-10 pilot users
 - [ ] Set up feedback channel (email, or simple Google Form)
 

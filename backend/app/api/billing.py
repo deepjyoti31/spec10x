@@ -18,22 +18,23 @@ from app.schemas import UsageResponse
 
 router = APIRouter(prefix="/api/billing", tags=["Billing"])
 
-# Plan limits
+# Plan limits (must match product specification pricing table)
+# NOTE: Free tier "interviews" is a LIFETIME cap (10 total forever), not monthly.
 PLAN_LIMITS = {
     PlanType.free: {
-        "interviews_per_month": 5,
-        "qa_queries_per_month": 20,
-        "storage_bytes": 500 * 1024 * 1024,  # 500 MB
+        "interviews_per_month": 10,       # 10 total forever (enforced as lifetime cap)
+        "qa_queries_per_month": 20,       # 20/month
+        "storage_bytes": 100 * 1024 * 1024,  # 100 MB
     },
     PlanType.pro: {
-        "interviews_per_month": 50,
-        "qa_queries_per_month": 200,
+        "interviews_per_month": 100,      # 100/month
+        "qa_queries_per_month": 500,      # 500/month
         "storage_bytes": 5 * 1024 * 1024 * 1024,  # 5 GB
     },
     PlanType.business: {
-        "interviews_per_month": 500,
-        "qa_queries_per_month": 2000,
-        "storage_bytes": 50 * 1024 * 1024 * 1024,  # 50 GB
+        "interviews_per_month": 999999,   # Unlimited
+        "qa_queries_per_month": 999999,   # Unlimited
+        "storage_bytes": 999 * 1024 * 1024 * 1024,  # Unlimited (999 GB practical cap)
     },
 }
 

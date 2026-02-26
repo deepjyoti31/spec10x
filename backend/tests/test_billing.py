@@ -24,9 +24,9 @@ class TestPlanLimits:
 
     def test_free_limits(self):
         free = PLAN_LIMITS[PlanType.free]
-        assert free["interviews_per_month"] == 5
+        assert free["interviews_per_month"] == 10
         assert free["qa_queries_per_month"] == 20
-        assert free["storage_bytes"] == 500 * 1024 * 1024  # 500 MB
+        assert free["storage_bytes"] == 100 * 1024 * 1024  # 100 MB
 
     def test_pro_higher_than_free(self):
         free = PLAN_LIMITS[PlanType.free]

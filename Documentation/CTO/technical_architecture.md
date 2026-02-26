@@ -96,35 +96,48 @@
 
 ```
 spec10x/
-├── frontend/                    # Next.js app
-│   ├── app/                     # App router pages
-│   │   ├── (auth)/              # Login, signup
-│   │   ├── (app)/               # Protected app pages
-│   │   │   ├── dashboard/       # Insight Dashboard
-│   │   │   ├── interview/[id]/  # Interview Detail
-│   │   │   └── ask/             # Ask Your Interviews
-│   │   └── (marketing)/         # Landing page
-│   ├── components/              # Reusable UI components
-│   │   ├── ui/                  # Primitives (Button, Card, Input, etc.)
-│   │   ├── layout/              # NavBar, Sidebar, Panels
-│   │   ├── dashboard/           # Theme cards, interview list
-│   │   ├── interview/           # Transcript viewer, highlights
-│   │   ├── ask/                 # Chat messages, citations
-│   │   └── upload/              # Upload modal, processing queue
-│   ├── lib/                     # API client, auth helpers, utils
-│   ├── hooks/                   # Custom React hooks
-│   └── styles/                  # Global CSS, design tokens
+├── frontend/                    # Next.js 16.1 app
+│   ├── Dockerfile               # Multi-stage production build (standalone)
+│   ├── .dockerignore
+│   ├── next.config.ts           # Standalone output mode enabled
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── layout.tsx       # Root layout (AuthProvider + ToastProvider)
+│   │   │   ├── globals.css      # Design system tokens + global styles
+│   │   │   ├── (auth)/          # Login, signup (+ metadata.ts each)
+│   │   │   ├── (app)/           # Protected app pages
+│   │   │   │   ├── layout.tsx   # AppLayout wrapper (NavBar + auth)
+│   │   │   │   ├── dashboard/   # Insight Dashboard (+ metadata.ts)
+│   │   │   │   ├── interview/[id]/ # Interview Detail (+ metadata.ts)
+│   │   │   │   ├── ask/         # Ask Your Interviews (+ metadata.ts)
+│   │   │   │   └── settings/    # Settings & Billing (+ metadata.ts)
+│   │   │   └── page.tsx         # Root redirect
+│   │   ├── components/          # Reusable UI components
+│   │   │   ├── ui/              # Primitives (Button, Card, Input, Toast, etc.)
+│   │   │   ├── layout/          # NavBar, AppLayout, CommandPalette
+│   │   │   ├── dashboard/       # InterviewSidebar, ThemeArea, DetailPanel
+│   │   │   ├── interview/       # TranscriptPanel, InsightPanel
+│   │   │   └── upload/          # UploadModal, processing queue
+│   │   ├── lib/                 # API client, auth helpers, utils
+│   │   └── hooks/               # useAuth, useInterviews, useThemes, useAsk
 │
 ├── backend/                     # FastAPI app
+│   ├── Dockerfile               # Production build (Python 3.12-slim, uvicorn)
+│   ├── Dockerfile.worker        # Worker build (+ FFmpeg, arq)
+│   ├── .dockerignore
+│   ├── requirements.txt
 │   ├── app/
 │   │   ├── main.py              # FastAPI app entry
 │   │   ├── api/                 # API route modules
 │   │   │   ├── interviews.py    # Upload, list, delete, detail
 │   │   │   ├── themes.py        # List, rename, detail
 │   │   │   ├── insights.py      # CRUD, manual corrections
-│   │   │   ├── ask.py           # Q&A streaming endpoint
-│   │   │   ├── export.py        # Markdown/PDF export
-│   │   │   └── billing.py       # Stripe webhooks, usage
+│   │   │   ├── ask.py           # Q&A endpoint
+│   │   │   ├── export.py        # Markdown export
+│   │   │   ├── billing.py       # Usage tracking, plan limits
+│   │   │   ├── auth.py          # Token verification
+│   │   │   ├── websocket.py     # Real-time processing updates
+│   │   │   └── demo.py          # Sample data loader
 │   │   ├── services/            # Business logic
 │   │   │   ├── processing.py    # File processing pipeline
 │   │   │   ├── transcription.py # Speech-to-text
@@ -135,18 +148,21 @@ spec10x/
 │   │   │   └── export.py        # Export formatting
 │   │   ├── models/              # SQLAlchemy ORM models
 │   │   ├── schemas/             # Pydantic request/response schemas
-│   │   ├── workers/             # Background job definitions
+│   │   ├── workers/             # Background job definitions (arq)
 │   │   ├── core/                # Config, auth, database setup
 │   │   └── prompts/             # Gemini prompt templates
 │   ├── alembic/                 # Database migrations
-│   └── tests/
+│   └── tests/                   # 76 tests (unit + integration + pipeline)
 │
-├── infra/                       # Terraform / deployment configs
-│   ├── terraform/               # GCP infrastructure as code
-│   ├── cloudbuild.yaml          # CI/CD pipeline
-│   └── Dockerfile.backend       # Backend container
+├── infra/                       # Infrastructure configs
+│   └── init-db.sql              # PostgreSQL init (pgvector extension)
 │
-└── docs/                        # Architecture docs, ADRs
+├── Documentation/               # Project documentation
+│   ├── CTO/                     # Technical docs
+│   ├── CEO/                     # Business & product docs
+│   └── quick_start_guide.md     # Beta tester onboarding guide
+│
+└── docker-compose.yml           # Local dev infra (PostgreSQL, Redis, MinIO)
 ```
 
 ---
@@ -499,7 +515,7 @@ POST   /api/insights/:id/flag         → Flag as uncertain
 
 ### Ask (Q&A)
 ```
-POST   /api/ask                       → Send question, get streaming response (SSE)
+POST   /api/ask                       → Send question, get JSON response (SSE streaming deferred)
 GET    /api/ask/conversations         → List past conversations
 GET    /api/ask/conversations/:id     → Get conversation history
 ```

@@ -35,4 +35,4 @@ class TestGetLimits:
         assert "usage" in data
         assert "limits" in data
         assert "remaining" in data
-        assert data["limits"]["interviews_per_month"] == 5
+        assert data["limits"]["interviews_per_month"] == 10
