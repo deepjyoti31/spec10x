@@ -1,8 +1,8 @@
 # Spec10x v0.1 — Testing Strategy
 
 > **Owner:** CTO  
-> **Last Updated:** Feb 24, 2026  
-> **Status:** Day 5 (Sprint: Feb 24–28)
+> **Last Updated:** Feb 26, 2026  
+> **Status:** Day 3 complete, Day 5 pending (Sprint: Feb 24–28)
 
 ---
 
@@ -126,13 +126,13 @@ pytest tests/test_processing_pipeline.py -v
 
 ---
 
-### 4. Frontend Tests (Future — Day 5)
+### 4. Frontend Tests (Day 5)
 
 **What:** Component-level tests using React Testing Library + Jest/Vitest. Tests key UI interactions (upload flow, theme card clicks, Ask chat).
 
 **Why:** Ensures UI components render correctly, handle loading/error states, and respond to user interactions.
 
-**When:** Implemented during Day 5 polish phase, once frontend components are built (Day 3–4).
+**When:** Implemented during Day 5 polish phase. Frontend components are built (Day 3 complete).
 
 **Planned:**
 
@@ -151,7 +151,7 @@ npm test
 
 ---
 
-### 5. E2E Smoke Tests (Future — Day 5)
+### 5. E2E Smoke Tests (Day 5)
 
 **What:** Browser-level tests that verify the critical user path works end-to-end: Login → Upload → View Insights → Ask Question → Export.
 
@@ -204,10 +204,10 @@ Shared fixtures:
 
 | Phase | Day | What | Who Runs |
 |---|---|---|---|
-| **Unit tests** | Day 2 (today) | Services layer: extraction, analysis, synthesis, embeddings, QA, billing | Developer / CI |
+| **Unit tests** | Day 2 (✅ done) | Services layer: extraction, analysis, synthesis, embeddings, QA, billing | Developer / CI |
 | **Integration tests** | Day 3–4 | API endpoints with real DB | Developer / CI |
 | **Pipeline tests** | Day 4 | Full processing pipeline E2E | Developer / CI |
-| **Frontend tests** | Day 5 | Component tests (once UI is built) | Developer / CI |
+| **Frontend tests** | Day 5 | Component tests (UI built Day 3) | Developer / CI |
 | **E2E smoke tests** | Day 5 | Critical path manual walk-through | Developer |
 | **Beta acceptance** | Post-launch | Real users, real data, feedback loop | Beta testers |
 

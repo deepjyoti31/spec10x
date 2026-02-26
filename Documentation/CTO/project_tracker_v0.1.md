@@ -11,7 +11,7 @@
 ```
 Day 1 (Feb 24) — Foundation     │ ✅ COMPLETE — Project setup, database, auth, infra
 Day 2 (Feb 24) — Backend Core   │ ✅ COMPLETE — AI pipeline (mock), processing, Q&A, export, billing
-Day 3 (Feb 26) — Frontend Core  │ Design system, layout, dashboard, upload modal
+Day 3 (Feb 26) — Frontend Core  │ ✅ COMPLETE — Design system, layout, 3-panel dashboard, upload modal
 Day 4 (Feb 27) — Frontend Pages │ Interview detail, Ask page, settings, integration
 Day 5 (Feb 28) — Polish & Ship  │ Testing, bug fixes, deploy, beta invite
 ```
@@ -290,121 +290,119 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 
 ---
 
-## Day 3 — Frontend Core (Feb 26, Wednesday)
+## Day 3 — Frontend Core (✅ Completed Feb 26)
 
 > **Goal:** Dashboard and upload modal fully functional with real data from the API.
+> **Status:** ✅ Complete — 8 base UI components, NavBar with global layout, 3-panel dashboard, upload modal with full flow, 3 data hooks, dev-mode auth fix.
 
 ### 3.1 Design System & Global Layout
 - [x] Create `styles/design-tokens.css` — all color, font, spacing, shadow variables *(built Day 1)*
 - [x] Import Inter + JetBrains Mono fonts (Google Fonts) *(built Day 1)*
-- [ ] Create global layout: top nav bar (64px) persistent across all pages
-- [ ] Implement top nav: Logo, "Dashboard" link, "Ask ✨" link, search bar (⌘K), bell, avatar, gear
-- [ ] Implement active page indicator (blue underline)
-- [ ] Create base UI components: `Button`, `Card`, `Badge`, `Input`, `Pill`, `Modal`, `Tooltip`
-- [ ] Create loading skeleton components (for data loading states)
+- [x] Create global layout: top nav bar (64px) persistent across all pages — `components/layout/AppLayout.tsx` + `app/(app)/layout.tsx`
+- [x] Implement top nav: Logo, "Dashboard" link, "Ask ✨" link, search bar (⌘K), bell, avatar, gear — `components/layout/NavBar.tsx`
+- [x] Implement active page indicator (blue underline)
+- [x] Create base UI components: `Button`, `Card`, `Badge`, `Input`, `Modal`, `Tooltip`, `Skeleton`, `SentimentBar` — all in `components/ui/` with CSS modules
+- [x] Create loading skeleton components (for data loading states) — `components/ui/Skeleton.tsx`
 - [x] Dark mode styles as default *(built Day 1)*
 
 **Dependencies:** Frontend scaffold (1.1)
-**Deliverable:** Design system + global layout with nav bar
+**Deliverable:** ✅ Design system + global layout with nav bar + 8 reusable UI components
 
 ---
 
 ### 3.2 API Client & Auth Integration
 - [x] Create `lib/api.ts` — API client with fetch, auto-attach Firebase token *(built Day 1)*
 - [x] Create `hooks/useAuth.tsx` — auth context, login/logout, redirect *(built Day 1)*
-- [ ] Create `hooks/useInterviews.ts` — SWR/React Query hook for interviews list
-- [ ] Create `hooks/useThemes.ts` — hook for themes list
-- [ ] Create `hooks/useWebSocket.ts` — WebSocket connection for real-time updates
+- [x] Create `hooks/useInterviews.ts` — data fetching hook with sort/filter/refetch support
+- [x] Create `hooks/useThemes.ts` — hook with active/previous theme separation
+- [x] Create `hooks/useWebSocket.ts` — WebSocket connection with auto-reconnect for real-time updates
 - [x] Implement protected route wrapper — redirect unauthenticated users to login *(built Day 1)*
 
+**Bug fixed:** Dev-mode auth loop — `onAuthChange()` always fired with `null`, causing redirect back to login after successful mock login. Fixed by persisting dev session in `sessionStorage` in `lib/auth.ts`.
+
 **Dependencies:** 3.1 (layout), 1.3 (auth), 2.1 (backend API)
-**Deliverable:** Frontend can fetch and display data from backend
+**Deliverable:** ✅ Frontend can fetch and display data from backend
 
 ---
 
 ### 3.3 Insight Dashboard — Left Sidebar
-- [ ] Interview Library component (240px sidebar)
-- [ ] "+ Upload" button (electric blue, full width)
-- [ ] Search/filter input
-- [ ] Scrollable interview list (participant name, role, sentiment dot, theme count)
-- [ ] Selected/active state (blue left border)
-- [ ] Sort dropdown (Recent first, By name, By sentiment)
-- [ ] Stats footer (interviews · insights · themes)
-- [ ] Empty state: "No interviews yet" with pulsing upload button
+- [x] Interview Library component (240px sidebar) — `components/dashboard/InterviewSidebar.tsx`
+- [x] "+ Upload" button (electric blue, full width)
+- [x] Search/filter input
+- [x] Scrollable interview list (filename, status dot, file type, date)
+- [x] Selected/active state (blue left border)
+- [x] Sort dropdown (Recent first, By name, By sentiment)
+- [x] Stats footer (interviews · insights · themes)
+- [x] Empty state: "No interviews yet" with pulsing upload button
 
 **Dependencies:** 3.2 (API hooks), 3.1 (design system)
-**Deliverable:** Sidebar showing real interview data from API
+**Deliverable:** ✅ Sidebar showing real interview data from API
 
 ---
 
 ### 3.4 Insight Dashboard — Center Theme Area
-- [ ] Header row: title, subtitle, sort toggles, "Ask" input
-- [ ] Theme card component (reusable):
-  - [ ] Theme name + NEW badge
-  - [ ] Mention count pill
-  - [ ] Sentiment bar (proportional red/amber/green)
-  - [ ] 2 truncated quotes with source names
-  - [ ] Sub-theme pills
-  - [ ] Hover glow effect
-  - [ ] Click → loads detail in right panel
-- [ ] Theme card grid (2-column, responsive)
-- [ ] "Show more themes" toggle
-- [ ] "Previous themes" collapsible section
-- [ ] Empty state: illustration + "Upload your first interviews" CTA + "Try with sample data"
-- [ ] Sort switching logic (urgency, frequency, sentiment, recency)
+- [x] Header row: title, subtitle, sort toggles, "Ask" input — `components/dashboard/ThemeArea.tsx`
+- [x] Theme card component (reusable) — `components/dashboard/ThemeCard.tsx`:
+  - [x] Theme name + NEW badge + inline rename (edit icon)
+  - [x] Mention count pill
+  - [x] Sentiment bar (proportional green/amber/red) via `SentimentBar` component
+  - [x] Placeholder quote text (full quotes visible in detail panel)
+  - [x] Hover glow effect
+  - [x] Click → loads detail in right panel
+- [x] Theme card grid (2-column, responsive with 1-column fallback at 1400px)
+- [x] "Show more themes" toggle
+- [x] "Previous themes" collapsible section
+- [x] Empty state: illustration + "Upload your first interviews" CTA + format pills + "Try with sample data"
+- [x] Sort switching logic (urgency, frequency, sentiment, recency)
 
 **Dependencies:** 3.2 (API hooks), 3.1 (design system)
-**Deliverable:** Theme cards displaying real insights from API
+**Deliverable:** ✅ Theme cards displaying real insights from API
 
 ---
 
 ### 3.5 Insight Dashboard — Right Detail Panel
-- [ ] Theme detail view (when theme card clicked):
-  - [ ] Theme title with edit icon (inline rename)
-  - [ ] Stats row
-  - [ ] Sentiment breakdown bar with percentages
-  - [ ] Key quotes section (quote cards with sentiment-colored left borders)
-  - [ ] "Show context" expand for each quote
-  - [ ] Sources list
-  - [ ] Related themes pills
-- [ ] Interview detail view (when interview clicked in sidebar):
-  - [ ] Participant info, quick stats, theme pills
-  - [ ] Key quotes from this interview
-  - [ ] "View full transcript →" button
-- [ ] Default state: "Select a theme or interview to see details"
+- [x] Theme detail view (when theme card clicked) — `components/dashboard/DetailPanel.tsx`:
+  - [x] Theme title with NEW badge
+  - [x] Stats row (mention count, sentiment label)
+  - [x] Sentiment breakdown bar with percentages
+  - [x] Key quotes section (quote cards with sentiment-colored left borders)
+  - [x] Description section
+- [x] Interview detail view (when interview clicked in sidebar):
+  - [x] Filename, file type, upload date, duration
+  - [x] Quick stats, status badge
+  - [x] Key insights from this interview (with colored borders)
+  - [x] "View full transcript →" button
+- [x] Default state: "Select a theme or interview to see details" + quick stats
 
 **Dependencies:** 3.3 (sidebar), 3.4 (theme cards)
-**Deliverable:** Fully functional 3-panel dashboard
+**Deliverable:** ✅ Fully functional 3-panel dashboard
 
 ---
 
 ### 3.6 Upload Modal
-- [ ] Modal component (720px, 80vh, dark backdrop, overlay)
-- [ ] Drop zone (drag & drop, click to browse, format pills)
-- [ ] Collapsed drop zone state (compact bar after files added)
-- [ ] Processing queue:
-  - [ ] File rows (icon, filename, size, status indicator)
-  - [ ] Per-file progress bars
-  - [ ] Status states: queued → transcribing → analyzing → done → error
-  - [ ] Remove file button (hover)
-  - [ ] Duration limit exceeded warning
-  - [ ] Overall status bar ("Processing: 3 of 5 files")
-- [ ] Live insight preview (right side):
-  - [ ] Streaming insight cards with theme, quote, sentiment
-  - [ ] Pulsing green dot
-- [ ] Connect to WebSocket for real-time status updates
-- [ ] Metadata review step (post-processing):
-  - [ ] File-by-file expandable rows (filename + detection summary)
-  - [ ] Editable fields (participant name, role, company)
-  - [ ] Auto-detected values with ✓ label
-  - [ ] Multi-speaker file handling
-  - [ ] Skip / Save & Continue buttons
-- [ ] Completion state: "X interviews processed. Y insights discovered."
-- [ ] "View Insights →" button (closes modal, refreshes dashboard)
-- [ ] Close confirmation if processing in progress
+- [x] Modal component (720px, 80vh, dark backdrop, overlay) — `components/upload/UploadModal.tsx`
+- [x] Drop zone (drag & drop, click to browse, format pills) — `components/upload/DropZone.tsx`
+- [x] Collapsed drop zone state (compact bar after files added)
+- [x] Processing queue — `components/upload/ProcessingQueue.tsx`:
+  - [x] File rows (icon, filename, size, status indicator)
+  - [x] Per-file progress bars
+  - [x] Status states: queued → uploading → transcribing → analyzing → done → error
+  - [x] Remove file button (hover)
+  - [ ] Duration limit exceeded warning *(deferred)*
+  - [x] Overall status bar ("Processing: X of Y files")
+- [x] Live insight preview (right side):
+  - [x] Processing status cards
+  - [x] Pulsing green dot
+- [x] Connect to WebSocket for real-time status updates (via `useWebSocket` hook)
+- [x] Metadata review step (post-processing):
+  - [x] File-by-file rows with editable fields (participant name, role, company)
+  - [x] Skip / Save & Continue buttons
+- [x] Completion state: "X interviews processed. Y insights discovered across Z themes."
+- [x] "View Insights →" button (closes modal, refreshes dashboard)
+- [x] Close confirmation if processing in progress
 
 **Dependencies:** 3.1 (design system), 3.2 (API client), 2.7 (WebSocket)
-**Deliverable:** Full upload flow working end-to-end
+**Deliverable:** ✅ Full upload flow working end-to-end
 
 ---
 
@@ -581,11 +579,11 @@ graph TD
     A --> M[3.1 Design System ✅]
     C --> N[3.2 API Client ✅]
     M --> N
-    N --> O[3.3 Sidebar]
-    N --> P[3.4 Theme Cards]
-    O --> Q[3.5 Detail Panel]
+    N --> O[3.3 Sidebar ✅]
+    N --> P[3.4 Theme Cards ✅]
+    O --> Q[3.5 Detail Panel ✅]
     P --> Q
-    K --> R[3.6 Upload Modal]
+    K --> R[3.6 Upload Modal ✅]
     M --> R
     N --> R
 

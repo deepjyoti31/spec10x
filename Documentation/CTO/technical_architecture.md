@@ -55,8 +55,8 @@
 |---|---|---|---|
 | **Frontend** | Next.js 16.1 (React 19 + TypeScript) | SSR for landing page SEO, SPA for the app, Turbopack stable, huge ecosystem | ✅ |
 | **Backend** | FastAPI (Python 3.12+) | Best AI/ML ecosystem, async-native, type-safe, first-class Vertex AI SDK | ✅ |
-| **Database** | PostgreSQL 18 + pgvector 0.8 | One DB for relational data AND vector search. No separate vector DB needed | ✅ |
-| **Cache / Queue** | Redis 8.x | Job queue (via `arq`), caching, pub/sub for WebSocket coordination | ✅ |
+| **Database** | PostgreSQL 17 + pgvector | One DB for relational data AND vector search. No separate vector DB needed | ✅ |
+| **Cache / Queue** | Redis 7.x | Job queue (via `arq`), caching, pub/sub for WebSocket coordination | ✅ |
 | **File Storage** | Google Cloud Storage | Cheap, reliable, direct upload from browser via signed URLs | GCP |
 | **Video → Audio** | FFmpeg (open-source) | Extract audio track from video files before transcription | ✅ |
 | **AI — Extraction** | Gemini 2.5 Flash-Lite (via Vertex AI) | $0.10/1M input tokens — 5x cheaper than Gemini 3 Flash. Sufficient quality for theme extraction | GCP |
@@ -66,7 +66,7 @@
 | **Auth** | Firebase Authentication | GCP-native, email + Google OAuth, free tier generous | GCP (free) |
 | **Payments** | Stripe | Industry standard for SaaS billing, great API | N/A |
 | **Deployment** | Cloud Run | Serverless containers, scales to zero, no K8s to manage, native custom domains with auto-SSL | GCP |
-| **Database Hosting** | Cloud SQL (PostgreSQL 18) | Managed, auto-backups, pgvector 0.8.1 supported | GCP |
+| **Database Hosting** | Cloud SQL (PostgreSQL 17) | Managed, auto-backups, pgvector supported | GCP |
 | **Redis Hosting** | Memorystore for Redis | Managed Redis on GCP | GCP |
 | **Monitoring** | Cloud Logging + Sentry (errors) | GCP-native logging + open-source error tracking | Sentry: ✅ |
 
@@ -600,7 +600,7 @@ git push to main
 
 | Service | Spec | Monthly Cost |
 |---|---|---|
-| Cloud SQL (PostgreSQL 18) | db-f1-micro (1 vCPU shared, 614MB RAM) | ~$10 |
+| Cloud SQL (PostgreSQL 17) | db-f1-micro (1 vCPU shared, 614MB RAM) | ~$10 |
 | Memorystore (Redis) | Basic, 1GB | $35 |
 | Cloud Run (Backend API) | 1 vCPU, 512MB, min 1 instance | ~$15-25 |
 | Cloud Run (Frontend) | 1 vCPU, 512MB, scales to zero | ~$5-15 |
