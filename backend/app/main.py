@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
-from app.api import auth, interviews, themes, insights, ask, export, billing, websocket
+from app.api import auth, interviews, themes, insights, ask, export, billing, websocket, demo
 
 settings = get_settings()
 
@@ -59,6 +59,7 @@ app.include_router(ask.router)
 app.include_router(export.router)
 app.include_router(billing.router)
 app.include_router(websocket.router)
+app.include_router(demo.router)
 
 
 @app.get("/health")

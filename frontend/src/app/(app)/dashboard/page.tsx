@@ -56,6 +56,17 @@ export default function DashboardPage() {
         refetchThemes();
     }, [refetchInterviews, refetchThemes]);
 
+    const handleLoadSampleData = useCallback(async () => {
+        if (!token) return;
+        try {
+            await api.loadSampleData(token);
+            refetchInterviews();
+            refetchThemes();
+        } catch (err) {
+            console.error('Failed to load sample data:', err);
+        }
+    }, [token, refetchInterviews, refetchThemes]);
+
     return (
         <>
             <div className={styles.dashboard}>
@@ -83,6 +94,7 @@ export default function DashboardPage() {
                     onThemeSelect={handleThemeSelect}
                     onThemeRename={handleThemeRename}
                     onUploadClick={() => setIsUploadModalOpen(true)}
+                    onLoadSampleData={handleLoadSampleData}
                     interviewCount={interviews.length}
                 />
 

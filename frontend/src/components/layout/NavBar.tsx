@@ -7,7 +7,11 @@ import Input from '@/components/ui/Input';
 import Tooltip from '@/components/ui/Tooltip';
 import styles from './NavBar.module.css';
 
-export default function NavBar() {
+interface NavBarProps {
+    onSearchClick?: () => void;
+}
+
+export default function NavBar({ onSearchClick }: NavBarProps = {}) {
     const { user, logout } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
@@ -62,9 +66,7 @@ export default function NavBar() {
                     placeholder="Search interviews, themes…"
                     suffix="⌘K"
                     readOnly
-                    onClick={() => {
-                        // Cmd+K palette placeholder — will be implemented Day 4
-                    }}
+                    onClick={() => onSearchClick?.()}
                     style={{ cursor: 'pointer' }}
                 />
             </div>

@@ -2,7 +2,7 @@
 
 > **Owner:** CTO  
 > **Last Updated:** Feb 26, 2026  
-> **Status:** Day 3 complete, Day 5 pending (Sprint: Feb 24–28)
+> **Status:** Day 4 complete, Day 5 pending (Sprint: Feb 24–28)
 
 ---
 
@@ -205,9 +205,9 @@ Shared fixtures:
 | Phase | Day | What | Who Runs |
 |---|---|---|---|
 | **Unit tests** | Day 2 (✅ done) | Services layer: extraction, analysis, synthesis, embeddings, QA, billing | Developer / CI |
-| **Integration tests** | Day 3–4 | API endpoints with real DB | Developer / CI |
-| **Pipeline tests** | Day 4 | Full processing pipeline E2E | Developer / CI |
-| **Frontend tests** | Day 5 | Component tests (UI built Day 3) | Developer / CI |
+| **Integration tests** | Day 3–4 (✅ done) | API endpoints with real DB | Developer / CI |
+| **Pipeline tests** | Day 4 (✅ done) | Full processing pipeline E2E | Developer / CI |
+| **Frontend tests** | Day 5 | Component tests (UI built Day 3, pages Day 4) | Developer / CI |
 | **E2E smoke tests** | Day 5 | Critical path manual walk-through | Developer |
 | **Beta acceptance** | Post-launch | Real users, real data, feedback loop | Beta testers |
 

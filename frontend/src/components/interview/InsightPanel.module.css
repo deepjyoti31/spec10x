@@ -1,0 +1,203 @@
+.container {
+    padding: 20px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.headerTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.countBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 11px;
+    background: rgba(79, 140, 255, 0.15);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+/* Insight card */
+.insightCard {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 200ms ease-out;
+    position: relative;
+    border-left: 3px solid transparent;
+}
+
+.insightCard:hover {
+    border-color: var(--border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.insightCardActive {
+    border-left-color: var(--accent) !important;
+    background: rgba(79, 140, 255, 0.05);
+}
+
+/* Category pill */
+.categoryPill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+
+.categoryPainPoint {
+    background: rgba(248, 113, 113, 0.15);
+    color: var(--danger);
+}
+
+.categoryFeatureRequest {
+    background: rgba(79, 140, 255, 0.15);
+    color: var(--accent);
+}
+
+.categoryPositive {
+    background: rgba(52, 211, 153, 0.15);
+    color: var(--success);
+}
+
+.categorySuggestion {
+    background: rgba(251, 191, 36, 0.15);
+    color: var(--warning);
+}
+
+.insightTitle {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.insightQuote {
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-style: italic;
+    line-height: 1.5;
+    margin-bottom: 8px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.insightFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.jumpLink {
+    font-size: 12px;
+    color: var(--accent);
+    text-decoration: none;
+    cursor: pointer;
+    transition: opacity 200ms ease-out;
+}
+
+.jumpLink:hover {
+    opacity: 0.8;
+}
+
+.themePill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    background: rgba(79, 140, 255, 0.1);
+    color: var(--accent);
+}
+
+/* Card actions (hover) */
+.cardActions {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 200ms ease-out;
+}
+
+.insightCard:hover .cardActions {
+    opacity: 1;
+}
+
+.cardActionBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: none;
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 200ms ease-out;
+}
+
+.cardActionBtn:hover {
+    background: rgba(79, 140, 255, 0.12);
+    color: var(--accent);
+}
+
+.flaggedBtn {
+    color: var(--warning);
+}
+
+/* Add insight button */
+.addInsightBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px dashed var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: all 200ms ease-out;
+}
+
+.addInsightBtn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(79, 140, 255, 0.05);
+}
+
+/* Empty state */
+.empty {
+    text-align: center;
+    padding: 32px 16px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}

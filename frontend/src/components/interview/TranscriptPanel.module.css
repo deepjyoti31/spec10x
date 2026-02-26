@@ -1,0 +1,195 @@
+.container {
+    padding: 24px;
+}
+
+/* Participant header */
+.participantHeader {
+    margin-bottom: 24px;
+}
+
+.participantName {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+}
+
+.metadataRow {
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.separator {
+    opacity: 0.4;
+}
+
+.themePills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.themePill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(79, 140, 255, 0.12);
+    color: var(--accent);
+    cursor: pointer;
+    transition: all 200ms ease-out;
+}
+
+.themePill:hover {
+    background: rgba(79, 140, 255, 0.2);
+}
+
+/* Highlight legend bar */
+.legendBar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.legendItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 200ms ease-out;
+}
+
+.legendItemDisabled {
+    opacity: 0.35;
+}
+
+.legendDot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dotPainPoint {
+    background: var(--danger);
+}
+
+.dotFeatureRequest {
+    background: var(--accent);
+}
+
+.dotPositive {
+    background: var(--success);
+}
+
+.dotSuggestion {
+    background: var(--warning);
+}
+
+/* Transcript body */
+.transcriptBody {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text-primary);
+}
+
+.paragraph {
+    margin-bottom: 16px;
+    position: relative;
+}
+
+.speakerLabel {
+    font-weight: 600;
+    margin-right: 4px;
+}
+
+.speakerInterviewer {
+    color: var(--text-secondary);
+}
+
+.speakerParticipant {
+    color: var(--text-primary);
+}
+
+/* AI highlights */
+.highlight {
+    border-radius: 3px;
+    padding: 1px 2px;
+    cursor: pointer;
+    transition: all 200ms ease-out;
+    position: relative;
+}
+
+.highlight:hover {
+    filter: brightness(1.3);
+}
+
+.highlightPainPoint {
+    background: rgba(248, 113, 113, 0.12);
+}
+
+.highlightFeatureRequest {
+    background: rgba(79, 140, 255, 0.12);
+}
+
+.highlightPositive {
+    background: rgba(52, 211, 153, 0.12);
+}
+
+.highlightSuggestion {
+    background: rgba(251, 191, 36, 0.12);
+}
+
+.highlightActive {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* Tooltip */
+.tooltip {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-elevated, #252830);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    color: var(--text-primary);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 20;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tooltipCategory {
+    color: var(--text-secondary);
+    margin-left: 4px;
+}
+
+/* Empty transcript */
+.emptyTranscript {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}

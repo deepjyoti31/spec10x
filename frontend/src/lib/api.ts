@@ -53,6 +53,35 @@ class ApiClient {
     return response.json();
   }
 
+  private async requestText(
+    endpoint: string,
+    options: RequestOptions = {}
+  ): Promise<string> {
+    const { token, ...fetchOptions } = options;
+
+    const headers: Record<string, string> = {
+      ...(options.headers as Record<string, string>),
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      ...fetchOptions,
+      headers,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({
+        detail: response.statusText,
+      }));
+      throw new ApiError(response.status, error.detail || 'An error occurred');
+    }
+
+    return response.text();
+  }
+
   // === Auth ===
 
   async verifyToken(token: string) {
@@ -153,6 +182,59 @@ class ApiClient {
 
   async flagInsight(token: string, id: string) {
     return this.request<InsightResponse>(`/api/insights/${id}/flag`, {
+      method: 'POST',
+      token,
+    });
+  }
+
+  // === Ask (Q&A) ===
+
+  async askQuestion(token: string, question: string, conversationId?: string) {
+    return this.request<AskResponse>('/api/ask', {
+      method: 'POST',
+      body: JSON.stringify({
+        question,
+        conversation_id: conversationId || null,
+      }),
+      token,
+    });
+  }
+
+  async listConversations(token: string) {
+    return this.request<AskConversation[]>('/api/ask/conversations', { token });
+  }
+
+  async getConversation(token: string, id: string) {
+    return this.request<AskConversationDetail>(
+      `/api/ask/conversations/${id}`,
+      { token }
+    );
+  }
+
+  // === Export ===
+
+  async exportInsights(token: string) {
+    return this.requestText('/api/export/insights', { token });
+  }
+
+  async exportInterview(token: string, id: string) {
+    return this.requestText(`/api/export/interview/${id}`, { token });
+  }
+
+  // === Billing ===
+
+  async getUsage(token: string) {
+    return this.request<UsageResponse>('/api/billing/usage', { token });
+  }
+
+  async getLimits(token: string) {
+    return this.request<LimitsResponse>('/api/billing/limits', { token });
+  }
+
+  // === Demo ===
+
+  async loadSampleData(token: string) {
+    return this.request<SampleDataResponse>('/api/demo/load-sample-data', {
       method: 'POST',
       token,
     });
@@ -280,6 +362,76 @@ export interface InsightUpdate {
   category?: string;
   title?: string;
   theme_id?: string;
+}
+
+// --- Ask (Q&A) ---
+
+export interface AskResponse {
+  answer: string;
+  citations: AskCitation[];
+  suggested_followups: string[];
+  conversation_id: string;
+  message_id: string;
+}
+
+export interface AskCitation {
+  interview_id: string;
+  filename: string;
+  quote: string;
+}
+
+export interface AskConversation {
+  id: string;
+  title: string;
+  created_at: string;
+}
+
+export interface AskConversationDetail extends AskConversation {
+  messages: AskMessage[];
+}
+
+export interface AskMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  citations?: AskCitation[];
+  created_at: string;
+}
+
+// --- Billing ---
+
+export interface UsageResponse {
+  month: string;
+  interviews_uploaded: number;
+  qa_queries_used: number;
+  storage_bytes_used: number;
+}
+
+export interface LimitsResponse {
+  plan: string;
+  usage: {
+    interviews_uploaded: number;
+    qa_queries_used: number;
+    storage_bytes_used: number;
+  };
+  limits: {
+    interviews_per_month: number;
+    qa_queries_per_month: number;
+    storage_bytes: number;
+  };
+  remaining: {
+    interviews: number;
+    qa_queries: number;
+    storage_bytes: number;
+  };
+}
+
+// --- Demo ---
+
+export interface SampleDataResponse {
+  interviews_created: number;
+  insights_discovered: number;
+  themes_created: number;
 }
 
 // === Singleton export ===

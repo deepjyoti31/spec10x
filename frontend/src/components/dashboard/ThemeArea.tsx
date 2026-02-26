@@ -25,6 +25,7 @@ interface ThemeAreaProps {
     onThemeSelect: (theme: ThemeResponse) => void;
     onThemeRename?: (id: string, name: string) => void;
     onUploadClick: () => void;
+    onLoadSampleData?: () => void;
     interviewCount: number;
 }
 
@@ -38,6 +39,7 @@ export default function ThemeArea({
     onThemeSelect,
     onThemeRename,
     onUploadClick,
+    onLoadSampleData,
     interviewCount,
 }: ThemeAreaProps) {
     const router = useRouter();
@@ -73,7 +75,7 @@ export default function ThemeArea({
                             <span key={fmt} className={styles.formatPill}>{fmt}</span>
                         ))}
                     </div>
-                    <button className={styles.sampleLink}>
+                    <button className={styles.sampleLink} onClick={onLoadSampleData}>
                         Or try with sample data →
                     </button>
                 </div>

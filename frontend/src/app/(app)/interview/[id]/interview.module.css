@@ -1,0 +1,122 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px);
+  overflow: hidden;
+}
+
+/* Breadcrumb bar */
+.breadcrumbBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.breadcrumbLink {
+  color: var(--text-secondary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 200ms ease-out;
+}
+
+.breadcrumbLink:hover {
+  color: var(--text-primary);
+}
+
+.breadcrumbSep {
+  color: var(--text-secondary);
+  opacity: 0.5;
+}
+
+.breadcrumbCurrent {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actionBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 200ms ease-out;
+}
+
+.actionBtn:hover {
+  color: var(--text-primary);
+  border-color: var(--accent);
+  background: rgba(79, 140, 255, 0.08);
+}
+
+.toggleActive {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(79, 140, 255, 0.12);
+}
+
+/* Two-panel layout */
+.panels {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.transcriptPanel {
+  flex: 0 0 65%;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+}
+
+.insightPanel {
+  flex: 0 0 35%;
+  overflow-y: auto;
+}
+
+/* Loading state */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Error state */
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--danger);
+}
+
+.error a {
+  color: var(--accent);
+  text-decoration: none;
+}

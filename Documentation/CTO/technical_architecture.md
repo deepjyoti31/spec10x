@@ -477,6 +477,11 @@ DELETE /api/interviews/:id            → Delete interview + recalculate themes
 POST   /api/interviews/:id/reanalyze  → Re-run AI extraction
 ```
 
+### Demo Data
+```
+POST   /api/demo/load-sample-data     → Populates DB with 3 sample interviews and themes
+```
+
 ### Themes
 ```
 GET    /api/themes                    → List themes (sorted, paginated, top 10 + show more)
@@ -501,9 +506,8 @@ GET    /api/ask/conversations/:id     → Get conversation history
 
 ### Export
 ```
-GET    /api/export/insights           → Export all insights (markdown or PDF)
-GET    /api/export/interview/:id      → Export single interview + insights
-GET    /api/export/all-data           → Full data export (ZIP)
+GET    /api/export/insights           → Export all insights (markdown)
+GET    /api/export/interview/:id      → Export single interview + insights (markdown)
 ```
 
 ### Auth & Billing
