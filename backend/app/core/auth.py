@@ -11,6 +11,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -93,7 +94,8 @@ async def get_current_user(
     """
     FastAPI dependency — extracts and verifies the Firebase JWT from the
     Authorization header, then returns the corresponding User from the database.
-    Creates the user on first login.
+    Creates the user on first login. Handles concurrent request race conditions
+    gracefully via IntegrityError catch-and-retry.
     """
     token = credentials.credentials
     claims = verify_firebase_token(token)
@@ -115,14 +117,47 @@ async def get_current_user(
     user = result.scalar_one_or_none()
 
     if user is None:
-        user = User(
-            firebase_uid=firebase_uid,
-            email=email,
-            name=name or email.split("@")[0],
-            avatar_url=claims.get("picture"),
-        )
-        db.add(user)
-        await db.flush()
-        logger.info(f"Created new user: {email} ({firebase_uid})")
+        try:
+            user = User(
+                firebase_uid=firebase_uid,
+                email=email,
+                name=name or email.split("@")[0],
+                avatar_url=claims.get("picture"),
+            )
+            db.add(user)
+            await db.flush()
+            logger.info(f"Created new user: {email} ({firebase_uid})")
+        except IntegrityError:
+            # Another request already created this user — roll back and re-query
+            await db.rollback()
+
+            # Try by firebase_uid first
+            stmt = select(User).where(User.firebase_uid == firebase_uid)
+            result = await db.execute(stmt)
+            user = result.scalar_one_or_none()
+
+            # If not found by firebase_uid, try by email (user may have
+            # re-registered with Firebase, getting a new UID)
+            if user is None and email:
+                stmt = select(User).where(User.email == email)
+                result = await db.execute(stmt)
+                user = result.scalar_one_or_none()
+                if user:
+                    # Update firebase_uid to match the new Firebase account
+                    user.firebase_uid = firebase_uid
+                    user.name = name or user.name
+                    user.avatar_url = claims.get("picture") or user.avatar_url
+                    await db.flush()
+                    logger.info(f"Updated firebase_uid for existing user: {email}")
+
+            if user is None:
+                logger.error(f"User creation failed for {email}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to create user account. Please try again.",
+                )
+            else:
+                logger.info(f"Race condition resolved — found existing user: {email}")
 
     return user
+
