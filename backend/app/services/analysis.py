@@ -1,16 +1,25 @@
 """
-Spec10x Backend — Mock AI Analysis Service
+Spec10x Backend — AI Analysis Service
 
 Extracts structured insights from interview transcripts.
-Mock mode uses keyword/heuristic matching; real mode uses Gemini via Vertex AI.
+Mock mode uses keyword/heuristic matching; real mode uses Gemini.
 """
 
+import json
 import logging
 import re
 import random
 from dataclasses import dataclass, field
 
+import google.generativeai as genai
+
+from app.core.config import get_settings
+from app.prompts.extraction import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, OUTPUT_SCHEMA
+
 logger = logging.getLogger(__name__)
+
+# Track whether genai has been configured
+_genai_configured = False
 
 
 # ─── Data Classes ────────────────────────────────────────
@@ -213,12 +222,93 @@ def _mock_analyze(transcript: str) -> AnalysisResult:
     return result
 
 
+def _configure_genai():
+    """Configure the genai SDK (once) with API key or ADC."""
+    global _genai_configured
+    if _genai_configured:
+        return
+    settings = get_settings()
+    if settings.google_api_key:
+        genai.configure(api_key=settings.google_api_key)
+        logger.info("Gemini configured with API key")
+    else:
+        logger.info("Gemini using Application Default Credentials")
+    _genai_configured = True
+
+
 def _real_analyze(transcript: str) -> AnalysisResult:
-    """Real analysis using Gemini via Vertex AI. To be implemented."""
-    raise NotImplementedError(
-        "Real AI analysis requires Vertex AI configuration. "
-        "Set USE_MOCK_AI=true in .env to use mock mode."
-    )
+    """
+    Real analysis using Gemini. Sends the transcript with the extraction
+    prompt and parses structured JSON output into AnalysisResult.
+    """
+    _configure_genai()
+    settings = get_settings()
+
+    try:
+        model = genai.GenerativeModel(
+            model_name=settings.gemini_model,
+            system_instruction=SYSTEM_PROMPT,
+        )
+
+        prompt = USER_PROMPT_TEMPLATE.format(transcript=transcript[:50000])  # Limit transcript length
+
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.GenerationConfig(
+                response_mime_type="application/json",
+                response_schema=OUTPUT_SCHEMA,
+                temperature=0.2,
+            ),
+        )
+
+        # Parse JSON response
+        data = json.loads(response.text)
+
+        # Build AnalysisResult from parsed JSON
+        result = AnalysisResult(
+            summary=data.get("summary", ""),
+            language=data.get("language", "en"),
+        )
+
+        # Parse speakers
+        for s in data.get("speakers", []):
+            result.speakers.append(SpeakerData(
+                label=s.get("label", "Unknown"),
+                name=s.get("name"),
+                role=s.get("role"),
+                is_interviewer=s.get("is_interviewer", False),
+            ))
+
+        # Parse insights
+        for i in data.get("insights", []):
+            # Find quote position in transcript
+            quote = i.get("quote", "")
+            quote_start = transcript.find(quote) if quote else None
+            quote_end = (quote_start + len(quote)) if quote_start and quote_start >= 0 else None
+
+            result.insights.append(InsightData(
+                category=i.get("category", "suggestion"),
+                title=i.get("title", ""),
+                quote=quote,
+                quote_start=quote_start if quote_start and quote_start >= 0 else None,
+                quote_end=quote_end,
+                speaker=i.get("speaker"),
+                theme_suggestion=i.get("theme_suggestion", "General Feedback"),
+                sub_themes=i.get("sub_themes", []),
+                sentiment=i.get("sentiment", "neutral"),
+                confidence=i.get("confidence", 0.85),
+            ))
+
+        logger.info(
+            f"Gemini analysis complete: {len(result.insights)} insights, "
+            f"{len(result.speakers)} speakers"
+        )
+        return result
+
+    except Exception as e:
+        logger.error(f"Gemini analysis failed: {e}")
+        logger.info("Falling back to mock analysis")
+        return _mock_analyze(transcript)
 
 
 # ─── Helper Functions ────────────────────────────────────

@@ -63,9 +63,7 @@ OUTPUT_SCHEMA = {
                     },
                     "confidence": {
                         "type": "number",
-                        "minimum": 0,
-                        "maximum": 1,
-                        "description": "Confidence score (0-1)",
+                        "description": "Confidence score between 0 and 1",
                     },
                 },
                 "required": ["category", "title", "quote", "theme_suggestion", "sentiment", "confidence"],

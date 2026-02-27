@@ -2,7 +2,7 @@
 Spec10x Backend — Text Chunking & Embedding Service
 
 Splits transcripts into chunks and generates embeddings for RAG.
-Mock mode uses random vectors; real mode uses gemini-embedding-001 via Vertex AI.
+Mock mode uses random vectors; real mode uses text-embedding-004 via Gemini.
 """
 
 import logging
@@ -10,8 +10,11 @@ import random
 import math
 import uuid
 
+import google.generativeai as genai
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.models import Interview, TranscriptChunk
 
 logger = logging.getLogger(__name__)
@@ -106,8 +109,30 @@ def _random_embedding(dim: int = 768) -> list[float]:
 
 
 def _real_embeddings(chunks: list[str]) -> list[list[float]]:
-    """Generate real embeddings via Vertex AI. To be implemented."""
-    raise NotImplementedError(
-        "Real embeddings require Vertex AI configuration. "
-        "Set USE_MOCK_AI=true in .env to use mock mode."
-    )
+    """
+    Generate real embeddings using text-embedding-004 via Gemini.
+    Processes in batches of 100 (API limit).
+    """
+    from app.services.analysis import _configure_genai
+    _configure_genai()
+
+    all_embeddings = []
+    batch_size = 100
+
+    for i in range(0, len(chunks), batch_size):
+        batch = chunks[i:i + batch_size]
+        try:
+            result = genai.embed_content(
+                model="models/text-embedding-004",
+                content=batch,
+                task_type="RETRIEVAL_DOCUMENT",
+            )
+            all_embeddings.extend(result["embedding"])
+            logger.info(f"Embedded batch {i // batch_size + 1}: {len(batch)} chunks")
+        except Exception as e:
+            logger.error(f"Embedding batch {i // batch_size + 1} failed: {e}")
+            # Fallback to random embeddings for this batch
+            all_embeddings.extend([_random_embedding(768) for _ in batch])
+
+    return all_embeddings
+

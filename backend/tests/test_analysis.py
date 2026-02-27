@@ -85,9 +85,11 @@ class TestAnalyzeTranscript:
             assert insight.sentiment in ("positive", "negative", "neutral")
             assert 0 <= insight.confidence <= 1
 
-    def test_real_mode_raises(self):
-        with pytest.raises(NotImplementedError):
-            analyze_transcript("test", use_mock=False)
+    def test_real_mode_falls_back_to_mock(self):
+        """Real mode without API key falls back to mock analysis."""
+        result = analyze_transcript(TRANSCRIPT_MIXED, use_mock=False)
+        # Should fall back gracefully and return an AnalysisResult
+        assert isinstance(result, AnalysisResult)
 
 
 class TestSpeakerDetection:

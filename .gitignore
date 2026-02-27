@@ -41,3 +41,8 @@ docker-compose.override.yml
 coverage/
 .coverage
 htmlcov/
+
+
+# === Key files ===
+
+./backend/firebase-service-account.json

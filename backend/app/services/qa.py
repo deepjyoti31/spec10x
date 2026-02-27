@@ -5,13 +5,17 @@ Answers user questions using interview data.
 Mock mode uses full-text search; real mode uses vector similarity + Gemini.
 """
 
+import json
 import logging
 import uuid
 from dataclasses import dataclass, field
 
-from sqlalchemy import select, or_
+import google.generativeai as genai
+
+from sqlalchemy import select, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.models import (
     TranscriptChunk, Interview, Insight, AskConversation, AskMessage,
     MessageRole,
@@ -272,11 +276,162 @@ async def _real_answer(
     user_id: uuid.UUID,
     question: str,
 ) -> AskResponse:
-    """Real Q&A using vector search + Gemini. To be implemented."""
-    raise NotImplementedError(
-        "Real Q&A requires Vertex AI configuration. "
-        "Set USE_MOCK_AI=true in .env to use mock mode."
-    )
+    """
+    Real Q&A using vector similarity search + Gemini.
+
+    Pipeline:
+        1. Embed the question using text-embedding-004 (RETRIEVAL_QUERY)
+        2. Find top-K similar transcript chunks via pgvector cosine distance
+        3. Build a context prompt with the relevant chunks
+        4. Send to Gemini for a contextual answer
+        5. Parse citations and return
+    """
+    from app.services.analysis import _configure_genai
+    _configure_genai()
+
+    settings = get_settings()
+
+    try:
+        # Step 1: Embed the question
+        embed_result = genai.embed_content(
+            model="models/text-embedding-004",
+            content=question,
+            task_type="RETRIEVAL_QUERY",
+        )
+        question_embedding = embed_result["embedding"]
+
+        # Step 2: Vector search — find top 10 similar chunks for this user
+        # Using pgvector's cosine distance operator (<=>)
+        embedding_str = "[" + ",".join(str(x) for x in question_embedding) + "]"
+
+        vector_sql = text("""
+            SELECT tc.id, tc.content, tc.interview_id,
+                   tc.embedding <=> :query_embedding AS distance
+            FROM transcript_chunks tc
+            JOIN interviews i ON tc.interview_id = i.id
+            WHERE i.user_id = :user_id
+              AND tc.embedding IS NOT NULL
+            ORDER BY tc.embedding <=> :query_embedding
+            LIMIT 10
+        """)
+
+        result = await db.execute(
+            vector_sql,
+            {"query_embedding": embedding_str, "user_id": str(user_id)},
+        )
+        rows = result.fetchall()
+
+        if not rows:
+            # No chunks found — fall back to mock answer
+            logger.info("No embedding chunks found, falling back to mock")
+            return await _mock_answer(db, user_id, question)
+
+        # Step 3: Build context from chunks
+        interview_ids = set()
+        context_parts = []
+        for row in rows:
+            interview_ids.add(row.interview_id)
+            context_parts.append(f"[Source: Interview {row.interview_id}]\n{row.content}\n")
+
+        context = "\n---\n".join(context_parts)
+
+        # Get interview filenames
+        interview_names = {}
+        if interview_ids:
+            stmt = select(Interview).where(Interview.id.in_(list(interview_ids)))
+            res = await db.execute(stmt)
+            for interview in res.scalars().all():
+                interview_names[interview.id] = interview.filename
+
+        # Step 4: Call Gemini for answer
+        model = genai.GenerativeModel(
+            model_name=settings.gemini_model,
+            system_instruction=(
+                "You are a product research analyst. Answer the user's question "
+                "based ONLY on the interview transcript excerpts provided below. "
+                "Cite specific quotes from the excerpts to support your answer. "
+                "If the excerpts don't contain relevant information, say so honestly. "
+                "Format your response in clear markdown."
+            ),
+        )
+
+        prompt = (
+            f"## User Question\n{question}\n\n"
+            f"## Interview Excerpts\n{context}\n\n"
+            f"Answer the question based on these excerpts. "
+            f"Use bullet points and bold key findings."
+        )
+
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.GenerationConfig(
+                temperature=0.3,
+                max_output_tokens=1500,
+            ),
+        )
+
+        answer = response.text
+
+        # Step 5: Build citations from the chunks used
+        citations = []
+        seen_interviews = set()
+        for row in rows[:5]:
+            if row.interview_id not in seen_interviews:
+                seen_interviews.add(row.interview_id)
+                citations.append(Citation(
+                    interview_id=str(row.interview_id),
+                    interview_filename=interview_names.get(
+                        row.interview_id, "Unknown"
+                    ),
+                    quote=row.content[:200] + "...",
+                    chunk_id=str(row.id),
+                ))
+
+        # Generate follow-up suggestions using Gemini
+        followups = await _ai_suggest_followups(question, answer, settings)
+
+        logger.info(
+            f"Gemini Q&A complete: {len(answer)} chars, "
+            f"{len(citations)} citations"
+        )
+
+        return AskResponse(
+            answer=answer,
+            citations=citations,
+            suggested_followups=followups,
+        )
+
+    except Exception as e:
+        logger.error(f"Gemini Q&A failed: {e}")
+        logger.info("Falling back to mock Q&A")
+        return await _mock_answer(db, user_id, question)
+
+
+async def _ai_suggest_followups(
+    question: str,
+    answer: str,
+    settings,
+) -> list[str]:
+    """Generate follow-up question suggestions using Gemini."""
+    try:
+        model = genai.GenerativeModel(model_name=settings.gemini_model)
+        response = model.generate_content(
+            f"Based on this Q&A about customer interviews, "
+            f"suggest exactly 3 concise follow-up questions.\n\n"
+            f"Question: {question}\nAnswer: {answer[:500]}\n\n"
+            f"Respond as a JSON array of 3 strings, e.g. [\"q1\", \"q2\", \"q3\"]",
+            generation_config=genai.GenerationConfig(
+                response_mime_type="application/json",
+                temperature=0.5,
+                max_output_tokens=200,
+            ),
+        )
+        followups = json.loads(response.text)
+        if isinstance(followups, list):
+            return followups[:3]
+    except Exception:
+        pass
+    return _suggest_followups(question, [])
 
 
 def _suggest_followups(question: str, insights: list) -> list[str]:
@@ -297,3 +452,4 @@ def _suggest_followups(question: str, insights: list) -> list[str]:
             selected.append(f)
 
     return selected[:3]
+

@@ -566,6 +566,7 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 - [ ] Configure Cloud Run custom domain mapping (spec10x.com via GoDaddy CNAME)
 - [ ] Verify SSL certificate auto-provisioned
 - [ ] Set environment variables in Cloud Run (secrets via GCP Secret Manager)
+- [ ] Configure custom SMTP for Firebase verification emails *(required — default emails go to spam; use SendGrid free tier + SPF/DKIM DNS records on spec10x.com)*
 - [ ] Smoke test on production: sign up, upload, process, view insights, ask question
 - [ ] Set up basic monitoring: Cloud Run logs, error alerting in Sentry
 

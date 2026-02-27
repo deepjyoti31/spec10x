@@ -14,6 +14,7 @@ import {
     GoogleAuthProvider,
     signOut,
     onAuthStateChanged,
+    sendEmailVerification,
     User,
     Auth,
     updateProfile,
@@ -87,6 +88,14 @@ export async function loginWithEmail(email: string, password: string) {
     }
 
     const result = await signInWithEmailAndPassword(auth, email, password);
+
+    // Check if email is verified
+    if (!result.user.emailVerified) {
+        // Sign out the unverified user
+        await signOut(auth);
+        throw new Error('Please verify your email before signing in. Check your inbox for the verification link.');
+    }
+
     const token = await result.user.getIdToken();
     return { token, user: result.user };
 }
@@ -98,15 +107,21 @@ export async function signUpWithEmail(email: string, password: string, name?: st
     if (!auth) {
         console.warn('[DEV MODE] Firebase not configured, using mock auth');
         saveDevSession(email);
-        return { token: 'dev-token', user: { email, uid: 'dev-user-001', displayName: name } };
+        return { token: 'dev-token', user: { email, uid: 'dev-user-001', displayName: name }, emailVerified: true };
     }
 
     const result = await createUserWithEmailAndPassword(auth, email, password);
     if (name) {
         await updateProfile(result.user, { displayName: name });
     }
-    const token = await result.user.getIdToken();
-    return { token, user: result.user };
+
+    // Send verification email
+    await sendEmailVerification(result.user);
+
+    // Sign out immediately — user must verify email first
+    await signOut(auth);
+
+    return { token: null, user: result.user, emailVerified: false };
 }
 
 /**
@@ -172,6 +187,16 @@ export function onAuthChange(callback: (user: User | null) => void): () => void 
  */
 export function isAuthConfigured(): boolean {
     return isFirebaseConfigured;
+}
+
+/**
+ * Resend email verification to the current user
+ */
+export async function resendVerificationEmail(email: string, password: string) {
+    if (!auth) return;
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    await sendEmailVerification(result.user);
+    await signOut(auth);
 }
 
 export { auth };
