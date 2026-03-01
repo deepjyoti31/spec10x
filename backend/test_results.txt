@@ -1,0 +1,75 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.1, pytest-8.3.5, pluggy-1.6.0 -- C:\Python313\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\Deep\.gemini\antigravity\scratch\spec10x\backend
+configfile: pytest.ini
+plugins: anyio-4.12.1, asyncio-0.25.3
+asyncio: mode=Mode.AUTO, asyncio_default_fixture_loop_scope=function
+collecting ... collected 58 items
+
+tests/test_analysis.py::TestAnalyzeTranscript::test_returns_analysis_result PASSED [  1%]
+tests/test_analysis.py::TestSpeakerDetection::test_detects_speakers PASSED [  3%]
+tests/test_analysis.py::TestSpeakerDetection::test_identifies_interviewer PASSED [  5%]
+tests/test_analysis.py::TestSpeakerDetection::test_handles_empty_transcript PASSED [  6%]
+tests/test_analysis.py::TestSegmentSplitting::test_splits_into_segments PASSED [  8%]
+tests/test_analysis.py::TestSegmentSplitting::test_segments_have_text PASSED [ 10%]
+tests/test_analysis.py::TestSegmentSplitting::test_handles_empty_input PASSED [ 12%]
+tests/test_api_ask.py::TestAskQuestion::test_ask_returns_answer PASSED   [ 13%]
+tests/test_api_ask.py::TestListConversations::test_returns_list PASSED   [ 15%]
+tests/test_api_ask.py::TestGetConversation::test_returns_messages PASSED [ 17%]
+tests/test_api_billing.py::TestGetUsage::test_returns_usage PASSED       [ 18%]
+tests/test_api_billing.py::TestGetLimits::test_returns_limits PASSED     [ 20%]
+tests/test_api_export.py::TestExportInsights::test_returns_text_response PASSED [ 22%]
+tests/test_api_export.py::TestExportInterview::test_404_for_nonexistent PASSED [ 24%]
+tests/test_api_health.py::TestHealthEndpoint::test_health_returns_ok PASSED [ 25%]
+tests/test_api_health.py::TestHealthEndpoint::test_root_returns_welcome PASSED [ 27%]
+tests/test_api_insights.py::TestCreateInsight::test_creates_manual_insight PASSED [ 29%]
+tests/test_api_insights.py::TestFlagInsight::test_toggles_flag PASSED    [ 31%]
+tests/test_api_interviews.py::TestUploadUrl::test_returns_upload_url PASSED [ 32%]
+tests/test_api_interviews.py::TestCreateInterview::test_creates_interview PASSED [ 34%]
+tests/test_api_interviews.py::TestCreateInterview::test_rejects_duplicate_hash PASSED [ 36%]
+tests/test_api_interviews.py::TestListInterviews::test_lists_user_interviews PASSED [ 37%]
+tests/test_api_interviews.py::TestGetInterview::test_returns_interview_detail PASSED [ 39%]
+tests/test_api_interviews.py::TestGetInterview::test_404_for_nonexistent PASSED [ 41%]
+tests/test_api_interviews.py::TestDeleteInterview::test_deletes_interview PASSED [ 43%]
+tests/test_api_interviews.py::TestDeleteInterview::test_404_for_nonexistent_delete PASSED [ 44%]
+tests/test_api_themes.py::TestListThemes::test_lists_themes_returns_list PASSED [ 46%]
+tests/test_api_themes.py::TestGetTheme::test_404_for_nonexistent PASSED  [ 48%]
+tests/test_billing.py::TestPlanLimits::test_free_plan_exists PASSED      [ 50%]
+tests/test_billing.py::TestPlanLimits::test_pro_plan_exists PASSED       [ 51%]
+tests/test_billing.py::TestPlanLimits::test_business_plan_exists PASSED  [ 53%]
+tests/test_billing.py::TestPlanLimits::test_free_limits PASSED           [ 55%]
+tests/test_billing.py::TestPlanLimits::test_pro_higher_than_free PASSED  [ 56%]
+tests/test_billing.py::TestPlanLimits::test_business_higher_than_pro PASSED [ 58%]
+tests/test_billing.py::TestPlanLimits::test_all_plans_have_required_keys PASSED [ 60%]
+tests/test_embeddings.py::TestChunkTranscript::test_short_text_single_chunk PASSED [ 62%]
+tests/test_embeddings.py::TestChunkTranscript::test_respects_chunk_size PASSED [ 63%]
+tests/test_embeddings.py::TestChunkTranscript::test_overlap_between_chunks PASSED [ 65%]
+tests/test_embeddings.py::TestChunkTranscript::test_empty_text_returns_empty PASSED [ 67%]
+tests/test_embeddings.py::TestChunkTranscript::test_whitespace_only_returns_empty PASSED [ 68%]
+tests/test_embeddings.py::TestChunkTranscript::test_default_parameters PASSED [ 70%]
+tests/test_embeddings.py::TestChunkTranscript::test_all_words_preserved PASSED [ 72%]
+tests/test_extraction.py::TestExtractText::test_extract_from_txt PASSED  [ 74%]
+tests/test_extraction.py::TestExtractText::test_extract_from_txt_utf8 PASSED [ 75%]
+tests/test_extraction.py::TestExtractText::test_extract_from_empty_txt PASSED [ 77%]
+tests/test_extraction.py::TestExtractText::test_extract_from_mp3_raises_not_implemented PASSED [ 79%]
+tests/test_extraction.py::TestExtractText::test_extract_from_wav_raises_not_implemented PASSED [ 81%]
+tests/test_extraction.py::TestExtractText::test_extract_from_mp4_raises_not_implemented PASSED [ 82%]
+tests/test_extraction.py::TestFileHash::test_hash_returns_string PASSED  [ 84%]
+tests/test_extraction.py::TestFileHash::test_hash_is_deterministic PASSED [ 86%]
+tests/test_extraction.py::TestFileHash::test_different_content_different_hash PASSED [ 87%]
+tests/test_synthesis.py::TestNormalizeThemeName::test_lowercase PASSED   [ 89%]
+tests/test_synthesis.py::TestNormalizeThemeName::test_strips_whitespace PASSED [ 91%]
+tests/test_synthesis.py::TestNormalizeThemeName::test_replaces_underscores PASSED [ 93%]
+tests/test_synthesis.py::TestNormalizeThemeName::test_replaces_hyphens PASSED [ 94%]
+tests/test_synthesis.py::TestNormalizeThemeName::test_combined PASSED    [ 96%]
+tests/test_synthesis.py::TestGenerateThemeDescription::test_description_mentions_count PASSED [ 98%]
+tests/test_synthesis.py::TestGenerateThemeDescription::test_description_includes_categories PASSED [100%]
+
+============================== warnings summary ===============================
+tests/test_api_export.py::TestExportInsights::test_returns_text_response
+  C:\Users\Deep\.gemini\antigravity\scratch\spec10x\backend\app\api\export.py:60: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+    f"*Generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}*",
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 58 passed, 1 warning in 3.64s ========================

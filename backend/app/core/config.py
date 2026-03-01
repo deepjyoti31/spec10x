@@ -35,14 +35,16 @@ class Settings(BaseSettings):
     firebase_project_id: str = ""
     firebase_service_account_path: str = "./firebase-service-account.json"
 
-    # Google AI / Vertex AI
-    google_api_key: str = ""  # API key from AI Studio (local dev) or empty for ADC (production)
-    gemini_model: str = "gemini-2.0-flash"  # Model for analysis + Q&A
+    # GCP / Vertex AI
     gcp_project_id: str = ""
     gcp_location: str = "us-central1"
-    use_mock_ai: bool = True  # Set to False when Gemini API key is configured
+    gemini_model: str = "gemini-3.0-flash"  # Model for analysis + Q&A
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "ignore"
+    }
 
 
 @lru_cache

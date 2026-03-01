@@ -12,6 +12,7 @@ import uuid
 
 import pytest
 import pytest_asyncio
+from unittest.mock import patch, Mock
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
@@ -50,7 +51,7 @@ async def client():
                 raise
 
     # Mock get_current_user — find or create a test user in the DB
-    async def _override_current_user(db: AsyncSession = None):
+    async def _override_current_user():
         # Get a fresh session since the dependency may be called outside db override
         async with session_factory() as session:
             stmt = select(User).where(User.firebase_uid == TEST_USER_UID)
@@ -97,4 +98,38 @@ async def create_test_interview(client: AsyncClient, filename="test.txt", file_h
     response = await client.post("/api/interviews", json=body, headers=AUTH_HEADER)
     assert response.status_code == 201, f"Interview creation failed: {response.text}"
     return response.json()
+
+@pytest.fixture(autouse=True)
+def mock_genai_client_global():
+    with patch("google.genai.Client") as mock_client:
+        mock_instance = mock_client.return_value
+        
+        # Mock generate_content response
+        mock_response = Mock()
+        mock_response.text = '''{
+            "insights": [
+                {
+                    "category": "pain_point",
+                    "title": "Onboarding is frustrating",
+                    "quote": "I'm really frustrated with the onboarding process.",
+                    "quote_start": "00:00",
+                    "quote_end": "00:10",
+                    "speaker": "Speaker 1",
+                    "theme_suggestion": "Onboarding",
+                    "sentiment": "negative",
+                    "confidence": 0.9
+                }
+            ],
+            "summary": "The onboarding process is frustrating."
+        }'''
+        mock_instance.models.generate_content.return_value = mock_response
+        
+        # Mock embed_content response
+        mock_emb = Mock()
+        mock_emb.values = [0.1] * 768
+        mock_emb_response = Mock()
+        mock_emb_response.embeddings = [mock_emb]
+        mock_instance.models.embed_content.return_value = mock_emb_response
+        
+        yield mock_instance
 

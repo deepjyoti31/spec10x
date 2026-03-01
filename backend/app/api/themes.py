@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api/themes", tags=["Themes"])
 
 @router.get("", response_model=list[ThemeResponse])
 async def list_themes(
-    sort: str = Query("urgency", regex="^(urgency|frequency|sentiment|recency)$"),
+    sort: str = Query("urgency", pattern="^(urgency|frequency|sentiment|recency)$"),
     status_filter: str = Query("active", alias="status"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

@@ -50,36 +50,30 @@ class TestExtractText:
 
         assert result == ""
 
-    def test_extract_from_mp3_returns_mock(self, tmp_path):
-        """Audio files should return a mock transcript."""
+    def test_extract_from_mp3_raises_not_implemented(self, tmp_path):
+        """Audio files should raise NotImplementedError."""
         mp3_file = tmp_path / "test.mp3"
         mp3_file.write_bytes(b"fake mp3 data")
 
-        result = extract_text(str(mp3_file), FileType.mp3)
+        with pytest.raises(NotImplementedError) as exc_info:
+            extract_text(str(mp3_file), FileType.mp3)
+        assert "Audio/video transcription via Chirp 3 is not supported yet" in str(exc_info.value)
 
-        assert result is not None
-        assert len(result) > 100  # Mock transcript should be substantial
-        assert "Speaker" in result or "Interviewer" in result
-
-    def test_extract_from_wav_returns_mock(self, tmp_path):
-        """WAV files should also get a mock transcript."""
+    def test_extract_from_wav_raises_not_implemented(self, tmp_path):
+        """WAV files should raise NotImplementedError."""
         wav_file = tmp_path / "test.wav"
         wav_file.write_bytes(b"fake wav data")
 
-        result = extract_text(str(wav_file), FileType.wav)
+        with pytest.raises(NotImplementedError):
+            extract_text(str(wav_file), FileType.wav)
 
-        assert result is not None
-        assert len(result) > 100
-
-    def test_extract_from_mp4_returns_mock(self, tmp_path):
-        """Video files should get a mock transcript too."""
+    def test_extract_from_mp4_raises_not_implemented(self, tmp_path):
+        """Video files should raise NotImplementedError."""
         mp4_file = tmp_path / "test.mp4"
         mp4_file.write_bytes(b"fake mp4 data")
 
-        result = extract_text(str(mp4_file), FileType.mp4)
-
-        assert result is not None
-        assert len(result) > 100
+        with pytest.raises(NotImplementedError):
+            extract_text(str(mp4_file), FileType.mp4)
 
 
 class TestFileHash:

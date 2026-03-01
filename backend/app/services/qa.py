@@ -10,7 +10,8 @@ import logging
 import uuid
 from dataclasses import dataclass, field
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from sqlalchemy import select, or_, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -48,7 +49,6 @@ async def ask_question(
     user_id: uuid.UUID,
     question: str,
     conversation_id: uuid.UUID | None = None,
-    use_mock: bool = True,
 ) -> AskResponse:
     """
     Answer a user's question about their interview data.
@@ -58,7 +58,6 @@ async def ask_question(
         user_id: Current user's ID
         question: The user's question
         conversation_id: Existing conversation ID (or None for new)
-        use_mock: If True, use full-text search; if False, use vector search + Gemini
 
     Returns:
         AskResponse with answer, citations, and follow-up suggestions
@@ -86,10 +85,7 @@ async def ask_question(
     await db.flush()
 
     # Generate answer
-    if use_mock:
-        response = await _mock_answer(db, user_id, question)
-    else:
-        response = await _real_answer(db, user_id, question)
+    response = await _real_answer(db, user_id, question)
 
     # Save assistant message
     assistant_msg = AskMessage(
@@ -131,145 +127,6 @@ async def _create_conversation(
     return conv
 
 
-async def _mock_answer(
-    db: AsyncSession,
-    user_id: uuid.UUID,
-    question: str,
-) -> AskResponse:
-    """
-    Mock Q&A using full-text search across transcript chunks.
-    Finds relevant chunks, builds a templated answer with citations.
-    """
-    question_lower = question.lower()
-
-    # Extract search keywords (simple word tokenization)
-    stop_words = {
-        "what", "how", "why", "when", "where", "who", "which", "do", "does",
-        "is", "are", "the", "a", "an", "in", "on", "at", "to", "for", "of",
-        "and", "or", "not", "about", "with", "from", "by", "it", "my", "your",
-        "their", "our", "this", "that", "these", "those", "all", "any",
-    }
-    keywords = [
-        w for w in question_lower.split()
-        if w not in stop_words and len(w) > 2
-    ]
-
-    if not keywords:
-        keywords = question_lower.split()[:3]
-
-    # Search transcript chunks using ILIKE
-    conditions = [
-        TranscriptChunk.content.ilike(f"%{kw}%")
-        for kw in keywords[:5]
-    ]
-
-    stmt = (
-        select(TranscriptChunk)
-        .join(Interview, TranscriptChunk.interview_id == Interview.id)
-        .where(
-            Interview.user_id == user_id,
-            or_(*conditions) if conditions else True,
-        )
-        .limit(10)
-    )
-    result = await db.execute(stmt)
-    chunks = result.scalars().all()
-
-    # Also search insights
-    insight_conditions = [
-        or_(
-            Insight.title.ilike(f"%{kw}%"),
-            Insight.quote.ilike(f"%{kw}%"),
-        )
-        for kw in keywords[:5]
-    ]
-    stmt = (
-        select(Insight)
-        .join(Interview, Insight.interview_id == Interview.id)
-        .where(
-            Insight.user_id == user_id,
-            Insight.is_dismissed == False,  # noqa: E712
-            or_(*insight_conditions) if insight_conditions else True,
-        )
-        .limit(10)
-    )
-    result = await db.execute(stmt)
-    related_insights = result.scalars().all()
-
-    # Build citations
-    citations = []
-    interview_ids_seen = set()
-
-    # Get interview filenames for citations
-    interview_ids = set()
-    for chunk in chunks:
-        interview_ids.add(chunk.interview_id)
-    for insight in related_insights:
-        interview_ids.add(insight.interview_id)
-
-    interview_names = {}
-    if interview_ids:
-        stmt = select(Interview).where(Interview.id.in_(interview_ids))
-        result = await db.execute(stmt)
-        for interview in result.scalars().all():
-            interview_names[interview.id] = interview.filename
-
-    for chunk in chunks[:5]:
-        if chunk.interview_id not in interview_ids_seen:
-            interview_ids_seen.add(chunk.interview_id)
-            citations.append(Citation(
-                interview_id=str(chunk.interview_id),
-                interview_filename=interview_names.get(chunk.interview_id, "Unknown"),
-                quote=chunk.content[:200] + "...",
-                chunk_id=str(chunk.id),
-            ))
-
-    # Build answer
-    if chunks or related_insights:
-        answer_parts = [
-            f"Based on analysis of your interviews, here's what I found about **\"{question}\"**:\n"
-        ]
-
-        if related_insights:
-            answer_parts.append(f"\n**Key findings ({len(related_insights)} relevant insights):**\n")
-            for i, insight in enumerate(related_insights[:5], 1):
-                category_label = {
-                    "pain_point": "🔴 Pain Point",
-                    "feature_request": "🔵 Feature Request",
-                    "positive": "🟢 Positive",
-                    "suggestion": "🟡 Suggestion",
-                }.get(insight.category.value if hasattr(insight.category, 'value') else insight.category, "📝")
-
-                answer_parts.append(
-                    f"{i}. {category_label}: **{insight.title}**\n"
-                    f"   > \"{insight.quote[:150]}{'...' if len(insight.quote) > 150 else ''}\"\n"
-                    f"   — *{interview_names.get(insight.interview_id, 'Interview')}*\n"
-                )
-
-        if chunks and not related_insights:
-            answer_parts.append(
-                f"\nFound {len(chunks)} relevant passages across "
-                f"{len(interview_ids_seen)} interviews. "
-                f"The data suggests this topic appears across multiple interviews.\n"
-            )
-
-        answer = "\n".join(answer_parts)
-    else:
-        answer = (
-            f"I couldn't find specific information about \"{question}\" "
-            f"in your interviews. Try uploading more interview transcripts "
-            f"or rephrasing your question."
-        )
-
-    # Generate follow-up suggestions
-    followups = _suggest_followups(question, related_insights)
-
-    return AskResponse(
-        answer=answer,
-        citations=citations,
-        suggested_followups=followups,
-    )
-
 
 async def _real_answer(
     db: AsyncSession,
@@ -286,19 +143,23 @@ async def _real_answer(
         4. Send to Gemini for a contextual answer
         5. Parse citations and return
     """
-    from app.services.analysis import _configure_genai
-    _configure_genai()
-
     settings = get_settings()
+    client = genai.Client(
+        vertexai=True,
+        project=settings.gcp_project_id,
+        location=settings.gcp_location
+    )
 
     try:
         # Step 1: Embed the question
-        embed_result = genai.embed_content(
-            model="models/text-embedding-004",
-            content=question,
-            task_type="RETRIEVAL_QUERY",
+        emb_response = client.models.embed_content(
+            model="gemini-embedding-001",
+            contents=question,
+            config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY")
         )
-        question_embedding = embed_result["embedding"]
+        if not emb_response.embeddings:
+            raise ValueError("No embeddings returned")
+        question_embedding = emb_response.embeddings[0].values
 
         # Step 2: Vector search — find top 10 similar chunks for this user
         # Using pgvector's cosine distance operator (<=>)
@@ -322,9 +183,10 @@ async def _real_answer(
         rows = result.fetchall()
 
         if not rows:
-            # No chunks found — fall back to mock answer
-            logger.info("No embedding chunks found, falling back to mock")
-            return await _mock_answer(db, user_id, question)
+            logger.info("No embedding chunks found for question")
+            return AskResponse(
+                answer="I couldn't find relevant information in your interviews to answer this question.",
+            )
 
         # Step 3: Build context from chunks
         interview_ids = set()
@@ -343,18 +205,7 @@ async def _real_answer(
             for interview in res.scalars().all():
                 interview_names[interview.id] = interview.filename
 
-        # Step 4: Call Gemini for answer
-        model = genai.GenerativeModel(
-            model_name=settings.gemini_model,
-            system_instruction=(
-                "You are a product research analyst. Answer the user's question "
-                "based ONLY on the interview transcript excerpts provided below. "
-                "Cite specific quotes from the excerpts to support your answer. "
-                "If the excerpts don't contain relevant information, say so honestly. "
-                "Format your response in clear markdown."
-            ),
-        )
-
+        # Step 4: Call Vertex AI for answer
         prompt = (
             f"## User Question\n{question}\n\n"
             f"## Interview Excerpts\n{context}\n\n"
@@ -362,12 +213,20 @@ async def _real_answer(
             f"Use bullet points and bold key findings."
         )
 
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(
+        response = client.models.generate_content(
+            model=settings.gemini_model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
                 temperature=0.3,
                 max_output_tokens=1500,
-            ),
+                system_instruction=(
+                    "You are a product research analyst. Answer the user's question "
+                    "based ONLY on the interview transcript excerpts provided below. "
+                    "Cite specific quotes from the excerpts to support your answer. "
+                    "If the excerpts don't contain relevant information, say so honestly. "
+                    "Format your response in clear markdown."
+                ),
+            )
         )
 
         answer = response.text
@@ -388,7 +247,7 @@ async def _real_answer(
                 ))
 
         # Generate follow-up suggestions using Gemini
-        followups = await _ai_suggest_followups(question, answer, settings)
+        followups = await _ai_suggest_followups(client, question, answer, settings)
 
         logger.info(
             f"Gemini Q&A complete: {len(answer)} chars, "
@@ -402,25 +261,27 @@ async def _real_answer(
         )
 
     except Exception as e:
-        logger.error(f"Gemini Q&A failed: {e}")
-        logger.info("Falling back to mock Q&A")
-        return await _mock_answer(db, user_id, question)
+        logger.error(f"Vertex AI Q&A failed: {e}")
+        raise
 
 
 async def _ai_suggest_followups(
+    client: genai.Client,
     question: str,
     answer: str,
     settings,
 ) -> list[str]:
     """Generate follow-up question suggestions using Gemini."""
     try:
-        model = genai.GenerativeModel(model_name=settings.gemini_model)
-        response = model.generate_content(
-            f"Based on this Q&A about customer interviews, "
-            f"suggest exactly 3 concise follow-up questions.\n\n"
-            f"Question: {question}\nAnswer: {answer[:500]}\n\n"
-            f"Respond as a JSON array of 3 strings, e.g. [\"q1\", \"q2\", \"q3\"]",
-            generation_config=genai.GenerationConfig(
+        response = client.models.generate_content(
+            model=settings.gemini_model,
+            contents=(
+                f"Based on this Q&A about customer interviews, "
+                f"suggest exactly 3 concise follow-up questions.\n\n"
+                f"Question: {question}\nAnswer: {answer[:500]}\n\n"
+                f"Respond as a JSON array of 3 strings, e.g. [\"q1\", \"q2\", \"q3\"]"
+            ),
+            config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 temperature=0.5,
                 max_output_tokens=200,

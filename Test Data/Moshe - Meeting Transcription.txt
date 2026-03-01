@@ -1,0 +1,246 @@
+Moshe Bartov: 00:00 
+ Hey.
+
+Deepjyoti Nath: 00:08 
+ Hello.
+
+Moshe Bartov: 00:09 
+ Hey, Deep. How you doing?
+
+Deepjyoti Nath: 00:12 
+ I'm good, I'm good. Hope you pronounce your name properly. Moshe.
+
+Moshe Bartov: 00:16 
+ Yeah, Moshe is good. That's. That's okay. It. The, let's say the proper pronunciation, the proper way of like, you know, the way you emphasize the 10 syllables is Moshe, but it's like a more heavy, so it's like more formal. So Moshe is great.
+
+Deepjyoti Nath: 00:35 
+ Okay. That's because it's quite a lot of cultures. I struggle to pronounce the names properly and it's. I don't want to be disrespectful to your name.
+
+Moshe Bartov: 00:45 
+ Oh, no, no. No worries. By the way, funny, funny. So I guess, I guess I. I assume that you are from India originally, right?
+
+Deepjyoti Nath: 00:53 
+ Yeah.
+
+Moshe Bartov: 00:55 
+ So funny story is that someone on LinkedIn reached out to me, you know, connected to me, and his name was like Amir. What was his last name? So both names sounded like a very typical, average kind of Jewish Israeli names. Right. Even. Even modern Jewish Israeli names. Right. So I was like, I, like, I sent to him like a message saying like something like in Hebrew like shalom or, you know, like, hi, how you doing? And stuff like stupidity was Israeli. Right. Without even even looking into his profile or whatever. And it's like, sorry, guys, I don't. I don't know what he writes.
+
+Deepjyoti Nath: 01:34 
+ So
+
+Moshe Bartov: 01:37 
+ names can also be. Anyway, your prime minister is here in Israel today, I think.
+
+Deepjyoti Nath: 01:46 
+ Yeah, yeah,
+
+Moshe Bartov: 01:49 
+ it's a sec. I think it's the second one. But it's still historical in. In a sense, certainly before all the. That goes on in the world. So.
+
+Deepjyoti Nath: 01:58 
+ Yeah, so you're basically right. Sorry. No, no, no, no worries. No, not in Berlin right now. I was in Berlin and moved to Bangalore recently.
+
+Moshe Bartov: 02:13 
+ Hello.
+
+Deepjyoti Nath: 02:15 
+ And originally, originally I'm from the northeastern part of India, so it's. It's a middle of nowhere.
+
+Moshe Bartov: 02:23 
+ Okay.
+
+Deepjyoti Nath: 02:23 
+ It's all the foothills of Himalaya, jungles and tigers.
+
+Moshe Bartov: 02:27 
+ Okay. Nice, nice. So you got a great view. I guess where you're born.
+
+Deepjyoti Nath: 02:33 
+ Used to be. Used to be. Nowadays it's. It's really tragic to see what, like how much climate change has affected those areas and how much. Oh, really, uncontrolled development has affected those places. Like, it used to be like super green. Now it's not.
+
+Moshe Bartov: 02:54 
+ I am, I am on the camp of knowing that there is a climate change, but it's. It's how the earth is. I like, on that. That camp that says like, yes, there is a climate change and things change dramatically over, you know, centuries and obviously thousands of millions of years. But the man made stuff. I'm less on that camp. Like I'm saying, it's like, yes, we contribute, but it's not, it's, you know, they, they found out that places were like, you know, Sahar used to be green and flourish and abundant of water and there were rivers and whatever. Right. And they. So like Earth is certain unstable. Like we have, we have a very narrow prism of time and so we, we just see, you know, few. Yeah, we feel like, oh, it always has been winter and winter and whatever. Right. But you know, 200 years ago things have been different and you know, even the poles have changed. So anyway, so tell me about your venture. I guess this is like the topic of the discussion. Sorry for taking the time on the background and the chitchat.
+
+Deepjyoti Nath: 04:01 
+ No, no worries. That's first human connection should be there, right? Yeah. So what I'm trying to build right now, it's something that I work as a technical product manager in a logistics company which also has a gigantic tech part building their own tech. So that's a problem that I face almost every day myself. And then I saw Y Combinator is looking for startups to work on this and I was like, okay, this is a problem statement. I understand. And this is something that the world needs as well. So why not try to figure out how many other people have the same problem that I go through and how big is the pain point? Right. So it's basically trying to understand. So in a very typical week, I would have at least 20, 30 calls with customers trying to understand their pain point and how they're struggling with our product. And well, my challenge as well is that because I take care of the Asia Pacific, I have to struggle with languages. Speaking with Japanese, it's particularly hard. It's like what we, you and I can get done in five minutes. It usually takes 30 minutes with them. So.
+
+Moshe Bartov: 05:13 
+ Yes, but even if people speak English, sometimes you need an extra level of translation because to understand certain phrases and certain intents that are, you know, like people sometimes say things, the same thing from a different culture. It has a totally different meaning in terms of how intent, you know, how, how adamant are they about a certain feature or about a certain requirement. They'd be very soft about it, but basically it's a deal breaker for them and others will be all over it, being hysterical about something. But yeah, nice to have features. So as a product guide could be even, even harder to decipher sometimes.
+
+Deepjyoti Nath: 05:54 
+ Exactly, exactly. So that's, that's basically the problem that I find it's Trying to extract all of this from this, you know, 20, 30 calls from them and trying to synthesize all of that. Like it's basically all happening in my brain. I don't have not using any tool to get that done. And then connecting all the, you know, the JIRA tickets that's there have all the bugs and connecting all of that and trying to synthesize something from it that hey, this is the direction I think we should go. This is the feature that I think we should work on next. And the priority of those features. Let's say I have a make a list of 10 and then I have to decide what priority should I give to all these features. And vast majority of the time, I would say 99% of the time it's based on gut feeling. And that's what I'm trying to solve because I think AI is significantly good at this. Because if we can have a tool where it collects all the customer calls, meetings and you know, information from the CRM and then it connects the technical side like it has the connected to the repository so it understands what the state of the product is right now. It has the constructual awareness of the product and then it has all the information about the customers complaining, the support tickets from customers, it combines all of that and then it speaks out. Okay, I think so based on all of this data, 500 of your customers are complaining about that. It's really hard to use the product in certain ways. So I think we should work on solving that. And this is how you do it. And it not only tells you what to work on, but it also spits out the whole JIRA tickets that you need for working on that feature and makes very specific specifications for that, developing that features based on the awareness of the reports and everything. So this is the rough idea of that. And my objective on getting on a call is not to sell you anything on like I'm not in that phase yet. It's first to really understand how often do you have this problems like that. So I have written a set of questions that I would like to ask you. Okay.
+
+Moshe Bartov: 08:17 
+ Okay.
+
+Deepjyoti Nath: 08:18 
+ Should I go ahead?
+
+Moshe Bartov: 08:20 
+ Yeah, yeah, sure. Just so I understand you characterize your role or your, or your. Yeah, your role as a technical product manager. So how would you define a technical product manager versus let's say a non technical product manager? Or is that. Or is that. I'm just trying to understand because you know, there's a lot of ambiguity sometimes and it's just for me to set up the, the, you know, understanding the Background. Is that like, you mean like being a product manager for a tech product or is that mean that you are taking more the technical side, the more inbound side rather than the outbound product marketing kind of facing activity? What's your definition of a tech product manager?
+
+Deepjyoti Nath: 09:07 
+ It's a mix of both. I mean it's just a term that they give in my company right now. They, it's not very typical to use that. So the way that it works is like we have a senior product manager or VP's in product management and they are mostly on the business side and then they give you this information. I get on the calls with them as well, but they are not technical enough to translate that into technical
+
+Moshe Bartov: 09:38 
+ inbound side. And they are more the outbound strategic kind of
+
+Deepjyoti Nath: 09:44 
+ mix of both. So they are mostly outbound and my job is to be mix of both worlds.
+
+Moshe Bartov: 09:50 
+ Okay, okay, got it. No, it's just important to understand where you're coming from because I was just giving like a small anecdote. I was given this kind of a young lady that was, that is just over her first role as a data analyst was, was thinking about transforming to or making the transition to, to be a product manager. And, and she's, you know, her only like outlook to product management is what she experienced in a small startup of you know, like probably less than 20 people that she worked for for three years. That was her first and only role right. In tech. And I told her that I would, I would strongly urge her to have additional experience and go through, you know, go work for a larger corporation. Because I'm pretty sure that the PM role in her small startup was heavily skewed because of, you know, the way a small startup operates and everybody does everything. And she might find out that the PM does something complet different than what she has dreamed of or envisioned or kind of, you know, experience even in, in the small startup. So anyway, back to you. So shoot away the questions. You need some information about my background or you probably kind of read my, my profile. You know, I have tons of experience running prod product mostly in let's say in the strategic kind of level. Right. So I was, I am less into the best practices of, of hands on pms. Right. Like I, I did my last was actually that and I got a lot of complaints about me not doing the right things, you know, even though I was like, you know, bringing innovation and strategic thinking that way beyond what they expected. So I wasn't good at the practicality of things. Just to give you an and for years I was more, I would say, more of a gut feeling PM than a data, data driven pm. Right. There's like two camps, right. And obviously there's always a mix between them. So I was like almost 100% gut feeling, inner voice, you know, kind of person. And then I had a role four, five years ago where I kind of got in love with driving product from data perspective. Right. Wasn't even a SaaS project. It was like a solar energy solution where I realized that many, much of the. Feature tuning that my predecessor was doing was mostly about rules of thumbs and kind of like this is what the industry does. And since we already had billions and billions of records of actual data from the field, I was actually able to transform that to actually analyze data and do massive queries of Snowflake and whatever, just to extract the actual data and prove that a certain rule of thumb was not even working for us. So anyway, just to give you some of my experience, but shoot away and let me try to be as effective as possible.
+
+Deepjyoti Nath: 13:36 
+ Sure. So the first question would be, can you please walk me through the makeup of your production team right now?
+
+Moshe Bartov: 13:45 
+ So right now, no. Okay, so I'm in between jobs. I'm not working right now as a, as a, as in any capacity in product. I can tell you about the previous one or the one before that. You, you make your choosing. I mean, like, I can tell you about, you know. Okay, so. So again, what was the question?
+
+Deepjyoti Nath: 14:05 
+ Just so like. Or you can just say in general, all throughout your career, like, what would be the mix of the production team? Like how many pm, how many key ways front and back end how, like what would the team look like?
+
+Moshe Bartov: 14:19 
+ Okay, so my previous role, I was working on part of the pro of the overall company product that was basically a document processing portion of the system. So intake was like scan PDFs of invoices and financial documents. The outcome was. And normalize heavily. So a lot of extraction of huge amount of details from every financial documents down to every number that is there and every relationship between different entities, normalizing them so transforming hundreds and hundreds of different formats into a normalized version of it. So, so you can then pile them up and provide analysis on top of them. So invoices can come in so many, in so many ways and we have to normalize them to a set of strict defined metadata. As pm, I was the only PM working on that. So I was hands on pm. So I was both dealing with strategy and writing the stories and managing JIRA and also doing much of the team leadership in R and D. So I'm not the professional one, not the distribution of necessary assignments between team members. I had like a senior engineer that was helping me on that but more about the priorities and some decisions to take along the way. And I had a designer that was working for me, a UI UX designer. Right. And because it was heavily relying on large language models. So we were using all sorts of kind of like handwritten algorithms or models to extract data as well as using LLMs and making a hype like mixing between them. We were doing a lot of data processing. And so I had like two, three researchers doing research around the algorithms and developing all sorts of models. Just a second of the write down something here.
+
+Deepjyoti Nath: 17:02 
+ Okay.
+
+Moshe Bartov: 17:03 
+ And so that was the team. The whole company had like four PMs and someone that managed the PM team and that was like the full scope. Before that I was a CEO and co founder and also hands on product manager of my own startup doing developing WhatsApp for doctors. So it was basically a mobile application and a backend there I was like providing a high level requirement document or requirements and that has been were translated was I was assisted by the lead R and D to Pro Q and A to turn that into a more detailed requirements and design. And because much of the document was you are UX driven. So a lot of the process was like designing a mockup first testing it, testing the usability of that, whether that actually portrayed a vision that I wanted to achieve. And then through that and set of functional requirements we were able to build a more detailed requirement so implicit detail requirements. So you had like the mock up the way things had to work and
+
+Deepjyoti Nath: 18:35 
+ the
+
+Moshe Bartov: 18:39 
+ high level details and some so and through questioning or through R D challenging my design I was able to provide the additional information that was missing like anything that I was omitting by not thinking that that was you know like by not understanding if it's simple, like sorry clearing any ambiguity let's say in the design. Okay. And that I was a big VP product for a company that did solar energy solution. I manage a physical product. So it's like it's a hardware and software solution. In the hardware side I was obviously driving product requirements for market analysis, understanding, you know, things like sizing up a system, what kind of battery we are going to use, what kind of capacity, what kind of features do we need to have and so on and so forth. It was a B2C product so it was less about business, you know like business users that came requirement was more about analyzing the market using the local office to, to collect requirements. So offices in, in Africa where we were operating and understanding the challenges that they, that their customers are communicating they're facing with our system or with competing alternatives. And before that and, and again you, you pick your choosing, you know which kind of experience you want me to draw from. Because they were all different kind of product management. Right. And before that I was doing product management for a company called nds. Now it's called Cena Media. It was a very big company, 5,000 or so employees. A thousand employees in India by the way. Many of the developers that work on my product was actually based in India. That's why I traveled there to work with them on some of that. And I had like 3PMs reporting. For me it started off my role side of as a product marketing, more of a product marketing than a product manager because the company was more product driven than product driven. So we called our technology product, but we didn't act as a product organization. We developed what the customer wanted. We use code basis as the stem for the product, the basis for the product. And what I did in, in my first year was to kind of change the way the company thought about the development and move from product driven to product driven in certain steps and push for that change. So mapping the different technologies, work with R and D and chief architects to understand you know, what kind of what, what is our arsenal of code and technology that we have. So basically we had like 2500 engineers working on a product on 20 plus something variation of products that do does basically the same thing. Right. So it's a set of box software. So the softer box white label software because of historical reasons and the way the company was built and acquisition made it was highly fragmented and we had to. And what I pitched and got approval to work on is method for reducing the amount of different branches building products. So different like products for different market segments. Right. So like for emerging markets where the southern product which was more matching a more modest hardware specification rather than a full featured product that was for more developed product for their high end because even with the customer they have different levels of set of box requirements. You know, whether it's a recording device, whether it has multi tuner or not, does it connect to the Internet or not? We're talking about 2007-2010. So this is like ancient time in terms of like the technology that was available at that time. You know, Netflix was not was still selling DVDs or renting DVDs at that point. So this is like my main product experiences. So you know, I'll be very happy to draw from any of those. And as you can understand, I was actually doing completely different things in those different. Yeah, it was a different product management practices altogether.
+
+Deepjyoti Nath: 24:09 
+ Okay. No, that's, that's actually quite interesting to get to see such different perspective of product management in all of them. Like what would you say your technology stack used to be like Confluence, Jira? Like that. What kind of tools?
+
+Moshe Bartov: 24:30 
+ So in, in recent years or so. So from 2017 onward I would say the. The most dominant one was jira. Obviously Jira Confluence Conference was like, you know, if, even if I take it the amount of utilization we had for Jira versus confluence, it was like 80, 20. So 20 for confluence, 80 for Jira. Most of the stuff was done in Jira. What else? There's a product called act, remember correctly, which I kind of vaguely use at some point, but not really and, and click up at some, at some, some. Yeah, but I use. By the way, I use ClickUp and I found it more accommodative than JIRA for quite some time and. But then as I build up my team in my own startup, you know, they all voted Jira so we had to dish, click up and move to. To Jira just to. To get everybody happy.
+
+Deepjyoti Nath: 25:43 
+ I understand where you're coming from. Like, yeah, most like I was a founder of a robotics company in Europe and I used to prefer things like Notion or ClickUp because they are more customizable and I can use the same product, pay for one product and use it for the tech, use it as a CRM, use it for different project management. But the tech team was always like no, no, no, we need Jira. So I have to get Jira just for them. I guess it's just because of familiarity and how used to you are already doing it.
+
+Moshe Bartov: 26:17 
+ Yeah, ClickUp was way more customizable and I use it for a lot of things like even for managing hiring process. Like I had quote for hiring different roles and I had to. And I could model the workflow very nicely. Way better than jira. It was a little bit slow, but it was better than Jira. And in batch of in many like in its flexibility more than anything else. Yeah, yeah, sorry, go ahead.
+
+Deepjyoti Nath: 26:53 
+ No, no, it's good.
+
+Moshe Bartov: 26:55 
+ No, I'm saying that the market kind of kind of decided on Jira. So I had to do a line. Yeah.
+
+Deepjyoti Nath: 27:06 
+ Okay. So like when you would get like a vague request coming in from leadership or sales.
+
+Moshe Bartov: 27:16 
+ Yeah.
+
+Deepjyoti Nath: 27:16 
+ What is the exact process for Figuring out the edge cases, like how do you make sense of them?
+
+Moshe Bartov: 27:24 
+ So if the vague quest comes from leadership as like as a, as a strategic thought, not as a, if, if it's a, it's a vague quest coming originally from a customer, I would ask for some facetime of the customer. I wouldn't, I wouldn't just leave it as I, I don't like mediated requirements. You know, like someone like a second hand here of say requirement. This could be the, could be a, a great waste of time if, if basically the guy that was collecting the requirement misunderstood the customer. Okay, if it's, if it's internal, let's say top management says like we have to know, we have to implement. I can tell you a brief story. I. We have to implement a Noyo customer kind of, you know, KYC flow, right? Because we have to filter out you know, the applicants for our product. You know, in Loomis, a company that does solar energy for Africa, we provided a solar energy solutions for rural areas. Not even rural. Everybody in Nigeria doesn't have really a good stable grid electricity. So. So even in the capital and the big cities we were providing a solution and we were suffering. We're hemorrhaging from bad paying customers, right? Like customers who took the system and after a month did not continue to pay. It's a top up kind of solution and did not return the system. So we had to spend money on, on getting, getting our systems back and whatever. Right. So there was an initiative and initiative was good, good one because I really understood the pain. The pain is like we are hemorrhaging money and we have to, to pick and choose our customers. Not everybody that comes in, we should provide him a system because they don't pay up front, they pay as they go and it's a lot of money that we need to put up front to provide that service per customer.
+
+Deepjyoti Nath: 29:42 
+ So
+
+Moshe Bartov: 29:46 
+ the story goes that there were two camps in our local office in Nigeria. One of them was promoting like a credit rating system, a company that was mobil and credit rating system. And the other one was suggesting that we do a questionnaire and based on that data they can weight the different answers and provide a rating which gives us a go no go on a customer. And the first thing that it is like I love both of those ideas. But I said guys, we have 200,000 installations already ongoing in Nigeria. So we have a good enough community, right population to actually test the waters of this kyc. So I engage with the customer support team, the call center to help me Run the questionnaire over a large portion of our customers. And I use the data guys to create for me a list of say 500, I don't remember the exact number customers and we defined like five groups within just 500 customers. So we identified there was 100 customers the the next, the the next in being better in payments and the absolute best 5, 100 customers. So like the five groups based on their tendency to pay and, and stickiness and, and and retention and we didn't tell the customer support which is which and we asked them to call those customers and ask those questions like what do you do for a living? Where do you live? You know how many people in the households like the guy that was making that questionnaire had this experience from, from a large African bank which he thought that could yield a good indication whether it's a good customer, whether it's the customer is a good one or not. So we can retrospectively ask existing customers questions. Got the answers, put them into an Excel sheet, asked them to ask him to wait it and give us the, you know, which how would he rate the customer? Right. And hoping to see some correlation between a weak space the, the fact of the customer versus the weighted answer whether there is a correlation or not. Because if he says that customer they, he has, they have to be in great correlation within the best, you know, the best of the 500 people. Right. And the same thing we gave even larger amount of IDs to the as a trial to the credit bureau and they gave us answers about the num. The social IDs that we gave them. And the funny thing or the sad true story was that we couldn't find, we couldn't establish any correlation between either the questionnaire nor the data credit, sorry the credit data company credit worker that can actually foresee whether a customer is a good one or not. So basically we avoided developing and paying out for third parties a very good feature that was simply. We didn't know how to do it. You know we simply didn't know how to implement it to actually bring us value. I mean the worst thing you could do is is launch a KYC that actually blocks the good customers and welcome the bad customers. That's what was something that we avoided through data and, and through like me as the PM lead of the VP product putting my foot in the door and says guys, before we implement something like that there is a big chance that we are not, we don't know how to do it right. We don't understand the market. Let's test IT first and we run a pilot and the pilot said like, yeah, you still don't know how to do it. So, so we had to go back to the drawing board and figure out how to do it best. So that's an example of the requirement coming in. And PM actually blocks that when he, when he. It doesn't block it, it's just like, let's first test it. Let's first understand what it means. Many cases I get a requirement and I'm looking at my backlog of requirements and I'm saying, where does that piece, right, Resemble another requirement, right? I'm trying to look for commonalities across requirements, like outstanding requirements, outstanding feature request. And the idea is that I think a good PM is someone who knows how to find common grounds around them. Figure out also by knowing the market very well, you know, what your competition is doing, where the market, what the analysts are saying, where the future is going, try to assess what is the next feature in that, in that, in that space need to be like. And then that is, is to package it in such a way, teach it today to the customers who are interested, saying, guys, if you go with that, we can, we can make it part of the product. You only pay whatever, you know, like customization and, and stuff like that. Because we had a lot of, you know, branding and integration, sometimes cost associated to certain feature. Let's say it's, it's like a unique VOD experience, right in the TV space. So I can define for example, how the VOD will work, what kind of protocols it will support, what kind of features will have. Should I have a description for the VOD essay? Should I have like rating. Does the user can rate the, does the end viewer can rate the product or not? You know, those are like the common features. So if you pay the product fees, the additional fees for that VOD thing, you get a vod. But what I was, I was telling you about the nra, sometimes you have like things like, yes, but you need to integrate this system by Harmonic, which is a certain VOD provider, and the integration cost will be extra, right? Because you know, we have the product and, and we have the adapters and things like that we need to integrate with, to make it happen. Or if you want your logo to show up in a certain way, we, we will charge you for this customization. So finding commonalities, generalizing a feature, right? Trying to figure out what is the, the common base, how do I make it, how do I productize it, right? So he, these guys wants a VOD that speaks German. The other one wants a VOD that speaks French. So I needed to make a VLD that is basically multilingual. Right. And that's the feature that I want to. Obviously I'm oversimplifying that, but you understand, you obviously you understand the idea and so I need to repackage it and then reintroduce it. And this is of course a customer driven feature. So just to answer your question. Okay,
+
+Deepjyoti Nath: 37:06 
+ makes sense. Makes sense. Okay, let's say in any of your job where you had to write, you know, user stories and acceptance criterias and you work 40 hours a week, how many hours of your week would you say would be spent on writing the user stories and acceptance criteria or PRDs?
+
+Moshe Bartov: 37:28 
+ So it depends if usually could be 60 a week and it could be 10. It depends whether I am launching a new, let's call it, initiative. So like, or an epic. Right? So like, or even a massive epic. So let's say that in the company Clarity, the company that dealt with these extractions of information from Fintech, So every quarter we'll do a quarterly plan, right. So we try to build like what are the biggest epics or the biggest. The. And it sometimes was used, so sometimes it was epics that we are going to deal with in the next quarter. So ramping up to the quarterly review and ramping up to. And, and right after the review and the thumbs up, I would spend a lot of time in planning, writing and improving. And then when it's all said, scheduled and ready and reviewed then, you know, after maybe even during the, the first sprint, the workload will go down dramatically regarding specifically writing, you know, requirements, user stories and stuff like that. Because if you don't have it by then, then obviously nobody knows what we approve for the quarter and nobody, you know, so it's, it makes sense.
+
+Deepjyoti Nath: 38:55 
+ Okay, Okay. I mean like 10 hours and then
+
+Moshe Bartov: 38:58 
+ you spend most of the time in like either researching things for the next quarter or reviewing the outcome of the work or you know, the development work, usual stuff, ongoing stuff.
+
+Deepjyoti Nath: 39:11 
+ Okay.
+
+Moshe Bartov: 39:11 
+ Okay.
+
+Deepjyoti Nath: 39:12 
+ One question would be like, how do you currently or previously ensure that a new feature doesn't conflict with existing business logic or a database constraint?
+
+Moshe Bartov: 39:26 
+ Basically what my, my, if, if memory served me, then I would know that it is a conflict. You know, so if, if I was, if it triggered right the potential conflict, then fine. Sometimes by the way, the potential conflict was raised by a developer or like, like usually senior developers that, that have been, you know, working on the product for a long time, they would be the Ones that say, oh, but we have this feature and it's probably going to be conflicting. And I think it's, it's mostly that case because they implemented it so they leave the feature constraints in a much more vivid way than you as a PM sometimes feel that. Also if you prototype features and if it has a UI to it, not just like a functional inner backend processing whatever, It will probably raise all the red flags about a potential conflict because then you're starting to meddle with it. The associative memory of yours is going to raise to realize that this is going to create a conflict. I mean there's certain, there are certain checkpoints along the way that will. I, I don't remember launching a feature and only then realizing it conflicted with. Yeah, I, I don't think even, even where I, when I was like new to an established product that has been developed for years before I joined because obviously I took the time to learn it. If it was like gross conflict, no mild conflict, or like it challenged some of that, you know, like a consistency, for example, that's like, like you could say it breaks the product a little bit. Like if, for example, I'll give you a dumb example. But you understand that if I put the settings of a certain feature in its own dialogue. But there is, and I forgot that there is like this general settings pages where everything is set there and I, you know, and I do that so I will fix that in the next version. Someone was like, it doesn't make sense, but that, but huge conflicts that break the product. You know, there are so many people involved in like acknowledging that this is the plan, this is the new feature that the collective memory will raise that this feature is actually breaking it. By the way, doing vibe coding. I do a lot of vibe coding in, in recent months, you know, building all sorts of products. Right. So to myself I get, I realize that I break consistency often because I don't leave the development and I don't leave the back and forth as I did when I was managing that with real developers and you know, like having like this organization memory. So I don't know what, what your startup, if you want, if, if you want to share with me, I be very happy to think about it. But that's one of the, I think and I don't, I didn't see anyone speak about, speaks about that. But this is something that actually sense on myself at least. I mean, I don't know how much I represent the customer that you tend to lose that context, you know, like the machine might have a context and that context we all know is very limited. But you as the product owner sometimes lose context because she actually developed something that does basically the same thing. And I'm trying to ask him to develop it again and break the system. Right. So this kind of shit happens in by calling. I think that is by itself as an interesting thing. By the way, in my vibe coding workflows, I'm trying to figure out workflows that create this extract of context and have a workflow that checks for either redoing the same sheet over and over again or any conflict that might happen because of that.
+
+Deepjyoti Nath: 43:54 
+ So anyway, now that's something I have noticed myself as well. Like I've been using LLM to write code for the last two, three years and I've seen a visible change in their behaviors of the LLMs. Like let's say a year ago, the LLMs used to like, you would tell it something and then it would go do that, but it will also do something else and you wouldn't even realize that it has done that. So it's a conflict that it would create on its own without you even telling it to do it. So that's something I have seen for sure.
+
+Moshe Bartov: 44:27 
+ Yeah, it would basically. So like I did, I. My vibe coding experience starts at about June last year. Okay, so that's when I. So it's like Sonnet 3.5 I think, and open AI, I don't remember which. Which one? ChatGPT4 probably what I learned then, which changed by the way, for the good is that each new feature I would ask it to add, I did this mobile application, very simple functionality, but it would create a function by breaking the older ones. The context memory was maybe a day old. I would add a nice to have feature and it will break the main feature and I would like why it just looked at the code and said this is obsolete. I don't understand why you need that and just delete that. Right. Instead of keeping it and building around it the features that I wanted. So anyway, and that has changed. It has improved over time. But what I fear the most, and it's a philosophical kind of, you know, feedback is that we are starting, we'll be starting to lose our ability to be the guardian. You have kind of human in the loop to. To know that because you are starting to lose your own skills of understanding logic and understanding and, and identifying potential and coffee. It's like probably people in the 19th century were physically stronger than people in the 20th century because 100°.
+
+Deepjyoti Nath: 46:14 
+ Yeah, I completely agree with you. Like that's a fear that I have myself. It's again like philosophical like you said. It's. I fear that we are offloading our cognitive thought process to the LLMs so that we don't do the thinking anymore. We ask them to do the thinking and I fear if we keep on doing that, then we'll have very dumb people in the next 50 years.
+
+Moshe Bartov: 46:38 
+ Yeah, it's like the, the movie Dumb and Dumber. Right? It's. What's the name of that movie where, where he wakes up in the future and everybody's so dumb because of. They. The, the reason is not AI, it's more about proliferation and people and like only the cool guys are having kids and the cool and dumb and smart guys are like thinking about their careers. So they, they, they postpone, you know, getting married or having kids. And so the population tends to be dumber and dumber over time. But here I think the AI is the, is the, could be the catalyst. But let's see. Yeah, hopefully we'll survive that. What's the premise of the product? I mean, what are you trying to achieve? What's the, I mean, what's the angle that you are trying to attack in product management?
+
+Deepjyoti Nath: 47:37 
+ So the angle that I'm trying to attack is to first I want to solve my own problem. It's like I don't want to spend a whole week trying to figure out what exactly the customers are saying. So that's like aggregating all of these meeting notes and everything, the customer support tickets and everything, collecting information that the customers are saying from every different angle and making sense of it. So I know what the customers are, their pain points are. So I have, I want to segregate into different themes that the, this is the highest priority for 100 of the customers. This is the biggest pain point. Okay, how do I solve this? So I want the AI to give me a full product roadmap based on this pain point and it tells me how to solve it with the product. So that's, that's the summary of the product in.
+
+Moshe Bartov: 48:29 
+ So I think if, if I try to, if I would have to design such a system, I would probably. So if. Because you're looking at the full cycle, so you're looking from like collecting requirements, analyzing them, probably normalizing them because you need to translate different. The same requirement is spoken in different ways to basically the same feature. Right. So sometimes you need to normalize the requirements, you need to weigh them and weighting could be done by having External wait system like, you know, how strategic is this customer or how critical or who is this the customer Persona or customer function that asks for that feature. So if accounting is asking for a feature and engineers ask for a different feature, it depends on the relationship between the customer. Maybe engineering prevails, maybe counting as is more important. So, so those are like, those are not logically made decision. Those are like knowledge that you ascertain about a certain customer, which you need to put in as to the weight system. So that would be the, the first to actually build a weight system because we do that all the time, right? We get a set of requirements, we analyze the impact, right? Like what, how, what, what, what's the positive impact it's going to have or not. And then we weigh in the importance of who is asking for it, whether within the customer or between the customers, right? And then we then take, then analyze the complexity and time to, to develop a certain feature as we put that into the formula, right? And then at the end we might look at things like dependency interdependency between the features. This is an infrastructure feature that will enable you to yield those kind of features. So you need to schedule it in a certain way. So what I think, what I believe, and that's my recommendation for you, is to look at things like providing assessment on complexity of development. Could be an interesting feature where AI can actually save time to pm because instead of coming each time to the development lead and say like this is what we are thinking about developing. What do you think about that? And they spend time on analyzing it and the impact AI might give you some kind of ballpark figures, which is basically what you get even from a developer lead, probably with good, good accuracy, right? Because it just look into existing architecture and existing solution and then try to extrapolate development time. And then you know, you can use that as a way also interpreting, interpreting intent or interpreting meanings and trying to look for challenging questions. So like better understanding, removing ambiguity, removing omissions, right? So sometimes the user asks for, I don't know, the picture is like I wanted the ability to add new customers. Yes, but do you need also to edit them? I mean, I'm giving something trivial, but that question sometimes is somehow omitted. You know, like the customer did not thought about it. Maybe for it was obvious you somehow forgot to ask about it because you're only human. We have 20 other calls to attend this week. But the AI might come and say what about editing? What about deleting that user? I mean, do you need a suite of Solutions do you need to limit what can you edit or not? Those are the kind of questions, clarification questions that it's better to have that will also evolve into a more well rounded future definition then just doing that by only single person interacting with the customer.
+
+Deepjyoti Nath: 52:47 
+ That's a big one. That's something I didn't think of actually. That's a very good point. Thank you.
+
+Moshe Bartov: 52:53 
+ AI challenging you, Challenging you can be a good value for what you do. Yeah, the, the, the, the other thing obviously the finger where LLM is like the superpower in is, is writing and, and editing. So like for example, most likely it will be able to write something in the language you ask him to write. So like be more explicit, be less descriptive, more descriptive, whatever. Right. Far better and more consistent than a human can because it's a mechanical kind of trait that you need and it can help you with the thinking. Right. So think about it as a way to enhance the thought process and that would be an interesting angle. So are you going, are you going to pitch that, that concept to yc?
+
+Deepjyoti Nath: 54:07 
+ Yeah, I mean it's. So what YC started to do is that they put out some ideas out there. They started doing it I think few years ago, two years ago and they're like okay, if somebody's building in that let us know. So I saw that and this is like, this is something that I face myself. So I was like, why don't I. I mean my last startup was like one and a half years ago. So now I feel like I'm ready to dive into another one. I feel like I have the energy back now. I recovered from the last one. I was looking for some problem to solve.
+
+Moshe Bartov: 54:43 
+ So. Sorry, was it a bad experience for you, the last startup?
+
+Deepjyoti Nath: 54:50 
+ Not bad experience but it's a very intense experience. So I mean I have been running starting startups since I was 18 years old. So in my 1012 years of career, I think eight years were startups. So it's, it's a draining experience. It drains you emotionally, financially and energy wise. So it's, I needed a break.
+
+Moshe Bartov: 55:12 
+ Absolutely. You know, two things. One is that I, I saw this bit, this interview with. What's the name of the Nvidia founder?
+
+Deepjyoti Nath: 55:26 
+ Yeah, Justin Wang.
+
+Moshe Bartov: 55:27 
+ Yeah. And he says like, like I, I wake up every morning anxious and oh, it was with Rogan and organizing. Wow. You have like a multi trillion dollar companies like. Yeah. But you never get loose, get rid of it. You always wake up, you know, anxious because the market changes and, and some things can fall and yeah. Owning Your own company doing something by itself is very drain draining. Right, so that's true. The second thing I can tell you is that my system. So I am a founder of Freaks. Freaks and, and a hired CEO twice. Okay. So. And I'm a little bit older than you. I'm going to be turned 55 next week. So. But my system over the years was as follows. I do early stage. So I do have founding. Like I found a startup. Usually I fail. I mean because like that's, that's a so far. Right. And then I take at least three to five years working for a large corporate to recover. Like and I see that and, and I. My analogy is a sprint race. Right. So you go for a sprint and then you need to recover and then you go for another sprint and then you need to recover. There are people that, that knows how to sprint all the time. Right. That. So they go from oneself to another. I'm not like that. I also like to be. To stay healthy. So I probably all obviously a little bit. So I rather do second interval founding. Right. Or intervals startups. Not. Not an ongoing thing. So anyway that's, that's. That's my take.
+
+Deepjyoti Nath: 57:21 
+ Cool.
+
+Moshe Bartov: 57:22 
+ So you already have your team set up. You know who's you're going to partner? Are you the technical or the non technical founder? Both, Both. Both.
+
+Deepjyoti Nath: 57:34 
+ I mean right now it's just me. So I don't like to go full steam ahead before I even understand the problem statement. So right now my plan is to just interview people for the next one month, build a prototype in the meantime and understand the market and see if I can somebody's problem. And then once I have like 10 customers not paying but somebody who is using it actively every week, then I know I have a, you know, some set of product market fit and then I can start charging from there and scaling up and then everything else falls in line from there.
+
+Moshe Bartov: 58:12 
+ Yeah, I think it's. It's a very exciting period of time that a single solopreneur can reach a meaningful kind of business before thinking about salaries. Obviously not just to himself but, but to others. On the flip side, it's also very kind of, I would say even frightening or at some point even, you know, you freeze out because of that. Because even, even some things that which are more niche and vertical that you feel like, you know, you can thrive in that. Then someone like Google comes in and throw a product which you realize is going to undermine your whole hard wall. Friend of mine was working on a boat to teach mathematics to high schools. And then he kind of elevated that to prepare students or undergrad to, to, to more advanced math. And so he bought this, he built this, built this boat. That's his own model. But you know, he trained a model. He built a concept of context and set of well engineered prompts and he, he thought he had a unique product. And then Google threw in this Google learning stuff. I don't remember the name of the product. And he saw a single demo that, and said like there's nothing I can do now. I mean like this, my product is obsolete now.
+
+Deepjyoti Nath: 59:43 
+ Yeah.
+
+Moshe Bartov: 59:45 
+ And it didn't even, there was not even announcement, I mean before. I mean there was not even, not even rumors that could have alerted him that something is coming. And it's, it's big and anyway, it's going to be an interesting time frame. I, I would love to hear more about what you do when, when, if you need, if you need someone to better test things. I'll be very happy to try.
+
+Deepjyoti Nath: 01:00:13 
+ Thank you, thank you so much for taking the time today. You gave me almost an hour, so thank you so much for that and because I'm happy to help, really helpful. I got ideas that I didn't even think of, so thank you so much for that and you're welcome. Yeah. If I can help you with anything, please let me know as well. And thank you so much and have a nice day.
+
+Moshe Bartov: 01:00:36 
+ Thank you. Bye bye.
+
+Deepjyoti Nath: 01:00:38 
+ Bye bye.
+

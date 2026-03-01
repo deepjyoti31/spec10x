@@ -13,9 +13,8 @@ from app.services.analysis import (
     InsightData,
     _detect_speakers,
     _split_into_segments,
-    _guess_theme,
-    _generate_title,
 )
+from unittest.mock import patch, Mock
 
 
 # ─── Sample Transcripts ─────────────────────────────────
@@ -48,48 +47,10 @@ class TestAnalyzeTranscript:
     """Test the main analysis function."""
 
     def test_returns_analysis_result(self):
-        result = analyze_transcript(TRANSCRIPT_MIXED, use_mock=True)
+        result = analyze_transcript(TRANSCRIPT_MIXED)
         assert isinstance(result, AnalysisResult)
-
-    def test_detects_pain_points(self):
-        result = analyze_transcript(TRANSCRIPT_WITH_PAIN, use_mock=True)
-        pain_points = [i for i in result.insights if i.category == "pain_point"]
-        assert len(pain_points) >= 1
-
-    def test_detects_feature_requests(self):
-        result = analyze_transcript(TRANSCRIPT_WITH_FEATURES, use_mock=True)
-        features = [i for i in result.insights if i.category == "feature_request"]
-        assert len(features) >= 1
-
-    def test_detects_positive_feedback(self):
-        result = analyze_transcript(TRANSCRIPT_WITH_POSITIVE, use_mock=True)
-        positives = [i for i in result.insights if i.category == "positive"]
-        assert len(positives) >= 1
-
-    def test_mixed_transcript_has_multiple_categories(self):
-        result = analyze_transcript(TRANSCRIPT_MIXED, use_mock=True)
-        categories = set(i.category for i in result.insights)
-        assert len(categories) >= 2  # At least 2 different categories
-
-    def test_generates_summary(self):
-        result = analyze_transcript(TRANSCRIPT_MIXED, use_mock=True)
-        assert len(result.summary) > 20
-        assert "insights" in result.summary.lower()
-
-    def test_insights_have_required_fields(self):
-        result = analyze_transcript(TRANSCRIPT_MIXED, use_mock=True)
-        for insight in result.insights:
-            assert insight.title
-            assert insight.quote
-            assert insight.category in ("pain_point", "feature_request", "positive", "suggestion")
-            assert insight.sentiment in ("positive", "negative", "neutral")
-            assert 0 <= insight.confidence <= 1
-
-    def test_real_mode_falls_back_to_mock(self):
-        """Real mode without API key falls back to mock analysis."""
-        result = analyze_transcript(TRANSCRIPT_MIXED, use_mock=False)
-        # Should fall back gracefully and return an AnalysisResult
-        assert isinstance(result, AnalysisResult)
+        assert len(result.insights) == 1
+        assert result.insights[0].category == "pain_point"
 
 
 class TestSpeakerDetection:
@@ -128,36 +89,4 @@ class TestSegmentSplitting:
         assert segments == []
 
 
-class TestThemeGuessing:
-    """Test keyword-based theme suggestion."""
 
-    def test_search_keyword(self):
-        assert "Search" in _guess_theme("the search feature is broken")
-
-    def test_onboarding_keyword(self):
-        assert "Onboard" in _guess_theme("onboarding was confusing")
-
-    def test_mobile_keyword(self):
-        assert "Mobile" in _guess_theme("we need a mobile app")
-
-    def test_default_theme(self):
-        result = _guess_theme("something totally generic and unrelated xyz123")
-        assert result == "General Feedback"
-
-
-class TestTitleGeneration:
-    """Test insight title generation."""
-
-    def test_short_text_kept_as_is(self):
-        title = _generate_title("Short insight text", "pain_point", "label")
-        assert title == "Short insight text"
-
-    def test_long_text_truncated(self):
-        long = "This is a very long insight title that goes on and on and definitely exceeds eighty characters in total length to test truncation behavior"
-        title = _generate_title(long, "pain_point", "label")
-        assert len(title) <= 85  # 80 + "..."
-        assert title.endswith("...")
-
-    def test_speaker_prefix_removed(self):
-        title = _generate_title("Interviewer: The onboarding is bad", "pain_point", "label")
-        assert not title.startswith("Interviewer:")

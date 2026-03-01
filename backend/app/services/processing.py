@@ -82,7 +82,6 @@ async def process_interview(interview_id: str) -> dict:
             from app.services.analysis import analyze_transcript
             analysis_result = analyze_transcript(
                 transcript,
-                use_mock=settings.use_mock_ai,
             )
 
             # Save insights and speakers to DB
@@ -100,7 +99,6 @@ async def process_interview(interview_id: str) -> dict:
             from app.services.embeddings import chunk_and_embed
             chunks_count = await chunk_and_embed(
                 db, interview, transcript,
-                use_mock=settings.use_mock_ai,
             )
 
             # ── Step 5: Cross-interview synthesis ──

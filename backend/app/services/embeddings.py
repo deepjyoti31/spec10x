@@ -8,9 +8,9 @@ Mock mode uses random vectors; real mode uses text-embedding-004 via Gemini.
 import logging
 import random
 import math
-import uuid
+from google import genai
+from google.genai import types
 
-import google.generativeai as genai
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,7 +24,6 @@ async def chunk_and_embed(
     db: AsyncSession,
     interview: Interview,
     transcript: str,
-    use_mock: bool = True,
 ) -> int:
     """
     Chunk a transcript and store with embeddings.
@@ -46,10 +45,7 @@ async def chunk_and_embed(
         return 0
 
     # Generate embeddings
-    if use_mock:
-        embeddings = [_random_embedding(768) for _ in chunks]
-    else:
-        embeddings = _real_embeddings(chunks)
+    embeddings = _real_embeddings(chunks)
 
     # Store chunks in DB
     for i, (chunk_text, embedding) in enumerate(zip(chunks, embeddings)):
@@ -101,20 +97,20 @@ def chunk_transcript(
     return chunks
 
 
-def _random_embedding(dim: int = 768) -> list[float]:
-    """Generate a random normalized embedding vector (for mock mode)."""
-    vec = [random.gauss(0, 1) for _ in range(dim)]
-    magnitude = math.sqrt(sum(v * v for v in vec))
-    return [v / magnitude for v in vec]
-
 
 def _real_embeddings(chunks: list[str]) -> list[list[float]]:
     """
-    Generate real embeddings using text-embedding-004 via Gemini.
+    Generate real embeddings using text-embedding-004 via Vertex AI.
     Processes in batches of 100 (API limit).
     """
-    from app.services.analysis import _configure_genai
-    _configure_genai()
+
+
+    settings = get_settings()
+    client = genai.Client(
+        vertexai=True,
+        project=settings.gcp_project_id,
+        location=settings.gcp_location
+    )
 
     all_embeddings = []
     batch_size = 100
@@ -122,17 +118,18 @@ def _real_embeddings(chunks: list[str]) -> list[list[float]]:
     for i in range(0, len(chunks), batch_size):
         batch = chunks[i:i + batch_size]
         try:
-            result = genai.embed_content(
-                model="models/text-embedding-004",
-                content=batch,
-                task_type="RETRIEVAL_DOCUMENT",
+            response = client.models.embed_content(
+                model="gemini-embedding-001",
+                contents=batch,
+                config=types.EmbedContentConfig(
+                    task_type="RETRIEVAL_DOCUMENT"
+                )
             )
-            all_embeddings.extend(result["embedding"])
+            all_embeddings.extend([emb.values for emb in response.embeddings])
             logger.info(f"Embedded batch {i // batch_size + 1}: {len(batch)} chunks")
         except Exception as e:
             logger.error(f"Embedding batch {i // batch_size + 1} failed: {e}")
-            # Fallback to random embeddings for this batch
-            all_embeddings.extend([_random_embedding(768) for _ in batch])
+            raise
 
     return all_embeddings
 

@@ -123,7 +123,7 @@ async def create_interview(
 
 @router.get("", response_model=list[InterviewResponse])
 async def list_interviews(
-    sort: str = Query("recent", regex="^(recent|name|sentiment)$"),
+    sort: str = Query("recent", pattern="^(recent|name|sentiment)$"),
     status_filter: Optional[str] = Query(None, alias="status"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),

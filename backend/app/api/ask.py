@@ -43,7 +43,6 @@ async def ask_question(
         user_id=current_user.id,
         question=request.question,
         conversation_id=request.conversation_id,
-        use_mock=settings.use_mock_ai,
     )
 
     return {

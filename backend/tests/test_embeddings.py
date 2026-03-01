@@ -8,7 +8,6 @@ import pytest
 
 from app.services.embeddings import (
     chunk_transcript,
-    _random_embedding,
 )
 
 
@@ -79,28 +78,4 @@ class TestChunkTranscript:
             assert word in all_chunk_words
 
 
-class TestRandomEmbedding:
-    """Test mock embedding generation."""
 
-    def test_correct_dimension(self):
-        """Embedding should have the specified dimension."""
-        vec = _random_embedding(768)
-        assert len(vec) == 768
-
-    def test_custom_dimension(self):
-        """Custom dimensions should work."""
-        vec = _random_embedding(128)
-        assert len(vec) == 128
-
-    def test_normalized(self):
-        """Embedding should be approximately unit length."""
-        import math
-        vec = _random_embedding(768)
-        magnitude = math.sqrt(sum(v * v for v in vec))
-        assert abs(magnitude - 1.0) < 0.001
-
-    def test_different_each_time(self):
-        """Two calls should produce different embeddings."""
-        v1 = _random_embedding(768)
-        v2 = _random_embedding(768)
-        assert v1 != v2

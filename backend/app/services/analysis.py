@@ -11,15 +11,13 @@ import re
 import random
 from dataclasses import dataclass, field
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from app.core.config import get_settings
 from app.prompts.extraction import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, OUTPUT_SCHEMA
 
 logger = logging.getLogger(__name__)
-
-# Track whether genai has been configured
-_genai_configured = False
 
 
 # ─── Data Classes ────────────────────────────────────────
@@ -114,126 +112,17 @@ THEME_KEYWORDS = {
 
 def analyze_transcript(
     transcript: str,
-    use_mock: bool = True,
 ) -> AnalysisResult:
     """
     Analyze an interview transcript and extract structured insights.
 
     Args:
         transcript: Full text of the interview
-        use_mock: If True, use keyword matching; if False, use Gemini
 
     Returns:
         AnalysisResult with insights, speakers, summary, language
     """
-    if use_mock:
-        return _mock_analyze(transcript)
-    else:
-        return _real_analyze(transcript)
-
-
-def _mock_analyze(transcript: str) -> AnalysisResult:
-    """Mock analysis using keyword/heuristic matching."""
-    result = AnalysisResult()
-
-    # Detect speakers
-    result.speakers = _detect_speakers(transcript)
-
-    # Split into sentences/segments
-    segments = _split_into_segments(transcript)
-
-    # Scan for insights
-    for segment in segments:
-        text = segment["text"]
-        text_lower = text.lower()
-
-        # Check pain points
-        for pattern, label in PAIN_PATTERNS:
-            if re.search(pattern, text_lower):
-                theme = _guess_theme(text_lower)
-                insight = InsightData(
-                    category="pain_point",
-                    title=_generate_title(text, "pain_point", label),
-                    quote=text.strip(),
-                    quote_start=segment.get("start"),
-                    quote_end=segment.get("end"),
-                    speaker=segment.get("speaker"),
-                    theme_suggestion=theme,
-                    sentiment="negative",
-                    confidence=round(random.uniform(0.75, 0.95), 2),
-                )
-                result.insights.append(insight)
-                break
-
-        # Check feature requests
-        for pattern, label in FEATURE_PATTERNS:
-            if re.search(pattern, text_lower):
-                if any(i.quote == text.strip() for i in result.insights):
-                    break
-                theme = _guess_theme(text_lower)
-                insight = InsightData(
-                    category="feature_request",
-                    title=_generate_title(text, "feature_request", label),
-                    quote=text.strip(),
-                    quote_start=segment.get("start"),
-                    quote_end=segment.get("end"),
-                    speaker=segment.get("speaker"),
-                    theme_suggestion=theme,
-                    sentiment="neutral",
-                    confidence=round(random.uniform(0.7, 0.9), 2),
-                )
-                result.insights.append(insight)
-                break
-
-        # Check positive feedback
-        for pattern, label in POSITIVE_PATTERNS:
-            if re.search(pattern, text_lower):
-                if any(i.quote == text.strip() for i in result.insights):
-                    break
-                theme = _guess_theme(text_lower)
-                insight = InsightData(
-                    category="positive",
-                    title=_generate_title(text, "positive", label),
-                    quote=text.strip(),
-                    quote_start=segment.get("start"),
-                    quote_end=segment.get("end"),
-                    speaker=segment.get("speaker"),
-                    theme_suggestion=theme,
-                    sentiment="positive",
-                    confidence=round(random.uniform(0.8, 0.95), 2),
-                )
-                result.insights.append(insight)
-                break
-
-    # Generate summary
-    pain_count = sum(1 for i in result.insights if i.category == "pain_point")
-    feature_count = sum(1 for i in result.insights if i.category == "feature_request")
-    positive_count = sum(1 for i in result.insights if i.category == "positive")
-    result.summary = (
-        f"Interview analysis found {len(result.insights)} insights: "
-        f"{pain_count} pain points, {feature_count} feature requests, "
-        f"{positive_count} positive feedback items."
-    )
-
-    logger.info(
-        f"Mock analysis complete: {len(result.insights)} insights, "
-        f"{len(result.speakers)} speakers"
-    )
-    return result
-
-
-def _configure_genai():
-    """Configure the genai SDK (once) with API key or ADC."""
-    global _genai_configured
-    if _genai_configured:
-        return
-    settings = get_settings()
-    if settings.google_api_key:
-        genai.configure(api_key=settings.google_api_key)
-        logger.info("Gemini configured with API key")
-    else:
-        logger.info("Gemini using Application Default Credentials")
-    _genai_configured = True
+    return _real_analyze(transcript)
 
 
 def _real_analyze(transcript: str) -> AnalysisResult:
@@ -241,23 +130,24 @@ def _real_analyze(transcript: str) -> AnalysisResult:
     Real analysis using Gemini. Sends the transcript with the extraction
     prompt and parses structured JSON output into AnalysisResult.
     """
-    _configure_genai()
     settings = get_settings()
+    client = genai.Client(
+        vertexai=True,
+        project=settings.gcp_project_id,
+        location=settings.gcp_location
+    )
 
     try:
-        model = genai.GenerativeModel(
-            model_name=settings.gemini_model,
-            system_instruction=SYSTEM_PROMPT,
-        )
-
         prompt = USER_PROMPT_TEMPLATE.format(transcript=transcript[:50000])  # Limit transcript length
 
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.GenerationConfig(
+        response = client.models.generate_content(
+            model=settings.gemini_model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
                 response_mime_type="application/json",
                 response_schema=OUTPUT_SCHEMA,
                 temperature=0.2,
+                system_instruction=SYSTEM_PROMPT,
             ),
         )
 
@@ -300,15 +190,14 @@ def _real_analyze(transcript: str) -> AnalysisResult:
             ))
 
         logger.info(
-            f"Gemini analysis complete: {len(result.insights)} insights, "
+            f"Vertex AI analysis complete: {len(result.insights)} insights, "
             f"{len(result.speakers)} speakers"
         )
         return result
 
     except Exception as e:
-        logger.error(f"Gemini analysis failed: {e}")
-        logger.info("Falling back to mock analysis")
-        return _mock_analyze(transcript)
+        logger.error(f"Vertex AI analysis failed: {e}")
+        raise
 
 
 # ─── Helper Functions ────────────────────────────────────
@@ -372,15 +261,6 @@ def _split_into_segments(transcript: str) -> list[dict]:
 
     return segments
 
-
-def _guess_theme(text: str) -> str:
-    """Guess a theme name based on keywords in the text."""
-    for keyword, theme in THEME_KEYWORDS.items():
-        if keyword in text:
-            return theme
-
-    # Default theme based on general content
-    return "General Feedback"
 
 
 def _generate_title(text: str, category: str, label: str) -> str:
