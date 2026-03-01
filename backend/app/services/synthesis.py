@@ -1,8 +1,7 @@
 """
 Spec10x Backend — Cross-Interview Theme Synthesis
 
-Groups insights into themes across all interviews for a user.
-Mock mode uses normalized string matching; real mode uses embedding similarity.
+Groups insights into themes across all interviews for a user based on normalized string matching.
 """
 
 import logging
@@ -27,7 +26,7 @@ async def synthesize_themes(
     """
     Cluster insights into themes across all interviews for a user.
 
-    Algorithm (mock mode — string matching):
+    Algorithm (string matching):
         1. Fetch all insights with theme_suggestion for this user
         2. Normalize and group by theme_suggestion
         3. For groups with 2+ sources: create/update Theme

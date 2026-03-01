@@ -59,8 +59,7 @@
 | **Cache / Queue** | Redis 7.x | Job queue (via `arq`), caching, pub/sub for WebSocket coordination | ✅ |
 | **File Storage** | Google Cloud Storage | Cheap, reliable, direct upload from browser via signed URLs | GCP |
 | **Video → Audio** | FFmpeg (open-source) | Extract audio track from video files before transcription | ✅ |
-| **AI — Extraction** | Gemini 2.5 Flash-Lite (via Vertex AI) | $0.10/1M input tokens — 5x cheaper than Gemini 3 Flash. Sufficient quality for theme extraction | GCP |
-| **AI — Q&A** | Gemini 3 Flash (via Vertex AI) | Higher quality for user-facing answers. $0.50/1M input tokens | GCP |
+| **AI — Extraction / Q&A** | Gemini 3 Flash (via Vertex AI) | High quality for both extraction and user-facing answers. Ensures workflow simplicity. $0.50/1M input tokens | GCP |
 | **AI — Embeddings** | gemini-embedding-001 (via Vertex AI) | Top MTEB scores, 100+ languages, default 3072 dims (scalable to 768 via MRL) | GCP |
 | **AI — Transcription** | Chirp 3 (via Vertex AI STT V2) | GA (Oct 2025), speaker diarization, 85+ languages, built-in denoiser. $0.016/min | GCP |
 | **Auth** | Firebase Authentication | GCP-native, email + Google OAuth, free tier generous | GCP (free) |
@@ -70,10 +69,9 @@
 | **Redis Hosting** | Memorystore for Redis | Managed Redis on GCP | GCP |
 | **Monitoring** | Cloud Logging + Sentry (errors) | GCP-native logging + open-source error tracking | Sentry: ✅ |
 
-> **Model Selection Strategy:** We use a two-tier approach to balance cost and quality:
-> - **Gemini 2.5 Flash-Lite** for bulk extraction tasks (theme/insight extraction from transcripts) — these run in background workers and don’t need the absolute best quality. At $0.10/1M tokens, it’s 5x cheaper than Gemini 3 Flash.
-> - **Gemini 3 Flash** for user-facing Q&A responses (the “Ask” feature) — these need higher quality since users directly read and evaluate them. At $0.50/1M tokens, still affordable given low query volume.
-> - **Can upgrade later:** If Gemini 3 Flash-Lite launches (expected), we’ll switch extraction to that for even better quality at the same cost.
+> **Model Selection Strategy:** We currently use a unified approach to simplify workflows:
+> - **Gemini 3 Flash** is used for all tasks (both bulk extraction and user-facing Q&A).
+> - **Future Optimization:** In the future, we may switch to a tiered model approach (using lighter models like Flash-Lite for background extraction) if cost optimization requires it, but for now, maintaining a single model reduces workflow and deployment complexity.
 
 > **Embedding Dimensions:** gemini-embedding-001 defaults to 3072 dimensions but supports Matryoshka Representation Learning (MRL) — we can set output dimensions to 768 to reduce storage and improve pgvector query speed with minimal quality loss. This is a config parameter, not a code change.
 
@@ -311,8 +309,8 @@ User drops files
 │  1. UPLOAD   │─▶│ 2. EXTRACT     │─▶│ 3. TRANSCRIBE│─▶│ 4. ANALYZE   │
 │              │  │  AUDIO         │  │              │  │              │
 │ Browser →    │  │ FFmpeg: video  │  │ Vertex AI    │  │ Vertex AI    │
-│ Signed URL → │  │ → audio (.wav) │  │ Chirp 3      │  │ Gemini 2.5   │
-│ GCS          │  │ (skip for text)│  │ (skip: text) │  │ Flash-Lite   │
+│ Signed URL → │  │ → audio (.wav) │  │ Chirp 3      │  │ Gemini 3     │
+│ GCS          │  │ (skip for text)│  │ (skip: text) │  │ Flash        │
 └──────────────┘  └────────────────┘  └──────────────┘  └──────┬───────┘
                                                        │
        ┌───────────────────────────────────────────────┘
@@ -364,8 +362,8 @@ User drops files
 - WebSocket push: "File X: Transcription complete"
 
 **Step 4 — Analyze** (background worker, Gemini call)
-- Send full transcript to **Gemini 2.5 Flash-Lite** via Vertex AI with a structured extraction prompt
-- Why Flash-Lite: This is batch background work, not user-facing. $0.10/1M tokens (5x cheaper than Gemini 3 Flash)
+- Send full transcript to **Gemini 3 Flash** via Vertex AI with a structured extraction prompt
+- We use the same high-quality model here as in the Q&A step to avoid workflow fragmentation.
 - Prompt asks for JSON output:
 
 ```json
@@ -635,10 +633,10 @@ git push to main
 | Service | Per Unit | Example (100 interviews/month) |
 |---|---|---|
 | Chirp 3 (transcription) | $0.016/min (60 min/month free) | 100 interviews × 30 min avg = $48 |
-| Gemini 2.5 Flash-Lite (extraction) | $0.10/1M input, $0.40/1M output | 100 interviews × ~5K tokens = ~$0.05 input + ~$0.20 output |
+| Gemini 3 Flash (extraction) | $0.50/1M input, $3.00/1M output | 100 interviews × ~5K tokens = ~$0.25 input + ~$1.50 output |
 | gemini-embedding-001 | $0.15/1M input tokens | 100 interviews × ~10K tokens = ~$0.15 |
 | Gemini 3 Flash (Q&A) | $0.50/1M input, $3.00/1M output | 500 queries × ~10K tokens = ~$5 input + ~$15 output |
-| **Total AI per 100 interviews** | | **~$68/month** |
+| **Total AI per 100 interviews** | | **~$70/month** |
 
 > **Cost note:** The transcription cost ($48) is the biggest driver. Encouraging users to upload existing transcripts from Otter/Fireflies instead of raw audio reduces this to near-zero.
 

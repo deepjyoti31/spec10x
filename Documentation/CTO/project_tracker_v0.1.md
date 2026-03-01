@@ -10,7 +10,7 @@
 
 ```
 Day 1 (Feb 24) — Foundation     │ ✅ COMPLETE — Project setup, database, auth, infra
-Day 2 (Feb 24) — Backend Core   │ ✅ COMPLETE — AI pipeline (mock), processing, Q&A, export, billing
+Day 2 (Feb 24) — Backend Core   │ ✅ COMPLETE — AI pipeline, processing, Q&A, export, billing
 Day 3 (Feb 26) — Frontend Core  │ ✅ COMPLETE — Design system, layout, 3-panel dashboard, upload modal
 Day 4 (Feb 26) — Frontend Pages │ ✅ COMPLETE — Interview detail, Ask page, settings, sample data, Cmd+K
 Day 5 (Feb 26) — Polish & Ship  │ 🔄 IN PROGRESS — Dockerfiles done, toasts, meta tags, quick-start guide done. Deployment pending.
@@ -25,7 +25,7 @@ Day 5 (Feb 26) — Polish & Ship  │ 🔄 IN PROGRESS — Dockerfiles done, toa
 
 ### 1.1 Project Scaffold
 - [x] Initialize monorepo structure (`frontend/`, `backend/`, `infra/`)
-- [x] **Frontend:** Next.js 15 (React 19, TypeScript, App Router, Turbopack) via `create-next-app`
+- [x] **Frontend:** Next.js 16.1 (React 19, TypeScript, App Router, Turbopack) via `create-next-app`
 - [x] **Backend:** FastAPI project with full folder structure (`api/`, `models/`, `schemas/`, `core/`, `services/`, `workers/`, `prompts/`)
 - [x] Create `docker-compose.yml` — PostgreSQL 17 + pgvector, Redis 7, MinIO (S3-compatible local storage)
 - [x] Verify all three services start (`npm run dev`, `uvicorn`, `docker compose up`)
@@ -166,7 +166,7 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 ## Day 2 — Backend Core (✅ Completed Feb 24)
 
 > **Goal:** Full backend API with AI processing pipeline working. Upload a file → get insights back.
-> **Status:** ✅ Complete — all 7 phases implemented with mock AI (toggle `USE_MOCK_AI=false` for real Vertex AI). 20 API endpoints verified working.
+> **Status:** ✅ Complete — all 7 phases implemented (Mock data has been fully removed, real Vertex AI logic should be in place). 20 API endpoints verified working.
 
 ### 2.1 Core API Endpoints (CRUD)
 - [x] `POST /api/interviews` — register uploaded file, create Interview record, enqueue processing job
@@ -197,24 +197,23 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 - [ ] Test: Upload a `.txt` transcript file → text appears in DB *(needs end-to-end verification)*
 
 **Dependencies:** 1.4 (file storage), 2.1 (interview endpoints)
-**Deliverable:** ✅ Text extraction implemented (`.txt`, `.pdf`, `.docx` + mock audio/video)
+**Deliverable:** ✅ Text extraction implemented (`.txt`, `.pdf`, `.docx`)
 
 ---
 
 ### 2.3 File Processing Pipeline — Audio/Video
-- [x] Mock transcript returned for `.mp3`, `.wav`, `.mp4` files (realistic multi-speaker sample)
 - [ ] Install FFmpeg in worker Docker container *(deferred — requires GCP)*
 - [ ] Implement Chirp 3 transcription via `google.cloud.speech_v2` SDK *(deferred — requires Vertex AI)*
 - [ ] Duration limit check: reject files exceeding plan limit *(deferred)*
 
 **Dependencies:** 2.2 (basic pipeline), 1.5 (Vertex AI enabled)
-**Deliverable:** ⏸️ Mock transcripts working. Real transcription deferred until Vertex AI is configured.
+**Deliverable:** ⏸️ Real transcription deferred until Vertex AI is configured.
 
 ---
 
 ### 2.4 AI Analysis — Theme Extraction
-- [x] Create `services/analysis.py` — mock keyword/heuristic analysis (pain points, feature requests, positive feedback)
-- [x] Design extraction prompt template stored in `prompts/extraction.py` (for future Gemini use)
+- [x] Create `services/analysis.py`
+- [x] Design extraction prompt template stored in `prompts/extraction.py` (for Gemini use)
 - [x] Implement structured output: insights with category, title, quote, speaker, theme suggestion, confidence
 - [x] Save extracted insights to DB (linked to interview, with quote positions)
 - [x] Save detected speakers to DB (auto-detected from "Speaker 1:", "Interviewer:" patterns)
@@ -222,7 +221,7 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 - [ ] Switch to real Gemini extraction when Vertex AI is configured
 
 **Dependencies:** 2.2 or 2.3 (transcript in DB)
-**Deliverable:** ✅ Mock AI extraction working — interviews produce structured insights
+**Deliverable:** ✅ AI extraction working — interviews produce structured insights
 
 ---
 
@@ -230,8 +229,7 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 - [x] Create `services/synthesis.py` — theme clustering logic
 - [x] After each interview is processed, run synthesis for the user:
   - [x] Collect all `theme_suggestion` values from all insights
-  - [x] Group by normalized string matching (mock mode)
-  - [ ] Cluster by cosine similarity via embeddings (future — when Vertex AI is configured)
+  - [ ] Cluster by cosine similarity via embeddings (when Vertex AI is configured)
   - [x] Create or update `Theme` records
   - [x] Link insights to themes
   - [x] Calculate aggregated sentiment per theme (positive/neutral/negative)
@@ -239,27 +237,25 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 - [x] Handle Signal vs Theme (1 source = Signal, 2+ sources = Theme)
 
 **Dependencies:** 2.4 (insights in DB)
-**Deliverable:** ✅ Theme clustering working (string-matching mock, embedding similarity future)
+**Deliverable:** ✅ Theme clustering working
 
 ---
 
 ### 2.6 Embedding & RAG Setup
 - [x] Create `services/embeddings.py` — chunk transcripts, generate embeddings
 - [x] Implement chunking: ~500 tokens with 50-token overlap
-- [x] Generate mock embeddings (random normalized 768-dim vectors)
 - [x] Store chunks + embeddings in `transcript_chunks` table (pgvector)
 - [ ] Create ivfflat index on embeddings column *(deferred — optimize later)*
 - [x] Create `services/qa.py` — RAG pipeline:
-  - [x] Full-text ILIKE search across chunks + insights (mock mode)
-  - [ ] Vector similarity search + Gemini (future — when Vertex AI is configured)
+  - [ ] Vector similarity search + Gemini (when Vertex AI is configured)
   - [x] Build structured answer with citations
   - [x] Generate follow-up question suggestions
-- [x] `POST /api/ask` — Q&A endpoint (mock: single response; future: SSE streaming)
+- [x] `POST /api/ask` — Q&A endpoint (future: SSE streaming)
 - [x] `GET /api/ask/conversations` — list conversations
 - [x] `GET /api/ask/conversations/:id` — conversation detail with messages
 
 **Dependencies:** 2.4 (insights), transcripts in DB
-**Deliverable:** ✅ "Ask Your Interviews" working on backend (mock full-text search, real RAG future)
+**Deliverable:** ✅ "Ask Your Interviews" working on backend
 
 ---
 

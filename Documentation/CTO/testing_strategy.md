@@ -23,7 +23,7 @@ We follow a **testing pyramid** approach: a strong base of unit tests, a middle 
 
 ### 1. Unit Tests (Backend)
 
-**What:** Test individual functions and classes in isolation — mock all external dependencies (DB, Redis, storage, AI).
+**What:** Test individual functions and classes in isolation — mock all external dependencies like DB, Redis, storage, and external AI services.
 
 **Why:** Fast feedback loop. Catches logic errors in the processing pipeline, analysis keyword matching, text chunking, theme clustering, and billing limit calculations.
 
@@ -33,10 +33,10 @@ We follow a **testing pyramid** approach: a strong base of unit tests, a middle 
 
 | Test File | Tests | Module Under Test |
 |---|---|---|
-| `tests/test_extraction.py` | Text extraction from .txt, .pdf, .docx; mock audio fallback | `services/extraction.py` |
+| `tests/test_extraction.py` | Text extraction from .txt, .pdf, .docx | `services/extraction.py` |
 | `tests/test_analysis.py` | Keyword detection, insight generation, speaker detection, title generation | `services/analysis.py` |
 | `tests/test_synthesis.py` | Theme name normalization, grouping, sentiment aggregation, Signal vs Theme | `services/synthesis.py` |
-| `tests/test_embeddings.py` | Transcript chunking (size, overlap, edge cases), mock embedding dimensions | `services/embeddings.py` |
+| `tests/test_embeddings.py` | Transcript chunking (size, overlap, edge cases) | `services/embeddings.py` |
 | `tests/test_qa.py` | Keyword extraction, stop-word filtering, follow-up suggestion generation | `services/qa.py` |
 | `tests/test_billing.py` | Plan limit calculations, usage increment logic | `api/billing.py` |
 
@@ -83,6 +83,7 @@ pytest tests/ --cov=app --cov-report=term-missing
 | `tests/test_api_ask.py` | Ask question, list conversations, get conversation | `/api/ask/*` |
 | `tests/test_api_export.py` | Markdown export (all insights, single interview) | `/api/export/*` |
 | `tests/test_api_billing.py` | Usage fetch, limits, plan enforcement | `/api/billing/*` |
+| `tests/test_api_health.py` | Health check endpoint | `/api/health*` |
 
 **How to Run:**
 
@@ -99,30 +100,9 @@ pytest tests/test_api_*.py -v
 
 ---
 
-### 3. Pipeline Tests (Backend)
+### 3. Pipeline Tests (Backend) (Removed)
 
-**What:** End-to-end tests of the full processing pipeline: upload → extract → analyze → embed → synthesize → done. Uses mock AI but real DB operations.
-
-**Why:** The processing pipeline is the core value engine. We need to verify the entire orchestration works, including status transitions and error handling.
-
-**When:** Run before any release. Part of CI.
-
-**Files:**
-
-| Test File | Tests |
-|---|---|
-| `tests/test_processing_pipeline.py` | Full pipeline with .txt file, status transitions, insight creation, theme synthesis, error recovery |
-
-**How to Run:**
-
-```powershell
-# Ensure Docker services are up
-docker compose up -d
-
-cd backend
-.\.venv\Scripts\Activate.ps1
-pytest tests/test_processing_pipeline.py -v
-```
+**Status:** The pipeline tests were removed as they relied heavily on mock data which has been eliminated from the codebase. The processing pipeline will now be thoroughly validated through higher-level Integration/E2E testing against the real Vertex AI environment.
 
 ---
 
@@ -206,7 +186,6 @@ Shared fixtures:
 |---|---|---|---|
 | **Unit tests** | Day 2 (✅ done) | Services layer: extraction, analysis, synthesis, embeddings, QA, billing | Developer / CI |
 | **Integration tests** | Day 3–4 (✅ done) | API endpoints with real DB | Developer / CI |
-| **Pipeline tests** | Day 4 (✅ done) | Full processing pipeline E2E | Developer / CI |
 | **Frontend tests** | Day 5 | Component tests (UI built Day 3, pages Day 4) | Developer / CI |
 | **E2E smoke tests** | Day 5 | Critical path manual walk-through | Developer |
 | **Beta acceptance** | Post-launch | Real users, real data, feedback loop | Beta testers |
@@ -263,7 +242,6 @@ pytest tests/ --cov=app --cov-report=term-missing
 # Backend: Specific category
 pytest tests/test_extraction.py -v         # Unit: extraction
 pytest tests/test_api_interviews.py -v     # Integration: interviews API
-pytest tests/test_processing_pipeline.py -v  # Pipeline: full E2E
 
 # Frontend: All tests (Day 5+)
 cd frontend

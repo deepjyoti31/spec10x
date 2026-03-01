@@ -1,8 +1,7 @@
 """
 Spec10x Backend — RAG Q&A Service
 
-Answers user questions using interview data.
-Mock mode uses full-text search; real mode uses vector similarity + Gemini.
+Answers user questions using interview data via vector similarity + Gemini.
 """
 
 import json

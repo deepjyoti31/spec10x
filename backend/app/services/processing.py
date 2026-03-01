@@ -29,7 +29,7 @@ async def process_interview(interview_id: str) -> dict:
 
     Steps:
         1. Download file from storage
-        2. Extract text (or mock-transcribe audio/video)
+        2. Extract text (or fail on audio/video if Vertex AI deferred)
         3. Run AI analysis (extract insights)
         4. Generate embeddings and store chunks
         5. Run cross-interview synthesis (cluster themes)

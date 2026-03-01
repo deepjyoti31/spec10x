@@ -1,8 +1,7 @@
 """
 Spec10x Backend — Text Chunking & Embedding Service
 
-Splits transcripts into chunks and generates embeddings for RAG.
-Mock mode uses random vectors; real mode uses text-embedding-004 via Gemini.
+Splits transcripts into chunks and generates embeddings for RAG using text-embedding-004 via Gemini.
 """
 
 import logging
@@ -32,7 +31,6 @@ async def chunk_and_embed(
         db: Database session
         interview: Interview model instance
         transcript: Full transcript text
-        use_mock: If True, use random embeddings
 
     Returns:
         Number of chunks created

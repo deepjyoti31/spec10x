@@ -1,8 +1,7 @@
 """
 Spec10x Backend — AI Analysis Service
 
-Extracts structured insights from interview transcripts.
-Mock mode uses keyword/heuristic matching; real mode uses Gemini.
+Extracts structured insights from interview transcripts using Gemini.
 """
 
 import json
