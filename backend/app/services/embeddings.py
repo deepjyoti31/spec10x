@@ -120,7 +120,8 @@ def _real_embeddings(chunks: list[str]) -> list[list[float]]:
                 model="gemini-embedding-001",
                 contents=batch,
                 config=types.EmbedContentConfig(
-                    task_type="RETRIEVAL_DOCUMENT"
+                    task_type="RETRIEVAL_DOCUMENT",
+                    output_dimensionality=768,
                 )
             )
             all_embeddings.extend([emb.values for emb in response.embeddings])

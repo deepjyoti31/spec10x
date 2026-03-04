@@ -9,9 +9,12 @@ import logging
 import json
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
+from sqlalchemy import select
 
 from app.core.auth import verify_firebase_token
+from app.core.database import async_session_factory
 from app.core.pubsub import subscribe_user
+from app.models import User
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["WebSocket"])
@@ -41,10 +44,29 @@ async def processing_updates(
         await websocket.close(code=4001, reason="Invalid token")
         return
 
-    user_id = claims.get("uid", "")
+    firebase_uid = claims.get("uid", "")
+
+    # Look up the database user to get the DB UUID — the worker publishes
+    # status updates keyed by the DB user UUID, not the Firebase UID.
+    try:
+        async with async_session_factory() as db:
+            stmt = select(User).where(User.firebase_uid == firebase_uid)
+            result = await db.execute(stmt)
+            user = result.scalar_one_or_none()
+
+        if user is None:
+            logger.warning(f"WebSocket: No DB user found for Firebase UID {firebase_uid}")
+            await websocket.close(code=4001, reason="User not found")
+            return
+
+        user_id = str(user.id)
+    except Exception as e:
+        logger.error(f"WebSocket: Failed to look up user: {e}")
+        await websocket.close(code=1011, reason="Internal error")
+        return
 
     await websocket.accept()
-    logger.info(f"WebSocket connected for user {user_id}")
+    logger.info(f"WebSocket connected for user {user_id} (firebase: {firebase_uid})")
 
     try:
         async for status_msg in subscribe_user(user_id):
@@ -57,3 +79,4 @@ async def processing_updates(
             await websocket.close(code=1011, reason="Internal error")
         except Exception:
             pass
+

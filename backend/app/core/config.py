@@ -2,6 +2,7 @@
 Spec10x Backend — Application Configuration
 """
 
+import os
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -38,7 +39,8 @@ class Settings(BaseSettings):
     # GCP / Vertex AI
     gcp_project_id: str = ""
     gcp_location: str = "us-central1"
-    gemini_model: str = "gemini-3.0-flash"  # Model for analysis + Q&A
+    gemini_model: str = "gemini-2.5-flash"  # Model for analysis + Q&A
+    google_application_credentials: str = ""  # Path to GCP service account JSON
 
     model_config = {
         "env_file": ".env",
@@ -49,4 +51,14 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    settings = Settings()
+    # Push GOOGLE_APPLICATION_CREDENTIALS into the OS environment so that
+    # google-auth / google-genai can discover it via Application Default
+    # Credentials (ADC). pydantic-settings reads .env but does NOT export
+    # values as real environment variables.
+    if settings.google_application_credentials and not os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
+        creds_path = os.path.abspath(settings.google_application_credentials)
+        if os.path.isfile(creds_path):
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = creds_path
+    return settings
+

@@ -44,5 +44,5 @@ htmlcov/
 
 
 # === Key files ===
-
-./backend/firebase-service-account.json
+backend/firebase-service-account.json
+backend/gcp-service-account.json

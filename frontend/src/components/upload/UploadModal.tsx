@@ -27,6 +27,7 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
     const [step, setStep] = useState<UploadStep>('upload');
     const [queueFiles, setQueueFiles] = useState<QueueFile[]>([]);
     const [completedCount, setCompletedCount] = useState(0);
+    const [errorCount, setErrorCount] = useState(0);
     const [insightsCount, setInsightsCount] = useState(0);
     const [themesCount, setThemesCount] = useState(0);
 
@@ -39,11 +40,26 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
             prev.map((qf) => {
                 // Match by interview ID if we have one stored
                 if ((qf as QueueFile & { interviewId?: string }).interviewId === latest.interview_id) {
+                    const wasDone = qf.status === 'done' || qf.status === 'error';
+                    const nowDone = latest.status === 'done';
+                    const nowError = latest.status === 'error';
+
+                    // Track completion counts on transition
+                    if (!wasDone && nowDone) {
+                        setCompletedCount((c) => c + 1);
+                        if (latest.insights_count != null) {
+                            setInsightsCount((c) => c + latest.insights_count!);
+                        }
+                    }
+                    if (!wasDone && nowError) {
+                        setErrorCount((c) => c + 1);
+                    }
+
                     return {
                         ...qf,
-                        status: latest.status === 'done' ? 'done' : latest.status === 'error' ? 'error' : latest.status,
-                        progress: latest.status === 'done' ? 100 : latest.progress || qf.progress,
-                        error: latest.status === 'error' ? latest.message : undefined,
+                        status: nowDone ? 'done' : nowError ? 'error' : latest.status,
+                        progress: nowDone || nowError ? 100 : latest.progress || qf.progress,
+                        error: nowError ? latest.message : undefined,
                     } as QueueFile;
                 }
                 return qf;
@@ -110,18 +126,7 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
                         : f)
                 );
 
-                // Simulate progress for now (real updates come via WebSocket)
-                setTimeout(() => {
-                    setQueueFiles((prev) =>
-                        prev.map((f) => {
-                            if (f.id === qf.id && f.status !== 'done' && f.status !== 'error') {
-                                setCompletedCount((c) => c + 1);
-                                return { ...f, status: 'done' as const, progress: 100 };
-                            }
-                            return f;
-                        })
-                    );
-                }, 3000 + Math.random() * 2000);
+                // Real updates come via WebSocket — no fake completion
 
             } catch (err) {
                 setQueueFiles((prev) =>
@@ -139,17 +144,14 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
 
     const handleSkipMetadata = useCallback(() => {
         setStep('complete');
-        // Count approximate stats
-        const done = queueFiles.filter((f) => f.status === 'done').length;
-        setCompletedCount(done);
-        setInsightsCount(done * 4); // approximate
-        setThemesCount(Math.ceil(done * 0.8)); // approximate
-    }, [queueFiles]);
+    }, []);
 
     const handleViewInsights = useCallback(() => {
         setStep('upload');
         setQueueFiles([]);
         setCompletedCount(0);
+        setErrorCount(0);
+        setInsightsCount(0);
         onComplete();
     }, [onComplete]);
 
@@ -162,11 +164,17 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
             if (window.confirm('Files are still processing. Are you sure you want to close?')) {
                 setStep('upload');
                 setQueueFiles([]);
+                setCompletedCount(0);
+                setErrorCount(0);
+                setInsightsCount(0);
                 onClose();
             }
         } else {
             setStep('upload');
             setQueueFiles([]);
+            setCompletedCount(0);
+            setErrorCount(0);
+            setInsightsCount(0);
             onClose();
         }
     }, [queueFiles, onClose]);
@@ -267,13 +275,22 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
                 {/* Step: Complete */}
                 {step === 'complete' && (
                     <div className={styles.completion}>
-                        <div className={styles.completionIcon}>✅</div>
+                        <div className={styles.completionIcon}>{errorCount > 0 && completedCount === 0 ? '❌' : errorCount > 0 ? '⚠️' : '✅'}</div>
                         <div className={styles.completionText}>
-                            {completedCount} interview{completedCount !== 1 ? 's' : ''} processed.{' '}
-                            {insightsCount} insights discovered across {themesCount} themes.
+                            {completedCount > 0 && (
+                                <>{completedCount} interview{completedCount !== 1 ? 's' : ''} processed successfully. {insightsCount} insights discovered. </>
+                            )}
+                            {errorCount > 0 && (
+                                <span style={{ color: 'var(--color-error, #ef4444)' }}>
+                                    {errorCount} interview{errorCount !== 1 ? 's' : ''} failed — click on the interview in the sidebar to see the error.
+                                </span>
+                            )}
+                            {completedCount === 0 && errorCount === 0 && (
+                                <>Processing complete.</>
+                            )}
                         </div>
                         <Button size="lg" onClick={handleViewInsights}>
-                            View Insights →
+                            {errorCount > 0 && completedCount === 0 ? 'Close' : 'View Insights →'}
                         </Button>
                     </div>
                 )}
