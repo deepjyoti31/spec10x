@@ -31,6 +31,7 @@ OUTPUT_SCHEMA = {
                     "label": {"type": "string", "description": "Speaker label as it appears in transcript"},
                     "name": {"type": "string", "description": "Inferred name if available"},
                     "role": {"type": "string", "description": "Inferred role (e.g., PM, Engineer, Customer)"},
+                    "company": {"type": "string", "description": "Inferred company name if available"},
                     "is_interviewer": {"type": "boolean"},
                 },
                 "required": ["label"],

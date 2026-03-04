@@ -31,6 +31,16 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
     const [insightsCount, setInsightsCount] = useState(0);
     const [themesCount, setThemesCount] = useState(0);
 
+    interface FileMetadata {
+        speakerId: string | null;
+        name: string;
+        role: string;
+        company: string;
+        speakerCount: number;
+    }
+    const [fileMetadata, setFileMetadata] = useState<Record<string, FileMetadata>>({});
+    const [isSavingMetadata, setIsSavingMetadata] = useState(false);
+
     // Process WebSocket updates
     React.useEffect(() => {
         if (wsMessages.length === 0) return;
@@ -66,6 +76,45 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
             })
         );
     }, [wsMessages]);
+
+    // Fetch speaker metadata when a file completes
+    React.useEffect(() => {
+        if (!token) return;
+        let mounted = true;
+
+        queueFiles.forEach(qf => {
+            const extendedQf = qf as QueueFile & { interviewId?: string };
+            if (extendedQf.status === 'done' && extendedQf.interviewId) {
+                setFileMetadata(prev => {
+                    if (prev[extendedQf.id]) return prev; // Already fetched or fetching
+
+                    // Mark as fetching
+                    const newMetadata = { ...prev, [extendedQf.id]: { speakerId: null, name: '', role: '', company: '', speakerCount: 0 } };
+
+                    api.getInterview(token, extendedQf.interviewId!)
+                        .then(interview => {
+                            if (!mounted) return;
+                            const primarySpeaker = interview.speakers.find(s => !s.is_interviewer) || interview.speakers[0];
+                            setFileMetadata(current => ({
+                                ...current,
+                                [extendedQf.id]: {
+                                    speakerId: primarySpeaker?.id || null,
+                                    name: primarySpeaker?.name || '',
+                                    role: primarySpeaker?.role || '',
+                                    company: primarySpeaker?.company || '',
+                                    speakerCount: interview.speakers.length,
+                                }
+                            }));
+                        })
+                        .catch(console.error);
+
+                    return newMetadata;
+                });
+            }
+        });
+
+        return () => { mounted = false; };
+    }, [queueFiles, token]);
 
     const handleFilesSelected = useCallback(async (files: File[]) => {
         if (!token) return;
@@ -146,12 +195,47 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
         setStep('complete');
     }, []);
 
+    const handleMetadataChange = (fileId: string, field: keyof FileMetadata, value: string) => {
+        setFileMetadata(prev => ({
+            ...prev,
+            [fileId]: { ...prev[fileId], [field]: value }
+        }));
+    };
+
+    const handleSaveMetadata = async () => {
+        if (!token) return;
+        setIsSavingMetadata(true);
+
+        try {
+            const promises = queueFiles.map(qf => {
+                const extendedQf = qf as QueueFile & { interviewId?: string };
+                if (extendedQf.status === 'done' && extendedQf.interviewId && fileMetadata[extendedQf.id]?.speakerId) {
+                    const meta = fileMetadata[extendedQf.id];
+                    return api.updateSpeaker(token, extendedQf.interviewId, meta.speakerId!, {
+                        name: meta.name || undefined,
+                        role: meta.role || undefined,
+                        company: meta.company || undefined,
+                    });
+                }
+                return Promise.resolve();
+            });
+
+            await Promise.all(promises);
+        } catch (error) {
+            console.error('Failed to save metadata', error);
+        } finally {
+            setIsSavingMetadata(false);
+            setStep('complete');
+        }
+    };
+
     const handleViewInsights = useCallback(() => {
         setStep('upload');
         setQueueFiles([]);
         setCompletedCount(0);
         setErrorCount(0);
         setInsightsCount(0);
+        setFileMetadata({});
         onComplete();
     }, [onComplete]);
 
@@ -167,6 +251,7 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
                 setCompletedCount(0);
                 setErrorCount(0);
                 setInsightsCount(0);
+                setFileMetadata({});
                 onClose();
             }
         } else {
@@ -175,6 +260,7 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
             setCompletedCount(0);
             setErrorCount(0);
             setInsightsCount(0);
+            setFileMetadata({});
             onClose();
         }
     }, [queueFiles, onClose]);
@@ -251,20 +337,39 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
                             <div key={qf.id} className={styles.metadataFile}>
                                 <div className={styles.metadataFileHeader}>
                                     <span className={styles.metadataFileName}>{qf.file.name}</span>
-                                    <span className={styles.metadataFileSummary}>No speakers detected</span>
+                                    <span className={styles.metadataFileSummary}>
+                                        {fileMetadata[qf.id]?.speakerCount > 0
+                                            ? `${fileMetadata[qf.id].speakerCount} speaker${fileMetadata[qf.id].speakerCount !== 1 ? 's' : ''} detected`
+                                            : 'No speakers detected'}
+                                    </span>
                                 </div>
                                 <div className={styles.metadataFields}>
                                     <div className={styles.metadataFieldRow}>
                                         <label className={styles.metadataLabel}>Participant:</label>
-                                        <input className={styles.metadataInput} placeholder="Unknown" />
+                                        <input
+                                            className={styles.metadataInput}
+                                            placeholder="Unknown"
+                                            value={fileMetadata[qf.id]?.name || ''}
+                                            onChange={(e) => handleMetadataChange(qf.id, 'name', e.target.value)}
+                                        />
                                     </div>
                                     <div className={styles.metadataFieldRow}>
                                         <label className={styles.metadataLabel}>Role:</label>
-                                        <input className={styles.metadataInput} placeholder="Unknown" />
+                                        <input
+                                            className={styles.metadataInput}
+                                            placeholder="Unknown"
+                                            value={fileMetadata[qf.id]?.role || ''}
+                                            onChange={(e) => handleMetadataChange(qf.id, 'role', e.target.value)}
+                                        />
                                     </div>
                                     <div className={styles.metadataFieldRow}>
                                         <label className={styles.metadataLabel}>Company:</label>
-                                        <input className={styles.metadataInput} placeholder="Unknown" />
+                                        <input
+                                            className={styles.metadataInput}
+                                            placeholder="Unknown"
+                                            value={fileMetadata[qf.id]?.company || ''}
+                                            onChange={(e) => handleMetadataChange(qf.id, 'company', e.target.value)}
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -309,11 +414,11 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
 
                 {step === 'metadata' && (
                     <div className={styles.footer}>
-                        <Button variant="secondary" onClick={handleSkipMetadata}>
+                        <Button variant="secondary" onClick={handleSkipMetadata} disabled={isSavingMetadata}>
                             Skip — continue without details
                         </Button>
-                        <Button onClick={handleSkipMetadata}>
-                            Save & View Insights
+                        <Button onClick={handleSaveMetadata} disabled={isSavingMetadata}>
+                            {isSavingMetadata ? 'Saving...' : 'Save & View Insights'}
                         </Button>
                     </div>
                 )}

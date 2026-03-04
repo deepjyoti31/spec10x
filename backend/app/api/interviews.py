@@ -17,13 +17,15 @@ from app.core.auth import get_current_user
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.storage import generate_upload_url
-from app.models import User, Interview, FileType, InterviewStatus
+from app.models import User, Interview, FileType, InterviewStatus, Speaker
 from app.schemas import (
     UploadUrlRequest,
     UploadUrlResponse,
     InterviewCreate,
     InterviewResponse,
     InterviewDetailResponse,
+    SpeakerUpdate,
+    SpeakerResponse,
 )
 
 router = APIRouter(prefix="/api/interviews", tags=["Interviews"])
@@ -229,6 +231,42 @@ async def reanalyze_interview(
     )
 
     return interview
-
-
+@router.put("/{interview_id}/speakers/{speaker_id}", response_model=SpeakerResponse)
+async def update_speaker(
+    interview_id: uuid.UUID,
+    speaker_id: uuid.UUID,
+    speaker_update: SpeakerUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update speaker metadata."""
+    # Verify interview belongs to user
+    stmt = select(Interview).where(
+        Interview.id == interview_id,
+        Interview.user_id == current_user.id
+    )
+    result = await db.execute(stmt)
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Interview not found")
+        
+    stmt = select(Speaker).where(
+        Speaker.id == speaker_id,
+        Speaker.interview_id == interview_id
+    )
+    result = await db.execute(stmt)
+    speaker = result.scalar_one_or_none()
+    
+    if not speaker:
+        raise HTTPException(status_code=404, detail="Speaker not found")
+        
+    if speaker_update.name is not None:
+        speaker.name = speaker_update.name
+    if speaker_update.role is not None:
+        speaker.role = speaker_update.role
+    if speaker_update.company is not None:
+        speaker.company = speaker_update.company
+        
+    await db.commit()
+    await db.refresh(speaker)
+    return speaker
 

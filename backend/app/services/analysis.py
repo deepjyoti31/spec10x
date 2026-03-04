@@ -42,6 +42,7 @@ class SpeakerData:
     label: str
     name: str | None = None
     role: str | None = None
+    company: str | None = None
     is_interviewer: bool = False
 
 
@@ -165,6 +166,7 @@ def _real_analyze(transcript: str) -> AnalysisResult:
                 label=s.get("label", "Unknown"),
                 name=s.get("name"),
                 role=s.get("role"),
+                company=s.get("company"),
                 is_interviewer=s.get("is_interviewer", False),
             ))
 

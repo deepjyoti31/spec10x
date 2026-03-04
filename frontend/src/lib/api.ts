@@ -127,6 +127,17 @@ class ApiClient {
     );
   }
 
+  async updateSpeaker(token: string, interviewId: string, speakerId: string, data: SpeakerUpdate) {
+    return this.request<SpeakerResponse>(
+      `/api/interviews/${interviewId}/speakers/${speakerId}`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        token
+      }
+    );
+  }
+
   async deleteInterview(token: string, id: string) {
     return this.request<void>(`/api/interviews/${id}`, {
       method: 'DELETE',
@@ -304,12 +315,19 @@ export interface InterviewDetailResponse extends InterviewResponse {
 
 export interface SpeakerResponse {
   id: string;
+  interview_id: string;
   speaker_label: string;
   name?: string;
   role?: string;
   company?: string;
   is_interviewer: boolean;
   auto_detected: boolean;
+}
+
+export interface SpeakerUpdate {
+  name?: string;
+  role?: string;
+  company?: string;
 }
 
 export interface ThemeResponse {
