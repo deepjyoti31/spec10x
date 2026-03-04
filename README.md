@@ -23,7 +23,7 @@ Spec10x reads your raw customer interviews (transcripts, audio, video) and autom
 
 | Layer | Technology |
 |---|---|
-| **Frontend** | Next.js 15 (React 19, TypeScript, App Router) |
+| **Frontend** | Next.js 16.1 (React 19, TypeScript, App Router) |
 | **Backend** | FastAPI (Python 3.12+, async) |
 | **Database** | PostgreSQL 17 + pgvector (vector search) |
 | **Cache/Queue** | Redis 7 |
