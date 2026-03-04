@@ -180,6 +180,7 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 - [x] `PATCH /api/insights/:id` — edit insight (category, title, theme)
 - [x] `DELETE /api/insights/:id` — dismiss insight (soft delete)
 - [x] `POST /api/insights/:id/flag` — flag as uncertain
+- [x] `GET /health` — API health check
 
 **Dependencies:** 1.2 (database), 1.3 (auth middleware)
 **Deliverable:** ✅ All CRUD endpoints working (built during Day 1)

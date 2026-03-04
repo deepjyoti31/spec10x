@@ -15,7 +15,7 @@ Spec10x reads your raw customer interviews (transcripts, audio, video) and autom
 | **Sentiment Analysis** | See positive/negative/neutral breakdown per theme |
 | **Ask Your Interviews** | Natural language Q&A with cited answers (RAG) |
 | **Multi-Format Upload** | `.txt` `.pdf` `.docx` `.mp3` `.wav` `.mp4` |
-| **Export** | Structured markdown and PDF reports |
+| **Export** | Structured markdown reports |
 
 ---
 
@@ -271,7 +271,6 @@ See `.env.example` for all available variables and their descriptions.
 | `MINIO_*` | Backend | Pre-configured for local MinIO |
 | `FIREBASE_*` | Auth (optional in dev) | Empty (dev-mode fallback) |
 | `GOOGLE_API_KEY` | AI features | Required for Gemini/Chirp |
-| `USE_MOCK_AI` | AI pipeline | `true` — set to `false` for real Vertex AI |
 
 ---
 

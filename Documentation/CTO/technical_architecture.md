@@ -54,7 +54,7 @@
 | Layer | Technology | Why This | Open-Source? |
 |---|---|---|---|
 | **Frontend** | Next.js 16.1 (React 19 + TypeScript) | SSR for landing page SEO, SPA for the app, Turbopack stable, huge ecosystem | ✅ |
-| **Backend** | FastAPI (Python 3.12+) | Best AI/ML ecosystem, async-native, type-safe, first-class Vertex AI SDK | ✅ |
+| **Backend** | FastAPI (Python 3.12+) | Best AI/ML ecosystem, async-native, type-safe, unified google-genai SDK | ✅ |
 | **Database** | PostgreSQL 17 + pgvector | One DB for relational data AND vector search. No separate vector DB needed | ✅ |
 | **Cache / Queue** | Redis 7.x | Job queue (via `arq`), caching, pub/sub for WebSocket coordination | ✅ |
 | **File Storage** | Google Cloud Storage | Cheap, reliable, direct upload from browser via signed URLs | GCP |
@@ -85,7 +85,7 @@
 | **GraphQL** | REST is simpler; we don't have deeply nested data queries yet |
 | **Kubernetes/GKE** | Cloud Run is enough. No need for K8s complexity until v1.0 scale |
 | **Microservices** | Monolith backend with clear module boundaries. Split later if needed |
-| **LangChain** | Over-abstraction for our use case. Direct Vertex AI SDK is simpler and more controllable |
+| **LangChain** | Over-abstraction for our use case. Direct google-genai SDK is simpler and more controllable |
 | **Supabase** | Would add a dependency; we want direct control over our PostgreSQL schema |
 
 ---
@@ -352,7 +352,7 @@ User drops files
 
 **Step 3 — Transcribe** (background worker, audio only)
 - Send the audio file (original or extracted) to **Vertex AI Chirp 3**
-  - Use Chirp 3 via the `google.cloud.speech_v2` SDK
+  - Use Chirp 3 via the unified `google-genai` SDK
   - Enable speaker diarization (auto-detect number of speakers)
   - Chirp 3 supports 100+ languages natively — no language detection needed
   - For long files: use `BatchRecognize` API for async processing
@@ -535,6 +535,11 @@ POST   /api/billing/webhook           → Stripe webhook handler
 ### WebSocket
 ```
 WS     /ws/processing                 → Real-time processing status updates
+```
+
+### Health
+```
+GET    /health                        → API health check
 ```
 
 ---

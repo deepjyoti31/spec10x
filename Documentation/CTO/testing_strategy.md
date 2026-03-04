@@ -2,7 +2,7 @@
 
 > **Owner:** CTO  
 > **Last Updated:** Feb 26, 2026  
-> **Status:** Day 4 complete, Day 5 pending (Sprint: Feb 24–28)
+> **Status:** Day 4 complete, Day 5 pending (Sprint: Feb 23–28)
 
 ---
 
@@ -83,7 +83,7 @@ pytest tests/ --cov=app --cov-report=term-missing
 | `tests/test_api_ask.py` | Ask question, list conversations, get conversation | `/api/ask/*` |
 | `tests/test_api_export.py` | Markdown export (all insights, single interview) | `/api/export/*` |
 | `tests/test_api_billing.py` | Usage fetch, limits, plan enforcement | `/api/billing/*` |
-| `tests/test_api_health.py` | Health check endpoint | `/api/health*` |
+| `tests/test_api_health.py` | Health check endpoint | `/health` |
 
 **How to Run:**
 
