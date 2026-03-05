@@ -113,6 +113,14 @@ async def process_interview(interview_id: str) -> dict:
                 insights_count=insights_count,
             )
 
+            from app.models import Notification
+            success_notification = Notification(
+                user_id=interview.user_id,
+                title="Interview Processed",
+                message=f"Successfully processed {interview.filename}. Found {insights_count} insights and {themes_count} themes."
+            )
+            db.add(success_notification)
+
             await db.commit()
 
             # Clean up temp file
@@ -141,6 +149,15 @@ async def process_interview(interview_id: str) -> dict:
                     if interview:
                         interview.status = InterviewStatus.error
                         interview.error_message = str(e)[:2000]
+
+                        from app.models import Notification
+                        error_notification = Notification(
+                            user_id=interview.user_id,
+                            title="Processing Failed",
+                            message=f"Failed to process {interview.filename}: {str(e)[:200]}"
+                        )
+                        err_db.add(error_notification)
+
                         await err_db.commit()
 
                         await publish_status(

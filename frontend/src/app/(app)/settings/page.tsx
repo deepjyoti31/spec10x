@@ -7,9 +7,11 @@ import { api } from '@/lib/api';
 import type { LimitsResponse } from '@/lib/api';
 
 export default function SettingsPage() {
-    const { user, token } = useAuth();
+    const { user, token, logout } = useAuth();
     const [limits, setLimits] = useState<LimitsResponse | null>(null);
     const [loading, setLoading] = useState(true);
+    const [isDeletingData, setIsDeletingData] = useState(false);
+    const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
     useEffect(() => {
         if (!token) return;
@@ -64,6 +66,39 @@ export default function SettingsPage() {
         return `${(bytes / 1024).toFixed(0)} KB`;
     };
 
+    const handleDeleteData = async () => {
+        if (!token) return;
+        if (!window.confirm("Are you SURE you want to delete all your data? This action cannot be undone.")) return;
+
+        setIsDeletingData(true);
+        try {
+            await api.deleteData(token);
+            alert("All your data has been successfully deleted.");
+        } catch (error) {
+            console.error(error);
+            alert("Failed to delete data. Please try again.");
+        } finally {
+            setIsDeletingData(false);
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (!token) return;
+        if (!window.confirm("Are you SURE you want to delete your account? This action is permanent and cannot be undone.")) return;
+
+        setIsDeletingAccount(true);
+        try {
+            await api.deleteAccount(token);
+            await logout(); // Sign out and redirect to home/login
+            alert("Your account has been successfully deleted.");
+        } catch (error) {
+            console.error(error);
+            alert("Failed to delete account. Please try again.");
+        } finally {
+            setIsDeletingAccount(false);
+        }
+    };
+
     return (
         <div className={styles.container}>
             <h1 className={styles.pageTitle}>Settings</h1>
@@ -95,7 +130,7 @@ export default function SettingsPage() {
                         <div className={styles.planRow}>
                             <span className={styles.currentPlan}>{planLabel(limits.plan)}</span>
                             {limits.plan === 'free' && (
-                                <button className={styles.upgradeBtn}>Upgrade to Pro</button>
+                                <button className={styles.upgradeBtn} disabled>Upgrade to Pro</button>
                             )}
                         </div>
                         <div className={styles.usageBars}>
@@ -144,14 +179,26 @@ export default function SettingsPage() {
                             <h4>Delete all data</h4>
                             <p>Permanently remove all interviews, insights, and themes</p>
                         </div>
-                        <button className={styles.dangerBtn}>Delete All Data</button>
+                        <button
+                            className={styles.dangerBtn}
+                            onClick={handleDeleteData}
+                            disabled={isDeletingData}
+                        >
+                            {isDeletingData ? 'Deleting...' : 'Delete All Data'}
+                        </button>
                     </div>
                     <div className={styles.dangerRow}>
                         <div className={styles.dangerText}>
                             <h4>Delete account</h4>
                             <p>Permanently delete your account and all associated data</p>
                         </div>
-                        <button className={styles.dangerBtn}>Delete Account</button>
+                        <button
+                            className={styles.dangerBtn}
+                            onClick={handleDeleteAccount}
+                            disabled={isDeletingAccount}
+                        >
+                            {isDeletingAccount ? 'Deleting...' : 'Delete Account'}
+                        </button>
                     </div>
                 </div>
             </div>

@@ -7,8 +7,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAsk } from '@/hooks/useAsk';
 import type { ChatMessage } from '@/hooks/useAsk';
 import type { AskCitation } from '@/lib/api';
+import { api } from '@/lib/api';
 
-const STARTER_QUESTIONS = [
+const DEFAULT_STARTERS = [
     'What are the top pain points?',
     'What do users love about the product?',
     'What features are most requested?',
@@ -21,6 +22,23 @@ export default function AskPage() {
     const [input, setInput] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const [starterQuestions, setStarterQuestions] = useState<string[]>(DEFAULT_STARTERS);
+
+    // Fetch dynamic starters
+    useEffect(() => {
+        if (!token) return;
+        const fetchStarters = async () => {
+            try {
+                const data = await api.getAskStarters(token);
+                if (data && data.length > 0) {
+                    setStarterQuestions(data);
+                }
+            } catch (err) {
+                console.error('Failed to parse starters', err);
+            }
+        };
+        fetchStarters();
+    }, [token]);
 
     // Auto-scroll to bottom when new messages arrive
     useEffect(() => {
@@ -79,7 +97,7 @@ export default function AskPage() {
                         answer includes citations.
                     </p>
                     <div className={styles.starterGrid}>
-                        {STARTER_QUESTIONS.map((q) => (
+                        {starterQuestions.map((q) => (
                             <button
                                 key={q}
                                 className={styles.starterCard}

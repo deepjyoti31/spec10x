@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import Input from '@/components/ui/Input';
 import Tooltip from '@/components/ui/Tooltip';
+import { api, NotificationResponse } from '@/lib/api';
 import styles from './NavBar.module.css';
 
 interface NavBarProps {
@@ -12,22 +13,55 @@ interface NavBarProps {
 }
 
 export default function NavBar({ onSearchClick }: NavBarProps = {}) {
-    const { user, logout } = useAuth();
+    const { user, token, logout } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
     const [showDropdown, setShowDropdown] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    // Close dropdown on outside click
+    // Notifications state
+    const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
+    const [showNotifications, setShowNotifications] = useState(false);
+    const notifDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Fetch notifications
+    useEffect(() => {
+        if (!token) return;
+        const fetchNotifications = async () => {
+            try {
+                const data = await api.getNotifications(token);
+                setNotifications(data);
+            } catch (err) {
+                console.error("Failed to fetch notifications", err);
+            }
+        };
+        fetchNotifications();
+    }, [token]);
+
+    // Close dropdowns on outside click
     useEffect(() => {
         function handleClickOutside(e: MouseEvent) {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
                 setShowDropdown(false);
             }
+            if (notifDropdownRef.current && !notifDropdownRef.current.contains(e.target as Node)) {
+                setShowNotifications(false);
+            }
         }
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    const handleNotificationClick = async (notif: NotificationResponse) => {
+        if (!notif.is_read && token) {
+            try {
+                await api.markNotificationRead(token, notif.id);
+                setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
+            } catch (err) {
+                console.error("Failed to mark notification as read", err);
+            }
+        }
+    };
 
     const isDashboard = pathname === '/dashboard' || pathname.startsWith('/interview/');
     const isAsk = pathname === '/ask';
@@ -74,11 +108,46 @@ export default function NavBar({ onSearchClick }: NavBarProps = {}) {
             {/* Right Side Actions */}
             <div className={styles.actions}>
                 {/* Notification Bell */}
-                <Tooltip content="Coming soon">
-                    <button className={styles.iconButton} aria-label="Notifications">
+                <div className={styles.notificationWrapper} ref={notifDropdownRef}>
+                    <button
+                        className={styles.iconButton}
+                        aria-label="Notifications"
+                        onClick={() => setShowNotifications(!showNotifications)}
+                    >
                         🔔
+                        {notifications.some(n => !n.is_read) && (
+                            <div className={styles.notificationBadge} />
+                        )}
                     </button>
-                </Tooltip>
+                    {showNotifications && (
+                        <div className={styles.notificationDropdown}>
+                            <div className={styles.notificationHeader}>
+                                Notifications
+                            </div>
+                            <div className={styles.notificationList}>
+                                {notifications.length === 0 ? (
+                                    <div className={styles.emptyNotifications}>
+                                        No new notifications
+                                    </div>
+                                ) : (
+                                    notifications.map(notif => (
+                                        <div
+                                            key={notif.id}
+                                            className={`${styles.notificationItem} ${!notif.is_read ? styles.notificationItemUnread : ''}`}
+                                            onClick={() => handleNotificationClick(notif)}
+                                        >
+                                            <div className={styles.notificationTitle}>{notif.title}</div>
+                                            <div className={styles.notificationMessage}>{notif.message}</div>
+                                            <div className={styles.notificationTime}>
+                                                {new Date(notif.created_at).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {/* Settings */}
                 <button

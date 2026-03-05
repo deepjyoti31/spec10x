@@ -7,11 +7,11 @@
 
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useInterviews } from '@/hooks/useInterviews';
 import { useThemes } from '@/hooks/useThemes';
-import { api, ThemeResponse, InterviewResponse } from '@/lib/api';
+import { api, ThemeResponse, InterviewResponse, InsightResponse } from '@/lib/api';
 import InterviewSidebar from '@/components/dashboard/InterviewSidebar';
 import ThemeArea from '@/components/dashboard/ThemeArea';
 import DetailPanel from '@/components/dashboard/DetailPanel';
@@ -25,7 +25,29 @@ export default function DashboardPage() {
 
     const [selectedTheme, setSelectedTheme] = useState<ThemeResponse | null>(null);
     const [selectedInterview, setSelectedInterview] = useState<InterviewResponse | null>(null);
+    const [themeInsights, setThemeInsights] = useState<InsightResponse[]>([]);
+    const [interviewInsights, setInterviewInsights] = useState<InsightResponse[]>([]);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+    useEffect(() => {
+        if (!token || !selectedTheme) {
+            setThemeInsights([]);
+            return;
+        }
+        api.getTheme(token, selectedTheme.id).then(data => {
+            setThemeInsights(data.insights || []);
+        }).catch(err => console.error('Failed to fetch theme details:', err));
+    }, [token, selectedTheme]);
+
+    useEffect(() => {
+        if (!token || !selectedInterview) {
+            setInterviewInsights([]);
+            return;
+        }
+        api.getInterview(token, selectedInterview.id).then(data => {
+            setInterviewInsights(data.insights || []);
+        }).catch(err => console.error('Failed to fetch interview details:', err));
+    }, [token, selectedInterview]);
 
     const handleThemeSelect = useCallback((theme: ThemeResponse) => {
         setSelectedTheme(theme);
@@ -102,6 +124,8 @@ export default function DashboardPage() {
                 <DetailPanel
                     selectedTheme={selectedTheme}
                     selectedInterview={selectedInterview}
+                    themeInsights={themeInsights}
+                    interviewInsights={interviewInsights}
                     totalInterviews={interviews.length}
                     totalThemes={activeThemes.length}
                 />

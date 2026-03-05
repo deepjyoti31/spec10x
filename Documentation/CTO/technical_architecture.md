@@ -271,6 +271,18 @@ ask_messages
 ├── citations (JSONB)              -- [{interview_id, quote, chunk_id}]
 ├── created_at
 
+-- Notifications
+notifications
+├── id (UUID, PK)
+├── user_id (FK → users)
+├── type (VARCHAR)                 -- e.g., 'success', 'error', 'info'
+├── title (VARCHAR)
+├── message (TEXT)
+├── is_read (BOOLEAN)
+├── related_entity_type (VARCHAR)
+├── related_entity_id (UUID)
+├── created_at
+
 -- Usage Tracking
 usage
 ├── id (UUID, PK)
@@ -411,8 +423,9 @@ User drops files
   7. Mark new/emerging themes with `is_new = true`
 - This is lightweight — runs in seconds for dozens of interviews
 
-**Step 7 — Notify** (WebSocket)
-- Push real-time updates to the frontend at every step
+**Step 7 — Notify** (WebSocket & DB)
+- Push real-time updates to the frontend at every step via WebSocket
+- Create persistent `Notification` records in PostgreSQL on success or failure of interview processing.
 - Frontend updates the upload modal's live insight preview and processing queue
 - When all files are done, enable the "View Insights" button
 
@@ -516,6 +529,13 @@ POST   /api/insights/:id/flag         → Flag as uncertain
 POST   /api/ask                       → Send question, get JSON response (SSE streaming deferred)
 GET    /api/ask/conversations         → List past conversations
 GET    /api/ask/conversations/:id     → Get conversation history
+GET    /api/ask/starters              → Generate dynamic starter questions via Vertex AI using recent user data
+```
+
+### Notifications
+```
+GET    /api/notifications             → List notifications for user
+PATCH  /api/notifications/:id/read    → Mark notification as read
 ```
 
 ### Export
@@ -524,9 +544,12 @@ GET    /api/export/insights           → Export all insights (markdown)
 GET    /api/export/interview/:id      → Export single interview + insights (markdown)
 ```
 
-### Auth & Billing
+### Auth & Billing & Users
 ```
 POST   /api/auth/verify               → Verify Firebase token, create/get user
+GET    /api/auth/me                   → Get current user
+DELETE /api/users/me/data             → Delete all user-associated data (Danger Zone)
+DELETE /api/users/me                  → Delete user account + Firebase Auth (Danger Zone)
 GET    /api/billing/usage             → Current usage stats
 POST   /api/billing/create-checkout   → Stripe checkout session
 POST   /api/billing/webhook           → Stripe webhook handler

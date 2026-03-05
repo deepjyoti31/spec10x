@@ -97,13 +97,6 @@ export default function ThemeCard({
                     negative={theme.sentiment_negative}
                 />
             </div>
-
-            {/* Placeholder for quotes — will be populated from theme detail API */}
-            <div className={styles.quotes}>
-                <div className={styles.quote}>
-                    <span>Theme details visible when selected…</span>
-                </div>
-            </div>
         </div>
     );
 }

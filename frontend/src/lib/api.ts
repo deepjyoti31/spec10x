@@ -95,6 +95,22 @@ class ApiClient {
     return this.request<UserResponse>('/api/auth/me', { token });
   }
 
+  // === Users ===
+
+  async deleteData(token: string) {
+    return this.request<void>('/api/users/me/data', {
+      method: 'DELETE',
+      token,
+    });
+  }
+
+  async deleteAccount(token: string) {
+    return this.request<void>('/api/users/me', {
+      method: 'DELETE',
+      token,
+    });
+  }
+
   // === Interviews ===
 
   async getUploadUrl(token: string, data: UploadUrlRequest) {
@@ -211,6 +227,10 @@ class ApiClient {
     });
   }
 
+  async getAskStarters(token: string) {
+    return this.request<string[]>('/api/ask/starters', { token });
+  }
+
   async listConversations(token: string) {
     return this.request<AskConversation[]>('/api/ask/conversations', { token });
   }
@@ -240,6 +260,19 @@ class ApiClient {
 
   async getLimits(token: string) {
     return this.request<LimitsResponse>('/api/billing/limits', { token });
+  }
+
+  // === Notifications ===
+
+  async getNotifications(token: string) {
+    return this.request<NotificationResponse[]>('/api/notifications', { token });
+  }
+
+  async markNotificationRead(token: string, id: string) {
+    return this.request<NotificationResponse>(`/api/notifications/${id}/read`, {
+      method: 'PATCH',
+      token,
+    });
   }
 
   // === Demo ===
@@ -450,6 +483,16 @@ export interface SampleDataResponse {
   interviews_created: number;
   insights_discovered: number;
   themes_created: number;
+}
+
+// --- Notifications ---
+
+export interface NotificationResponse {
+  id: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
 }
 
 // === Singleton export ===

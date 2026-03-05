@@ -61,6 +61,16 @@ async def ask_question(
     }
 
 
+@router.get("/starters", response_model=list[str])
+async def get_ask_starters(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get dynamic starter questions based on user's recent interviews."""
+    from app.services.qa import get_starters
+    return await get_starters(db=db, user_id=current_user.id)
+
+
 @router.get("/conversations", response_model=list[AskConversationResponse])
 async def list_conversations(
     current_user: User = Depends(get_current_user),

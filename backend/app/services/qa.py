@@ -313,3 +313,65 @@ def _suggest_followups(question: str, insights: list) -> list[str]:
 
     return selected[:3]
 
+
+async def get_starters(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+) -> list[str]:
+    """Generate dynamic starter questions based on recent interviews."""
+    settings = get_settings()
+    client = genai.Client(
+        vertexai=True,
+        project=settings.gcp_project_id,
+        location=settings.gcp_location
+    )
+
+    # Default starters as fallback
+    default_starters = [
+        "What are the top pain points?",
+        "What do users love about the product?",
+        "What features are most requested?",
+        "What's the overall sentiment?",
+    ]
+
+    try:
+        # Get some recent chunks to ground the questions
+        stmt = text("""
+            SELECT tc.content
+            FROM transcript_chunks tc
+            JOIN interviews i ON tc.interview_id = i.id
+            WHERE i.user_id = :user_id
+            ORDER BY tc.created_at DESC
+            LIMIT 15
+        """)
+        result = await db.execute(stmt, {"user_id": str(user_id)})
+        rows = result.fetchall()
+
+        if not rows:
+            return default_starters
+
+        context_parts = [r.content for r in rows]
+        context = "\\n---\\n".join(context_parts)
+
+        prompt = (
+            f"Based on the following excerpts from recent user interviews:\\n{context}\\n\\n"
+            f"Suggest exactly 4 insightful questions a product manager could ask to understand the user data better. "
+            f"Make them concise and specific to the topics discussed. "
+            f"Respond as a JSON array of 4 strings, e.g. [\\"q1\\", \\"q2\\", \\"q3\\", \\"q4\\"]"
+        )
+        response = client.models.generate_content(
+            model=settings.gemini_model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.7,
+            ),
+        )
+        starters = json.loads(response.text)
+        if isinstance(starters, list) and len(starters) >= 4:
+            return starters[:4]
+    except Exception as e:
+        logger.error(f"Failed to generate starters: {e}")
+
+    return default_starters
+

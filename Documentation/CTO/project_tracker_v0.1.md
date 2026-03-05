@@ -499,11 +499,13 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 
 ### 4.0 API Client Extensions
 - [x] Added `useAsk` hook for Q&A and conversations
-- [x] Added Ask endpoints (askQuestion, listConversations, getConversation)
+- [x] Added Ask endpoints (askQuestion, listConversations, getConversation, getAskStarters)
+- [x] Added Notifications endpoints (getNotifications, markNotificationRead)
+- [x] Added User endpoints (deleteData, deleteAccount)
 - [x] Added Export endpoints (exportInsights, exportInterview)
 - [x] Added Billing endpoints (getUsage, getLimits)
 - [x] Added Sample Data endpoint (loadSampleData)
-- [x] Added 9 corresponding TypeScript types
+- [x] Added corresponding TypeScript types
 
 **Dependencies:** 3.2 (API client)
 **Deliverable:** ✅ Quick navigation via keyboard
