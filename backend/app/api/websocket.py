@@ -34,8 +34,7 @@ async def processing_updates(
     {
         "interview_id": "...",
         "status": "analyzing",
-        "message": "Extracting themes...",
-        "insights_count": 3
+        "message": "Extracting themes..."
     }
     """
     # Authenticate

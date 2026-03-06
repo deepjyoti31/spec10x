@@ -24,11 +24,29 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
+            // Check if the user exists first to distinguish between missing user and wrong password
+            try {
+                const { exists } = await api.checkEmail(email);
+                if (!exists) {
+                    throw new Error("This email doesn't exist yet, please sign up first.");
+                }
+            } catch (err: any) {
+                if (err.message === "This email doesn't exist yet, please sign up first.") {
+                    throw err;
+                }
+                // Ignore other errors (e.g. network) and proceed to Firebase login attempt
+            }
+
             const { token } = await loginWithEmail(email, password);
             await api.verifyToken(token);
             router.push('/dashboard');
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : 'Login failed';
+            let message = err instanceof Error ? err.message : 'Login failed';
+
+            if (message.includes('auth/invalid-credential')) {
+                message = 'Incorrect password. Please try again.';
+            }
+
             setError(message);
         } finally {
             setLoading(false);

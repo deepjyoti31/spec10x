@@ -92,7 +92,6 @@ async def process_interview(interview_id: str) -> dict:
             await publish_status(
                 user_id, interview_id, "analyzing",
                 f"Found {insights_count} insights",
-                insights_count=insights_count,
             )
 
             # ── Step 4: Embed chunks ──
@@ -110,7 +109,6 @@ async def process_interview(interview_id: str) -> dict:
                 db, interview, InterviewStatus.done,
                 user_id,
                 f"Complete: {insights_count} insights, {themes_count} themes",
-                insights_count=insights_count,
             )
 
             from app.models import Notification
@@ -190,14 +188,12 @@ async def _update_status(
     status: InterviewStatus,
     user_id: str,
     message: str,
-    insights_count: int = 0,
 ) -> None:
     """Update interview status in DB and publish to Redis."""
     interview.status = status
     await db.flush()
     await publish_status(
         user_id, str(interview.id), status.value, message,
-        insights_count=insights_count,
     )
 
 

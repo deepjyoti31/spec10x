@@ -39,7 +39,6 @@ async def publish_status(
     interview_id: str,
     status: str,
     message: str,
-    insights_count: int = 0,
     extra: dict | None = None,
 ) -> None:
     """Publish a processing status update for a user's interview."""
@@ -48,7 +47,6 @@ async def publish_status(
         "interview_id": str(interview_id),
         "status": status,
         "message": message,
-        "insights_count": insights_count,
     }
     if extra:
         payload.update(extra)

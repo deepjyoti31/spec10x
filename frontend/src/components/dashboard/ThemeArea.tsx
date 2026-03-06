@@ -71,7 +71,7 @@ export default function ThemeArea({
                         Upload Interviews
                     </Button>
                     <div className={styles.formatPills}>
-                        {['.txt', '.md', '.pdf', '.docx', '.mp3', '.wav', '.mp4'].map((fmt) => (
+                        {['.txt', '.md', '.pdf', '.docx', '.mp3', '.wav'].map((fmt) => (
                             <span key={fmt} className={styles.formatPill}>{fmt}</span>
                         ))}
                     </div>

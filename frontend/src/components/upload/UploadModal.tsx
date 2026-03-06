@@ -28,7 +28,6 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
     const [queueFiles, setQueueFiles] = useState<QueueFile[]>([]);
     const [completedCount, setCompletedCount] = useState(0);
     const [errorCount, setErrorCount] = useState(0);
-    const [insightsCount, setInsightsCount] = useState(0);
     const [themesCount, setThemesCount] = useState(0);
 
     interface FileMetadata {
@@ -57,9 +56,6 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
                     // Track completion counts on transition
                     if (!wasDone && nowDone) {
                         setCompletedCount((c) => c + 1);
-                        if (latest.insights_count != null) {
-                            setInsightsCount((c) => c + latest.insights_count!);
-                        }
                     }
                     if (!wasDone && nowError) {
                         setErrorCount((c) => c + 1);
@@ -234,7 +230,6 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
         setQueueFiles([]);
         setCompletedCount(0);
         setErrorCount(0);
-        setInsightsCount(0);
         setFileMetadata({});
         onComplete();
     }, [onComplete]);
@@ -250,7 +245,6 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
                 setQueueFiles([]);
                 setCompletedCount(0);
                 setErrorCount(0);
-                setInsightsCount(0);
                 setFileMetadata({});
                 onClose();
             }
@@ -259,7 +253,6 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
             setQueueFiles([]);
             setCompletedCount(0);
             setErrorCount(0);
-            setInsightsCount(0);
             setFileMetadata({});
             onClose();
         }
@@ -298,30 +291,6 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
                                 />
                             )}
                         </div>
-
-                        {/* Live insight preview */}
-                        {queueFiles.length > 0 && (
-                            <div className={styles.rightCol}>
-                                <div className={styles.insightPreview}>
-                                    <div className={styles.insightHeader}>
-                                        <div className={styles.pulseDot} />
-                                        Insights discovered
-                                    </div>
-                                    {allDone ? (
-                                        <div className={styles.insightCard}>
-                                            <div className={styles.insightTheme}>Processing complete</div>
-                                            <div className={styles.insightQuote}>
-                                                {queueFiles.filter((f) => f.status === 'done').length} files analyzed successfully
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className={styles.emptyPreview}>
-                                            Insights will appear here as files are processed…
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
                     </div>
                 )}
 
@@ -383,7 +352,7 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
                         <div className={styles.completionIcon}>{errorCount > 0 && completedCount === 0 ? '❌' : errorCount > 0 ? '⚠️' : '✅'}</div>
                         <div className={styles.completionText}>
                             {completedCount > 0 && (
-                                <>{completedCount} interview{completedCount !== 1 ? 's' : ''} processed successfully. {insightsCount} insights discovered. </>
+                                <>{completedCount} interview{completedCount !== 1 ? 's' : ''} processed successfully.</>
                             )}
                             {errorCount > 0 && (
                                 <span style={{ color: 'var(--color-error, #ef4444)' }}>

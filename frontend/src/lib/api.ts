@@ -95,6 +95,13 @@ class ApiClient {
     return this.request<UserResponse>('/api/auth/me', { token });
   }
 
+  async checkEmail(email: string) {
+    return this.request<{ exists: boolean }>('/api/auth/check-email', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
   // === Users ===
 
   async deleteData(token: string) {

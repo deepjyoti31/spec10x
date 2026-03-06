@@ -4,13 +4,13 @@ import React, { useRef, useState, useCallback } from 'react';
 import styles from './DropZone.module.css';
 
 const ACCEPTED_TYPES = [
-    '.txt', '.md', '.pdf', '.docx', '.mp3', '.wav', '.mp4',
+    '.txt', '.md', '.pdf', '.docx', '.mp3', '.wav',
 ];
 
 const ACCEPTED_MIMES = [
     'text/plain', 'text/markdown', 'application/pdf',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'audio/mpeg', 'audio/wav', 'video/mp4',
+    'audio/mpeg', 'audio/wav',
 ];
 
 interface DropZoneProps {

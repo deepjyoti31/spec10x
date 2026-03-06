@@ -15,7 +15,6 @@ export interface ProcessingUpdate {
     status: 'queued' | 'transcribing' | 'analyzing' | 'done' | 'error';
     message?: string;
     progress?: number;
-    insights_count?: number;
 }
 
 interface UseWebSocketReturn {

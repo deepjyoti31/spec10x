@@ -11,6 +11,13 @@ from app.core.auth import verify_firebase_token, get_current_user
 from app.core.database import get_db
 from app.models import User
 from app.schemas import AuthVerifyRequest, UserResponse
+from pydantic import BaseModel, EmailStr
+
+class EmailCheckRequest(BaseModel):
+    email: EmailStr
+
+class EmailCheckResponse(BaseModel):
+    exists: bool
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
 
@@ -72,6 +79,18 @@ async def verify_token(
                 )
 
     return user
+
+
+@router.post("/check-email", response_model=EmailCheckResponse)
+async def check_email(
+    request: EmailCheckRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Check if an email is already registered."""
+    stmt = select(User).where(User.email == request.email)
+    result = await db.execute(stmt)
+    user = result.scalar_one_or_none()
+    return EmailCheckResponse(exists=user is not None)
 
 
 @router.get("/me", response_model=UserResponse)
