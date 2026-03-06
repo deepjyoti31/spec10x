@@ -1,2 +1,64 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-@import '../styles/design-tokens.css';
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+@import "tailwindcss";
+
+@theme {
+    --color-primary: #606bd2;
+    --color-primary-glow: #8A94EF;
+    --color-background-light: #f6f6f8;
+    --color-background-dark: #080808;
+    --color-accent: #00c2ff;
+    --color-surface: #121212;
+    --color-surface-lighter: #1e1e1e;
+    --color-border-color: #2a2a2a;
+
+    --font-display: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --animate-marquee: marquee 50s linear infinite;
+
+    --background-image-hero-glow: radial-gradient(circle at top, rgba(94, 106, 210, 0.15) 0%, transparent 60%);
+    --background-image-primary-gradient: linear-gradient(135deg, #606bd2 0%, #00c2ff 100%);
+    --background-image-grid-pattern: linear-gradient(to right, #2a2a2a 1px, transparent 1px), linear-gradient(to bottom, #2a2a2a 1px, transparent 1px);
+}
+
+@keyframes marquee {
+    0% {
+        transform: translateX(0%);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+@layer utilities {
+    .text-balance {
+        text-wrap: balance;
+    }
+
+    .grid-bg {
+        background-size: 40px 40px;
+        mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+        -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+    }
+
+    .mask-linear-fade {
+        mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+        -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+    }
+}
+
+details summary::-webkit-details-marker {
+    display: none;
+}
+
+details summary {
+    list-style: none;
+}
+
+body {
+    background-color: var(--color-background-dark);
+    color: #EDEDEF;
+    font-family: var(--font-display);
+}
