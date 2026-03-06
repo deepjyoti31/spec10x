@@ -109,7 +109,7 @@ export default function ProcessingQueue({ files, onRemove }: ProcessingQueueProp
                 <span>
                     {allDone
                         ? `All ${totalCount} files processed`
-                        : `Processing: ${doneCount} of ${totalCount} files`}
+                        : `Processing: ${Math.min(doneCount + 1, totalCount)} of ${totalCount} files`}
                 </span>
                 <div className={styles.overallProgress}>
                     <div className={styles.overallFill} style={{ width: `${overallProgress}%` }} />
