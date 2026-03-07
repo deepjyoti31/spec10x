@@ -3,23 +3,52 @@
 @import "tailwindcss";
 
 @theme {
-    --color-primary: #606bd2;
-    --color-primary-glow: #8A94EF;
+    --color-primary: #5E6AD2;
+    --color-primary-glow: rgba(94, 106, 210, 0.4);
     --color-background-light: #f6f6f8;
     --color-background-dark: #080808;
-    --color-accent: #00c2ff;
+    --color-accent: #00C2FF;
     --color-surface: #121212;
     --color-surface-lighter: #1e1e1e;
-    --color-border-color: #2a2a2a;
+    --color-border-color: rgba(255, 255, 255, 0.08);
 
     --font-display: 'Inter', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 
     --animate-marquee: marquee 50s linear infinite;
 
-    --background-image-hero-glow: radial-gradient(circle at top, rgba(94, 106, 210, 0.15) 0%, transparent 60%);
-    --background-image-primary-gradient: linear-gradient(135deg, #606bd2 0%, #00c2ff 100%);
-    --background-image-grid-pattern: linear-gradient(to right, #2a2a2a 1px, transparent 1px), linear-gradient(to bottom, #2a2a2a 1px, transparent 1px);
+    --background-image-hero-glow: radial-gradient(circle at top, rgba(94, 106, 210, 0.15) 0%, transparent 70%);
+    --background-image-primary-gradient: linear-gradient(135deg, #5E6AD2 0%, #00C2FF 100%);
+    --background-image-grid-pattern: linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+}
+
+@layer utilities {
+    .grid-lines {
+        background-image:
+            linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
+    }
+
+    .glass {
+        background: rgba(18, 18, 18, 0.7);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--color-border-color);
+    }
+
+    .hero-gradient {
+        background: radial-gradient(circle at top, rgba(94, 106, 210, 0.15) 0%, transparent 70%);
+    }
+
+    .text-glow {
+        text-shadow: 0 0 20px rgba(94, 106, 210, 0.3);
+    }
+
+    .primary-gradient-text {
+        background: linear-gradient(135deg, #5E6AD2 0%, #00C2FF 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
 }
 
 @keyframes marquee {
