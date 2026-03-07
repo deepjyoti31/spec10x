@@ -8,11 +8,16 @@
 'use client';
 
 import AppLayout from '@/components/layout/AppLayout';
+import '@/styles/design-tokens.css';
 
 export default function AppGroupLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    return <AppLayout>{children}</AppLayout>;
+    return (
+        <div className="dashboard-theme" style={{ minHeight: '100vh' }}>
+            <AppLayout>{children}</AppLayout>
+        </div>
+    );
 }
