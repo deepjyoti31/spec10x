@@ -99,8 +99,8 @@
 
   /* === Layout === */
   --nav-height: 64px;
-  --sidebar-width: 240px;
-  --detail-panel-width: 320px;
+  --sidebar-width: 20%;
+  --detail-panel-width: 25%;
 
   /* === Effects === */
   --radius-sm: 4px;
