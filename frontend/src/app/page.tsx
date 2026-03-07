@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 
 export default function LandingPage() {
   return (
@@ -22,10 +23,12 @@ export default function LandingPage() {
             <a className="text-sm font-medium text-slate-400 hover:text-white transition-colors" href="#pricing">Pricing</a>
           </div>
           <div className="flex items-center gap-6">
-            <a className="text-sm font-medium text-slate-400 hover:text-white transition-colors" href="#">Sign In</a>
-            <button className="h-9 px-5 rounded-lg bg-[#5E6AD2] hover:bg-[#5E6AD2]/90 text-white text-sm font-semibold transition-all shadow-[0_0_15px_rgba(94,106,210,0.3)]">
-              Sign Up
-            </button>
+            <Link className="text-sm font-medium text-slate-400 hover:text-white transition-colors" href="/login">Sign In</Link>
+            <Link href="/signup">
+              <button className="h-9 px-5 rounded-lg bg-[#5E6AD2] hover:bg-[#5E6AD2]/90 text-white text-sm font-semibold transition-all shadow-[0_0_15px_rgba(94,106,210,0.3)]">
+                Sign Up
+              </button>
+            </Link>
           </div>
         </div>
       </nav>
@@ -37,7 +40,7 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-6 text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#5E6AD2]/10 border border-[#5E6AD2]/20 text-[#5E6AD2] text-xs font-semibold uppercase tracking-widest mb-8">
               <span className="w-1.5 h-1.5 rounded-full bg-[#5E6AD2] animate-pulse"></span>
-              Enterprise Grade AI
+              Cursor for Product Managers
             </div>
             <h1 className="text-6xl lg:text-8xl font-black tracking-tighter text-white leading-[0.9] mb-8">
               Know What to Build.<br />
@@ -47,13 +50,17 @@ export default function LandingPage() {
               Capture every nuance of user discovery. Spec10x transforms messy transcripts into technical specs that engineering teams actually want to build.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button className="w-full sm:w-auto h-14 px-10 rounded-xl bg-gradient-to-r from-[#5E6AD2] to-[#00C2FF] text-white font-bold text-lg transition-all hover:scale-[1.02] shadow-[0_0_30px_rgba(94,106,210,0.4)]">
-                Join For Free
-              </button>
-              <button className="w-full sm:w-auto h-14 px-10 rounded-xl glass hover:bg-white/5 text-white font-semibold flex items-center justify-center gap-2 transition-all">
-                <span className="material-symbols-outlined">play_circle</span>
-                Watch Demo
-              </button>
+              <Link href="/signup" className="w-full sm:w-auto">
+                <button className="w-full h-14 px-10 rounded-xl bg-gradient-to-r from-[#5E6AD2] to-[#00C2FF] text-white font-bold text-lg transition-all hover:scale-[1.02] shadow-[0_0_30px_rgba(94,106,210,0.4)]">
+                  Join For Free
+                </button>
+              </Link>
+              <a href="#features" className="w-full sm:w-auto">
+                <button className="w-full h-14 px-10 rounded-xl glass hover:bg-white/5 text-white font-semibold flex items-center justify-center gap-2 transition-all">
+                  <span className="material-symbols-outlined">play_circle</span>
+                  How it Works
+                </button>
+              </a>
             </div>
           </div>
 
@@ -255,17 +262,14 @@ export default function LandingPage() {
             <h2 className="text-4xl lg:text-6xl font-black text-white mb-8 leading-tight">Ready to build the right thing?</h2>
             <p className="text-xl text-slate-400 mb-12">Join 500+ product teams who use Spec10x to bridge the gap between discovery and delivery.</p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <button className="w-full sm:w-auto h-14 px-12 rounded-xl bg-[#5E6AD2] hover:bg-[#5E6AD2]/90 text-white font-bold text-lg transition-all shadow-[0_0_30px_rgba(94,106,210,0.4)]">
-                Sign Up Now
-              </button>
+              <Link href="/signup" className="w-full sm:w-auto">
+                <button className="w-full h-14 px-12 rounded-xl bg-[#5E6AD2] hover:bg-[#5E6AD2]/90 text-white font-bold text-lg transition-all shadow-[0_0_30px_rgba(94,106,210,0.4)]">
+                  Sign up Now
+                </button>
+              </Link>
               <button className="w-full sm:w-auto h-14 px-12 rounded-xl glass hover:bg-white/5 text-white font-semibold flex items-center justify-center gap-2">
                 Talk to Sales
               </button>
-            </div>
-            <div className="mt-12 flex items-center justify-center gap-8 grayscale opacity-50">
-              <span className="font-bold text-xl">Linear</span>
-              <span className="font-bold text-xl">Github</span>
-              <span className="font-bold text-xl">Notion</span>
             </div>
           </div>
         </section>
@@ -303,7 +307,7 @@ export default function LandingPage() {
               </div>
             </div>
             <div className="mt-16 pt-8 border-t border-white/5 flex justify-between items-center text-xs text-slate-500">
-              <p>© 2024 Spec10x. All rights reserved.</p>
+              <p>© 2026 Spec10x. All rights reserved.</p>
               <div className="flex gap-6">
                 <a className="hover:text-white" href="#">Twitter</a>
                 <a className="hover:text-white" href="#">LinkedIn</a>
