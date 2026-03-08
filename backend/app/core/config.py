@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     # GCP / Vertex AI
     gcp_project_id: str = ""
     gcp_location: str = "us-central1"
-    gemini_model: str = "gemini-2.5-flash"  # Model for analysis + Q&A
+    gemini_model: str = "gemini-3.1-flash-lite-preview"  # Model for analysis + Q&A
     google_application_credentials: str = ""  # Path to GCP service account JSON
 
     model_config = {

@@ -40,7 +40,7 @@
   │  ┌──────────────────┐  ┌──────────────────┐  ┌─────────────┐  │
   │  │  Vertex AI       │  │  Vertex AI       │  │  FFmpeg     │  │
   │  │  Gemini 3.1      │  │  Chirp 3         │  │  (video →   │  │
-  │  │  Flash + Embed   │  │  (transcription)  │  │   audio)    │  │
+  │  │  Flash Lite      │  │  (transcription)  │  │   audio)    │  │
   │  └──────────────────┘  └──────────────────┘  └─────────────┘  │
   └────────────────────────────────────────────────────────────────┘
 ```
@@ -59,7 +59,7 @@
 | **Cache / Queue** | Redis 7.x | Job queue (via `arq`), caching, pub/sub for WebSocket coordination | ✅ |
 | **File Storage** | Google Cloud Storage | Cheap, reliable, direct upload from browser via signed URLs | GCP |
 | **Video → Audio** | FFmpeg (open-source) | Extract audio track from video files before transcription | ✅ |
-| **AI — Extraction / Q&A** | Gemini 3 Flash (via Vertex AI) | High quality for both extraction and user-facing answers. Ensures workflow simplicity. $0.50/1M input tokens | GCP |
+| **AI — Extraction / Q&A** | Gemini 3.1 Flash Lite (via Vertex AI global endpoint) | High quality for both extraction and user-facing answers. Ensures workflow simplicity. Optimized for cost and latency. | GCP |
 | **AI — Embeddings** | gemini-embedding-001 (via Vertex AI) | Top MTEB scores, 100+ languages, default 3072 dims (scalable to 768 via MRL) | GCP |
 | **AI — Transcription** | Chirp 3 (via Vertex AI STT V2) | GA (Oct 2025), speaker diarization, 85+ languages, built-in denoiser. $0.016/min | GCP |
 | **Auth** | Firebase Authentication | GCP-native, email + Google OAuth, free tier generous | GCP (free) |
@@ -70,8 +70,8 @@
 | **Monitoring** | Cloud Logging + Sentry (errors) | GCP-native logging + open-source error tracking | Sentry: ✅ |
 
 > **Model Selection Strategy:** We currently use a unified approach to simplify workflows:
-> - **Gemini 3 Flash** is used for all tasks (both bulk extraction and user-facing Q&A).
-> - **Future Optimization:** In the future, we may switch to a tiered model approach (using lighter models like Flash-Lite for background extraction) if cost optimization requires it, but for now, maintaining a single model reduces workflow and deployment complexity.
+> - **Gemini 3.1 Flash Lite** is used for all tasks (both bulk extraction and user-facing Q&A) via the **global Vertex AI endpoint** for maximum availability.
+> - **Future Optimization:** In the future, we may switch to a tiered model approach if cost optimization requires it, but for now, maintaining a single model reduces workflow and deployment complexity.
 
 > **Embedding Dimensions:** gemini-embedding-001 defaults to 3072 dimensions but supports Matryoshka Representation Learning (MRL) — we can set output dimensions to 768 to reduce storage and improve pgvector query speed with minimal quality loss. This is a config parameter, not a code change.
 
@@ -374,7 +374,7 @@ User drops files
 - WebSocket push: "File X: Transcription complete"
 
 **Step 4 — Analyze** (background worker, Gemini call)
-- Send full transcript to **Gemini 3 Flash** via Vertex AI with a structured extraction prompt
+- Send full transcript to **Gemini 3.1 Flash Lite** via Vertex AI with a structured extraction prompt
 - We use the same high-quality model here as in the Q&A step to avoid workflow fragmentation.
 - Prompt asks for JSON output:
 
@@ -456,7 +456,7 @@ User question: "What do users think about onboarding?"
          │
          ▼
 ┌──────────────────┐
-│ 4. Generate      │  → Vertex AI Gemini 3 Flash (higher quality for user-facing answers):
+│ 4. Generate      │  → Vertex AI Gemini 3.1 Flash Lite (higher quality for user-facing answers):
 │    answer        │    System: "You are an interview analyst..."
 │                  │    Context: [10 transcript chunks with sources]
 │                  │    User: "What do users think about onboarding?"

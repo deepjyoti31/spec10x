@@ -354,10 +354,10 @@ async def get_starters(
         context = "\\n---\\n".join(context_parts)
 
         prompt = (
-            f"Based on the following excerpts from recent user interviews:\\n{context}\\n\\n"
+            f"Based on the following excerpts from recent user interviews:\n{context}\n\n"
             f"Suggest exactly 4 insightful questions a product manager could ask to understand the user data better. "
             f"Make them concise and specific to the topics discussed. "
-            f"Respond as a JSON array of 4 strings, e.g. [\\"q1\\", \\"q2\\", \\"q3\\", \\"q4\\"]"
+            f'Respond as a JSON array of 4 strings, e.g. ["q1", "q2", "q3", "q4"]'
         )
         response = client.models.generate_content(
             model=settings.gemini_model,
