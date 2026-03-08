@@ -74,7 +74,8 @@ export default function NavBar({ onSearchClick }: NavBarProps = {}) {
         <nav className={styles.nav}>
             {/* Logo */}
             <a href="/dashboard" className={styles.logo}>
-                <span className={styles.logoAccent}>Spec</span>10x
+                <img src="/assets/logos/spec10x_logo_transparent_1080.png" alt="Spec10x Logo" className={styles.navLogo} />
+                <span>Spec10x</span>
             </a>
 
             {/* Navigation Links */}
