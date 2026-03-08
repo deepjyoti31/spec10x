@@ -79,9 +79,18 @@ async def process_interview(interview_id: str) -> dict:
                 user_id, "Analyzing content..."
             )
 
+            # Fetch existing theme names so the LLM can reuse them
+            from app.models import Theme
+            stmt_themes = select(Theme.name).where(
+                Theme.user_id == interview.user_id,
+            )
+            theme_result = await db.execute(stmt_themes)
+            existing_theme_names = [row[0] for row in theme_result.all()]
+
             from app.services.analysis import analyze_transcript
             analysis_result = analyze_transcript(
                 transcript,
+                existing_themes=existing_theme_names if existing_theme_names else None,
             )
 
             # Save insights and speakers to DB

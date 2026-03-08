@@ -14,7 +14,7 @@ from google import genai
 from google.genai import types
 
 from app.core.config import get_settings
-from app.prompts.extraction import SYSTEM_PROMPT, USER_PROMPT_TEMPLATE, OUTPUT_SCHEMA
+from app.prompts.extraction import SYSTEM_PROMPT, EXISTING_THEMES_CONTEXT, USER_PROMPT_TEMPLATE, OUTPUT_SCHEMA
 
 logger = logging.getLogger(__name__)
 
@@ -112,20 +112,25 @@ THEME_KEYWORDS = {
 
 def analyze_transcript(
     transcript: str,
+    existing_themes: list[str] | None = None,
 ) -> AnalysisResult:
     """
     Analyze an interview transcript and extract structured insights.
 
     Args:
         transcript: Full text of the interview
+        existing_themes: Optional list of existing theme names to encourage reuse
 
     Returns:
         AnalysisResult with insights, speakers, summary, language
     """
-    return _real_analyze(transcript)
+    return _real_analyze(transcript, existing_themes=existing_themes)
 
 
-def _real_analyze(transcript: str) -> AnalysisResult:
+def _real_analyze(
+    transcript: str,
+    existing_themes: list[str] | None = None,
+) -> AnalysisResult:
     """
     Real analysis using Gemini. Sends the transcript with the extraction
     prompt and parses structured JSON output into AnalysisResult.
@@ -140,6 +145,12 @@ def _real_analyze(transcript: str) -> AnalysisResult:
     try:
         prompt = USER_PROMPT_TEMPLATE.format(transcript=transcript[:50000])  # Limit transcript length
 
+        # Build system prompt with existing theme context
+        system_prompt = SYSTEM_PROMPT
+        if existing_themes:
+            themes_list = "\n".join(f"- {t}" for t in existing_themes)
+            system_prompt += EXISTING_THEMES_CONTEXT.format(themes_list=themes_list)
+
         response = client.models.generate_content(
             model=settings.gemini_model,
             contents=prompt,
@@ -147,7 +158,7 @@ def _real_analyze(transcript: str) -> AnalysisResult:
                 response_mime_type="application/json",
                 response_schema=OUTPUT_SCHEMA,
                 temperature=0.2,
-                system_instruction=SYSTEM_PROMPT,
+                system_instruction=system_prompt,
             ),
         )
 
