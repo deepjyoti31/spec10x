@@ -79,7 +79,7 @@ export default function AskPage() {
             {/* Chat header */}
             <div className={styles.chatHeader}>
                 <div className={styles.chatHeaderLeft}>
-                    <h1>Ask Your Interviews ✨</h1>
+                    <h1>Ask Your Interviews</h1>
                     <p>Answers are grounded in your interview data</p>
                 </div>
                 <button className={styles.newChatBtn} onClick={startNewChat}>
@@ -90,7 +90,7 @@ export default function AskPage() {
             {/* Messages area */}
             {messages.length === 0 && !loading ? (
                 <div className={styles.emptyState}>
-                    <div className={styles.emptyIcon}>✨</div>
+                    {/* Removed empty icon ✨ */}
                     <h2>Ask anything about your interviews</h2>
                     <p>
                         Get AI-powered answers grounded in your actual customer data. Every

@@ -90,7 +90,7 @@ export default function NavBar({ onSearchClick }: NavBarProps = {}) {
                     href="/ask"
                     className={`${styles.navLink} ${isAsk ? styles.navLinkActive : ''}`}
                 >
-                    Ask ✨
+                    Ask
                 </a>
             </div>
 

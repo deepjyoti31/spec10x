@@ -14,7 +14,6 @@ interface InterviewSidebarProps {
     onUploadClick: () => void;
     sort: string;
     onSortChange: (sort: string) => void;
-    totalInsights?: number;
     totalThemes?: number;
 }
 
@@ -26,7 +25,6 @@ export default function InterviewSidebar({
     onUploadClick,
     sort,
     onSortChange,
-    totalInsights = 0,
     totalThemes = 0,
 }: InterviewSidebarProps) {
     const [filter, setFilter] = useState('');
@@ -140,7 +138,7 @@ export default function InterviewSidebar({
             {/* Stats Footer */}
             {!isEmpty && (
                 <div className={styles.statsFooter}>
-                    {interviews.length} interview{interviews.length !== 1 ? 's' : ''} · {totalInsights} insights · {totalThemes} themes
+                    {interviews.length} interview{interviews.length !== 1 ? 's' : ''} · {totalThemes} themes
                 </div>
             )}
         </div>

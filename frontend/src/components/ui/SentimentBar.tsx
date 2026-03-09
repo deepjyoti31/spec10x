@@ -43,9 +43,13 @@ export default function SentimentBar({
                     />
                 )}
             </div>
-            <span className={styles.tooltipContent}>
-                {pPct}% positive · {nPct}% neutral · {negPct}% negative
-            </span>
+            <div className={styles.labels}>
+                <span className={styles.label}>{pPct}% positive</span>
+                <span className={styles.dot}>·</span>
+                <span className={styles.label}>{nPct}% neutral</span>
+                <span className={styles.dot}>·</span>
+                <span className={styles.label}>{negPct}% negative</span>
+            </div>
         </div>
     );
 }

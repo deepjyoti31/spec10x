@@ -101,7 +101,6 @@ export default function DashboardPage() {
                     onUploadClick={() => setIsUploadModalOpen(true)}
                     sort={interviewSort}
                     onSortChange={setInterviewSort}
-                    totalInsights={0}
                     totalThemes={activeThemes.length + previousThemes.length}
                 />
 
