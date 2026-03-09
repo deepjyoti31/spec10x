@@ -154,7 +154,7 @@ async def _real_answer(
         emb_response = client.models.embed_content(
             model="gemini-embedding-001",
             contents=question,
-            config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY")
+            config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY", output_dimensionality=768)
         )
         if not emb_response.embeddings:
             raise ValueError("No embeddings returned")
