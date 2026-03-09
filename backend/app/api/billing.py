@@ -8,12 +8,12 @@ import uuid
 from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
-from app.models import User, Usage, PlanType
+from app.models import User, Usage, PlanType, Interview
 from app.schemas import UsageResponse
 
 router = APIRouter(prefix="/api/billing", tags=["Billing"])
@@ -55,23 +55,38 @@ async def get_limits(
     db: AsyncSession = Depends(get_db),
 ):
     """Get plan limits and current usage."""
+    # Monthly usage (QA queries)
     usage = await _get_or_create_usage(db, current_user.id)
+    
+    # Total / Storage usage (Dynamically calculated from interviews table)
+    stats_stmt = select(
+        func.count(Interview.id).label("interview_count"),
+        func.sum(Interview.file_size_bytes).label("total_bytes")
+    ).where(Interview.user_id == current_user.id)
+    
+    stats_result = await db.execute(stats_stmt)
+    stats = stats_result.one()
+    
+    interviews_count = stats.interview_count or 0
+    storage_bytes_used = stats.total_bytes or 0
+    
     limits = PLAN_LIMITS.get(current_user.plan, PLAN_LIMITS[PlanType.free])
 
     return {
         "plan": current_user.plan.value,
         "usage": {
-            "interviews_uploaded": usage.interviews_uploaded,
+            "interviews_uploaded": interviews_count,
             "qa_queries_used": usage.qa_queries_used,
-            "storage_bytes_used": usage.storage_bytes_used,
+            "storage_bytes_used": storage_bytes_used,
         },
         "limits": limits,
         "remaining": {
-            "interviews": max(0, limits["interviews_per_month"] - usage.interviews_uploaded),
+            "interviews": max(0, limits["interviews_per_month"] - interviews_count),
             "qa_queries": max(0, limits["qa_queries_per_month"] - usage.qa_queries_used),
-            "storage_bytes": max(0, limits["storage_bytes"] - usage.storage_bytes_used),
+            "storage_bytes": max(0, limits["storage_bytes"] - storage_bytes_used),
         },
     }
+
 
 
 # ─── Usage Helpers (usable from other services) ─────────

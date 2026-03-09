@@ -214,11 +214,13 @@
 
 /* Danger zone */
 .dangerCard {
-    padding: 20px;
+    padding: 24px;
     background: rgba(248, 113, 113, 0.04);
     border: 1px solid rgba(248, 113, 113, 0.2);
-    border-radius: 10px;
+    border-radius: 12px;
+    margin-bottom: 40px;
 }
+
 
 .dangerRow {
     display: flex;
@@ -268,4 +270,61 @@
     height: 200px;
     color: var(--text-secondary);
     font-size: 14px;
+}
+
+/* Modal Content Styling */
+.modalContent {
+    padding: 32px;
+}
+
+.modalContent h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 12px;
+}
+
+.modalContent p {
+    font-size: 15px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    margin: 0 0 24px;
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.cancelBtn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 200ms ease;
+}
+
+.cancelBtn:hover {
+    background: var(--bg-hover);
+}
+
+.confirmDeleteBtn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background: var(--danger);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 200ms ease;
+}
+
+.confirmDeleteBtn:hover {
+    opacity: 0.9;
 }

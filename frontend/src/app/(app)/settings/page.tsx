@@ -5,6 +5,7 @@ import styles from './settings.module.css';
 import { useAuth } from '@/hooks/useAuth';
 import { api } from '@/lib/api';
 import type { LimitsResponse } from '@/lib/api';
+import Modal from '@/components/ui/Modal';
 
 export default function SettingsPage() {
     const { user, token, logout } = useAuth();
@@ -12,6 +13,10 @@ export default function SettingsPage() {
     const [loading, setLoading] = useState(true);
     const [isDeletingData, setIsDeletingData] = useState(false);
     const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+    // Modal states
+    const [showDeleteDataModal, setShowDeleteDataModal] = useState(false);
+    const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
 
     useEffect(() => {
         if (!token) return;
@@ -68,24 +73,24 @@ export default function SettingsPage() {
 
     const handleDeleteData = async () => {
         if (!token) return;
-        if (!window.confirm("Are you SURE you want to delete all your data? This action cannot be undone.")) return;
-
         setIsDeletingData(true);
         try {
             await api.deleteData(token);
             alert("All your data has been successfully deleted.");
+            // Refresh limits after deletion
+            const data = await api.getLimits(token);
+            setLimits(data);
         } catch (error) {
             console.error(error);
             alert("Failed to delete data. Please try again.");
         } finally {
             setIsDeletingData(false);
+            setShowDeleteDataModal(false);
         }
     };
 
     const handleDeleteAccount = async () => {
         if (!token) return;
-        if (!window.confirm("Are you SURE you want to delete your account? This action is permanent and cannot be undone.")) return;
-
         setIsDeletingAccount(true);
         try {
             await api.deleteAccount(token);
@@ -96,6 +101,7 @@ export default function SettingsPage() {
             alert("Failed to delete account. Please try again.");
         } finally {
             setIsDeletingAccount(false);
+            setShowDeleteAccountModal(false);
         }
     };
 
@@ -138,7 +144,7 @@ export default function SettingsPage() {
                                 label="Interviews"
                                 used={limits.usage.interviews_uploaded}
                                 limit={limits.limits.interviews_per_month}
-                                unit="/mo"
+                                unit=" Total"
                             />
                             <UsageBar
                                 label="AI Q&A Queries"
@@ -181,7 +187,7 @@ export default function SettingsPage() {
                         </div>
                         <button
                             className={styles.dangerBtn}
-                            onClick={handleDeleteData}
+                            onClick={() => setShowDeleteDataModal(true)}
                             disabled={isDeletingData}
                         >
                             {isDeletingData ? 'Deleting...' : 'Delete All Data'}
@@ -194,7 +200,7 @@ export default function SettingsPage() {
                         </div>
                         <button
                             className={styles.dangerBtn}
-                            onClick={handleDeleteAccount}
+                            onClick={() => setShowDeleteAccountModal(true)}
                             disabled={isDeletingAccount}
                         >
                             {isDeletingAccount ? 'Deleting...' : 'Delete Account'}
@@ -202,9 +208,63 @@ export default function SettingsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Deletion Modals */}
+            <Modal
+                isOpen={showDeleteDataModal}
+                onClose={() => setShowDeleteDataModal(false)}
+                width={480}
+            >
+                <div className={styles.modalContent}>
+                    <h3>Delete all data?</h3>
+                    <p>Are you SURE you want to delete all your interviews, insights, and themes? This action cannot be undone.</p>
+                    <div className={styles.modalActions}>
+                        <button
+                            className={styles.cancelBtn}
+                            onClick={() => setShowDeleteDataModal(false)}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            className={styles.confirmDeleteBtn}
+                            onClick={handleDeleteData}
+                            disabled={isDeletingData}
+                        >
+                            {isDeletingData ? 'Deleting...' : 'Yes, Delete All Data'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal
+                isOpen={showDeleteAccountModal}
+                onClose={() => setShowDeleteAccountModal(false)}
+                width={480}
+            >
+                <div className={styles.modalContent}>
+                    <h3>Delete your account?</h3>
+                    <p>This will permanently delete your account and all associated data. You will be signed out immediately.</p>
+                    <div className={styles.modalActions}>
+                        <button
+                            className={styles.cancelBtn}
+                            onClick={() => setShowDeleteAccountModal(false)}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            className={styles.confirmDeleteBtn}
+                            onClick={handleDeleteAccount}
+                            disabled={isDeletingAccount}
+                        >
+                            {isDeletingAccount ? 'Deleting...' : 'Yes, Delete Account'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }
+
 
 // --- Usage bar sub-component ---
 

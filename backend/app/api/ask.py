@@ -45,7 +45,12 @@ async def ask_question(
         conversation_id=request.conversation_id,
     )
 
+    # Increment usage
+    from app.api.billing import increment_usage
+    await increment_usage(db, current_user.id, "qa_queries_used")
+
     return {
+
         "answer": response.answer,
         "citations": [
             {
