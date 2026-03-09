@@ -26,9 +26,9 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
 
     const [step, setStep] = useState<UploadStep>('upload');
     const [queueFiles, setQueueFiles] = useState<QueueFile[]>([]);
-    const [completedCount, setCompletedCount] = useState(0);
-    const [errorCount, setErrorCount] = useState(0);
-    const [themesCount, setThemesCount] = useState(0);
+    // Derived state for counts
+    const completedCount = queueFiles.filter(f => f.status === 'done').length;
+    const errorCount = queueFiles.filter(f => f.status === 'error').length;
 
     interface FileMetadata {
         speakerId: string | null;
@@ -49,23 +49,11 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
             prev.map((qf) => {
                 // Match by interview ID if we have one stored
                 if ((qf as QueueFile & { interviewId?: string }).interviewId === latest.interview_id) {
-                    const wasDone = qf.status === 'done' || qf.status === 'error';
-                    const nowDone = latest.status === 'done';
-                    const nowError = latest.status === 'error';
-
-                    // Track completion counts on transition
-                    if (!wasDone && nowDone) {
-                        setCompletedCount((c) => c + 1);
-                    }
-                    if (!wasDone && nowError) {
-                        setErrorCount((c) => c + 1);
-                    }
-
                     return {
                         ...qf,
-                        status: nowDone ? 'done' : nowError ? 'error' : latest.status,
-                        progress: nowDone || nowError ? 100 : latest.progress || qf.progress,
-                        error: nowError ? latest.message : undefined,
+                        status: latest.status === 'done' ? 'done' : latest.status === 'error' ? 'error' : latest.status,
+                        progress: latest.status === 'done' || latest.status === 'error' ? 100 : latest.progress || qf.progress,
+                        error: latest.status === 'error' ? latest.message : undefined,
                     } as QueueFile;
                 }
                 return qf;
@@ -228,8 +216,6 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
     const handleViewInsights = useCallback(() => {
         setStep('upload');
         setQueueFiles([]);
-        setCompletedCount(0);
-        setErrorCount(0);
         setFileMetadata({});
         onComplete();
     }, [onComplete]);
@@ -243,16 +229,12 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
             if (window.confirm('Files are still processing. Are you sure you want to close?')) {
                 setStep('upload');
                 setQueueFiles([]);
-                setCompletedCount(0);
-                setErrorCount(0);
                 setFileMetadata({});
                 onClose();
             }
         } else {
             setStep('upload');
             setQueueFiles([]);
-            setCompletedCount(0);
-            setErrorCount(0);
             setFileMetadata({});
             onClose();
         }
