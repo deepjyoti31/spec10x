@@ -36,6 +36,7 @@ async def chunk_and_embed(
         Number of chunks created
     """
     # Split into chunks
+    logger.info(f"Chunking transcript for interview {interview.id} ({len(transcript)} chars)")
     chunks = chunk_transcript(transcript)
 
     if not chunks:
@@ -43,9 +44,11 @@ async def chunk_and_embed(
         return 0
 
     # Generate embeddings
+    logger.info(f"Generating embeddings for {len(chunks)} chunks...")
     embeddings = _real_embeddings(chunks)
 
     # Store chunks in DB
+    logger.info(f"Storing chunks in database for interview {interview.id}")
     for i, (chunk_text, embedding) in enumerate(zip(chunks, embeddings)):
         chunk = TranscriptChunk(
             interview_id=interview.id,
@@ -56,7 +59,7 @@ async def chunk_and_embed(
         db.add(chunk)
 
     await db.flush()
-    logger.info(f"Stored {len(chunks)} chunks for interview {interview.id}")
+    logger.info(f"✅ Stored {len(chunks)} chunks for interview {interview.id}")
     return len(chunks)
 
 

@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.core.database import async_session_factory
+from app.core.database import get_session_factory
 from app.core.storage import download_file
 from app.core.pubsub import publish_status
 from app.models import Interview, InterviewStatus
@@ -38,7 +38,7 @@ async def process_interview(interview_id: str) -> dict:
     Returns:
         dict with processing results summary
     """
-    async with async_session_factory() as db:
+    async with get_session_factory()() as db:
         try:
             # Load interview
             stmt = select(Interview).where(
@@ -54,30 +54,41 @@ async def process_interview(interview_id: str) -> dict:
             user_id = str(interview.user_id)
 
             # ── Step 1: Download file ──
+            logger.info(f"Step 1: Downloading file for interview {interview_id}")
             await _update_status(
                 db, interview, InterviewStatus.transcribing,
                 user_id, "Downloading file..."
             )
 
             local_path = await _download_file(interview)
+            logger.info(f"✅ Downloaded to {local_path}")
 
             # ── Step 2: Extract text ──
+            logger.info(f"Step 2: Extracting text for interview {interview_id}")
             await publish_status(
                 user_id, interview_id, "transcribing",
                 f"Extracting text from {interview.filename}..."
             )
+            logger.info(f"📡 Published status: transcribing for interview {interview_id}")
+            logger.debug(f"Calling text extraction service for {interview.file_type} file.")
 
             from app.services.extraction import extract_text
             transcript = extract_text(local_path, interview.file_type)
+            logger.info(f"✅ Extracted {len(transcript)} characters")
+            logger.debug(f"Transcript extracted, length: {len(transcript)}")
 
             interview.transcript = transcript
             await db.flush()
+            logger.debug("Transcript saved to interview object and flushed to DB.")
 
             # ── Step 3: AI Analysis ──
+            logger.info(f"Step 3: AI Analysis for interview {interview_id}")
             await _update_status(
                 db, interview, InterviewStatus.analyzing,
                 user_id, "Analyzing content..."
             )
+            logger.info(f"📡 Published status: {InterviewStatus.analyzing.value} for interview {interview_id}")
+            logger.debug(f"Fetching existing themes for user {user_id} to guide analysis.")
 
             # Fetch existing theme names so the LLM can reuse them
             from app.models import Theme
@@ -92,6 +103,7 @@ async def process_interview(interview_id: str) -> dict:
                 transcript,
                 existing_themes=existing_theme_names if existing_theme_names else None,
             )
+            logger.info(f"✅ AI Analysis complete: {len(analysis_result.insights)} insights found")
 
             # Save insights and speakers to DB
             insights_count = await _save_analysis_results(
@@ -104,16 +116,44 @@ async def process_interview(interview_id: str) -> dict:
             )
 
             # ── Step 4: Embed chunks ──
-            from app.services.embeddings import chunk_and_embed
-            chunks_count = await chunk_and_embed(
-                db, interview, transcript,
-            )
+            logger.info(f"Step 4: Embedding chunks for interview {interview_id}")
+            from app.services.embeddings import chunk_transcript, _real_embeddings
+            from app.models import TranscriptChunk
+            # Split into chunks
+            logger.info(f"Chunking transcript for interview {interview.id} ({len(transcript)} chars)")
+            chunks = chunk_transcript(transcript)
+
+            if not chunks:
+                logger.warning(f"No chunks generated for interview {interview.id}")
+                chunks_count = 0
+            else:
+                # Generate embeddings
+                logger.info(f"Generating embeddings for {len(chunks)} chunks...")
+                embeddings = _real_embeddings(chunks)
+
+                # Store chunks in DB
+                logger.info(f"Storing chunks in database for interview {interview.id}")
+                for i, (chunk_text, embedding) in enumerate(zip(chunks, embeddings)):
+                    chunk = TranscriptChunk(
+                        interview_id=interview.id,
+                        chunk_index=i,
+                        content=chunk_text,
+                        embedding=embedding,
+                    )
+                    db.add(chunk)
+
+                await db.flush()
+                logger.info(f"✅ Stored {len(chunks)} chunks for interview {interview.id}")
+                chunks_count = len(chunks)
 
             # ── Step 5: Cross-interview synthesis ──
+            logger.info(f"Step 5: Synthesizing themes for user {user_id}")
             from app.services.synthesis import synthesize_themes
             themes_count = await synthesize_themes(db, interview.user_id)
+            logger.info(f"✅ Synthesis complete: {themes_count} themes")
 
             # ── Step 6: Mark done ──
+            logger.info(f"Step 6: Finalizing interview {interview_id}")
             await _update_status(
                 db, interview, InterviewStatus.done,
                 user_id,
@@ -133,6 +173,8 @@ async def process_interview(interview_id: str) -> dict:
             # Clean up temp file
             _cleanup(local_path)
 
+            logger.info(f"🚀 Processing pipeline FINISHED for interview {interview_id}")
+
             return {
                 "interview_id": interview_id,
                 "insights": insights_count,
@@ -147,7 +189,7 @@ async def process_interview(interview_id: str) -> dict:
 
             # Try to mark as error
             try:
-                async with async_session_factory() as err_db:
+                async with get_session_factory()() as err_db:
                     stmt = select(Interview).where(
                         Interview.id == uuid.UUID(interview_id)
                     )
@@ -213,6 +255,7 @@ async def _save_analysis_results(
 ) -> int:
     """Save extracted insights and speakers to the database."""
     from app.models import Insight, Speaker, InsightCategory
+    from app.services.synthesis import _normalize_theme_name
 
     # Save speakers
     speaker_map = {}

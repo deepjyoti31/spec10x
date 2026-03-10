@@ -6,6 +6,7 @@
  */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+console.debug(`[ApiClient] Configured with BASE_URL: ${API_BASE_URL}`);
 
 interface RequestOptions extends RequestInit {
   token?: string;

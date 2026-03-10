@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     minio_secret_key: str = "minioadmin"
     minio_bucket: str = "spec10x-uploads"
     minio_use_ssl: bool = False
+    gcs_bucket: str = "spec10x-uploads"
+    gcp_service_account_email: str = ""
 
     # Firebase Auth
     firebase_project_id: str = ""
@@ -38,7 +40,7 @@ class Settings(BaseSettings):
 
     # GCP / Vertex AI
     gcp_project_id: str = ""
-    gcp_location: str = "us-central1"
+    gcp_location: str = "global"
     gemini_model: str = "gemini-3.1-flash-lite-preview"  # Model for analysis + Q&A
     google_application_credentials: str = ""  # Path to GCP service account JSON
 
@@ -52,6 +54,11 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     settings = Settings()
+    # Debug: Print key settings to Cloud Run logs
+    import logging
+    temp_logger = logging.getLogger("app.config")
+    temp_logger.info(f"Loaded Settings: project={settings.gcp_project_id}, location={settings.gcp_location}, model={settings.gemini_model}")
+    
     # Push GOOGLE_APPLICATION_CREDENTIALS into the OS environment so that
     # google-auth / google-genai can discover it via Application Default
     # Credentials (ADC). pydantic-settings reads .env but does NOT export

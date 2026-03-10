@@ -19,8 +19,17 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
+import os
+
 # Target metadata for auto-generation
 target_metadata = Base.metadata
+
+# Override sqlalchemy.url if DATABASE_URL is set in environment
+db_url = os.environ.get("DATABASE_URL")
+if db_url:
+    # Escape % for ConfigParser interpolation
+    db_url = db_url.replace("%", "%%")
+    config.set_main_option("sqlalchemy.url", db_url)
 
 
 def run_migrations_offline() -> None:

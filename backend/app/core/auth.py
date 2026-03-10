@@ -77,13 +77,16 @@ def verify_firebase_token(token: str) -> Optional[dict]:
             "name": "Dev User",
         }
 
+    import time
+    server_time = time.time()
+    
     try:
         from firebase_admin import auth as firebase_auth
 
         decoded = firebase_auth.verify_id_token(token)
         return decoded
     except Exception as e:
-        logger.error(f"Token verification failed: {e}")
+        logger.error(f"Token verification failed: {e}. Server time: {server_time}")
         return None
 
 

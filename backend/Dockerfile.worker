@@ -26,4 +26,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Run the arq worker
-CMD ["python", "-m", "arq", "app.workers.worker.WorkerSettings"]
+# Run the worker with a health shim (needed for Cloud Run Services)
+CMD ["python", "app/workers/shim.py"]

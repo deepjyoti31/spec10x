@@ -76,6 +76,7 @@ async def synthesize_themes(
     lock_key = hash(str(user_id)) % (2**31)  # PostgreSQL advisory lock needs int
     try:
         await db.execute(text(f"SELECT pg_advisory_xact_lock({lock_key})"))
+        logger.trace(f"Acquired advisory lock {lock_key} for user {user_id}")
     except Exception as e:
         # Advisory locks may not be available in all environments (e.g., test DBs)
         logger.warning(f"Could not acquire advisory lock: {e}")
@@ -96,15 +97,23 @@ async def synthesize_themes(
         logger.info("No insights found — nothing to synthesize")
         return 0
 
+    logger.info(f"Found {len(insights)} insights to synthesize")
+    logger.debug(f"Insights fetched: {[i.id for i in insights]}")
+
     # ── Step 1: Group insights by normalized theme suggestion ──
     raw_groups: dict[str, list[Insight]] = defaultdict(list)
     for insight in insights:
         if insight.theme_suggestion:
             key = _normalize_theme_name(insight.theme_suggestion)
             raw_groups[key].append(insight)
+    
+    logger.info(f"Grouped into {len(raw_groups)} raw theme suggestions")
+    logger.debug(f"Raw groups: {[(k, [i.id for i in v]) for k, v in raw_groups.items()]}")
 
     # ── Step 2: Merge near-duplicate groups ──
     theme_groups = _merge_similar_groups(raw_groups)
+    logger.info(f"Merged into {len(theme_groups)} unique themes")
+    logger.debug(f"Merged groups: {[(k, [i.id for i in v]) for k, v in theme_groups.items()]}")
 
     # ── Step 3: Get existing themes for this user ──
     stmt = select(Theme).where(Theme.user_id == user_id)
