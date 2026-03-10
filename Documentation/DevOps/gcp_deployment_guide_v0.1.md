@@ -235,7 +235,7 @@ Run this exact command in your project root to apply migrations to production:
 
 ```powershell
 # 1. Set the production URL (notice the %40 for the @ in the password)
-$env:DATABASE_URL="postgresql://postgres:ikab5R*nTK*R%40rD@35.238.52.95:5432/spec10x"
+$env:DATABASE_URL="postgresql://postgres:[PASSWORD]@[ip]/spec10x"
 
 # 2. Go to backend and activate your virtual environment
 cd backend
