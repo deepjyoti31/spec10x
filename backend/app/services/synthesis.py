@@ -154,31 +154,26 @@ async def synthesize_themes(
             theme.sentiment_negative = round(negative, 2)
             theme.sentiment_neutral = round(neutral, 2)
             theme.last_new_activity = datetime.now(timezone.utc)
-            if len(unique_interviews) >= 2:
-                theme.status = ThemeStatus.active
+            theme.status = ThemeStatus.active
             # Register this group under the matched key for insight linking
             existing_themes[theme_key] = theme
         else:
-            # Create new theme (only if 2+ unique sources)
-            if len(unique_interviews) >= 2:
-                theme = Theme(
-                    user_id=user_id,
-                    name=best_name,
-                    description=_generate_theme_description(group_insights),
-                    mention_count=mention_count,
-                    sentiment_positive=round(positive, 2),
-                    sentiment_negative=round(negative, 2),
-                    sentiment_neutral=round(neutral, 2),
-                    is_new=True,
-                    last_new_activity=datetime.now(timezone.utc),
-                    status=ThemeStatus.active,
-                )
-                db.add(theme)
-                await db.flush()
-                existing_themes[theme_key] = theme
-            else:
-                # Signal (1 source) — leave insights unlinked to a theme
-                continue
+            # Create new theme (even with 1 source)
+            theme = Theme(
+                user_id=user_id,
+                name=best_name,
+                description=_generate_theme_description(group_insights),
+                mention_count=mention_count,
+                sentiment_positive=round(positive, 2),
+                sentiment_negative=round(negative, 2),
+                sentiment_neutral=round(neutral, 2),
+                is_new=True,
+                last_new_activity=datetime.now(timezone.utc),
+                status=ThemeStatus.active,
+            )
+            db.add(theme)
+            await db.flush()
+            existing_themes[theme_key] = theme
 
         # Link insights to this theme
         for ins in group_insights:
