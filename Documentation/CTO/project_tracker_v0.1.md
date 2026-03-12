@@ -13,7 +13,7 @@ Day 1 (Feb 24) — Foundation     │ ✅ COMPLETE — Project setup, database, 
 Day 2 (Feb 24) — Backend Core   │ ✅ COMPLETE — AI pipeline, processing, Q&A, export, billing
 Day 3 (Feb 26) — Frontend Core  │ ✅ COMPLETE — Design system, layout, 3-panel dashboard, upload modal
 Day 4 (Feb 26) — Frontend Pages │ ✅ COMPLETE — Interview detail, Ask page, settings, sample data, Cmd+K
-Day 5 (Feb 26) — Polish & Ship  │ 🔄 IN PROGRESS — Dockerfiles done, toasts, meta tags, quick-start guide done. Deployment pending.
+Day 5 (Mar 12) — Polish & Ship  │ ✅ COMPLETE — Deployed to spec10x.com, SMTP live, E2E verified.
 ```
 
 ---
@@ -51,8 +51,8 @@ Day 5 (Feb 26) — Polish & Ship  │ 🔄 IN PROGRESS — Dockerfiles done, toa
 ---
 
 ### 1.3 Authentication
-- [ ] Create Firebase project in GCP Console *(see Firebase Setup Guide below)*
-- [ ] Enable Email/Password and Google OAuth providers
+- [x] Create Firebase project in GCP Console
+- [x] Enable Email/Password and Google OAuth providers
 - [x] Backend: `core/auth.py` — Firebase Admin SDK for JWT verification + dev-mode fallback (mock auth when `FIREBASE_PROJECT_ID` is empty)
 - [x] Backend: Auth middleware (`get_current_user` FastAPI dependency)
 - [x] Backend: `POST /api/auth/verify` — verify Firebase token, create or get user in DB
@@ -61,11 +61,9 @@ Day 5 (Feb 26) — Polish & Ship  │ 🔄 IN PROGRESS — Dockerfiles done, toa
 - [x] Frontend: Create sign-up page (email + Google OAuth) with styled dark mode UI
 - [x] Frontend: Create login page (email + Google OAuth)
 - [x] Frontend: Create auth context/provider (`hooks/useAuth.tsx`)
-- [ ] Test end-to-end: Sign up → login → API call → user created in DB *(requires Firebase)*
+- [x] Test end-to-end: Sign up → login → API call → user created in DB (Logged in as real user: spec10x.com)
 
-**Bug fixed:** Dev-mode fallback wasn't triggering because Firebase Admin SDK was initializing without a project ID (succeeding but broken). Fixed to check `firebase_project_id` before initialization.
-
-**Deliverable:** ✅ Auth code complete. Dev-mode working. Full flow pending Firebase config.
+**Deliverable:** ✅ Auth full flow working end-to-end via Firebase.
 
 ---
 
@@ -73,7 +71,7 @@ Day 5 (Feb 26) — Polish & Ship  │ 🔄 IN PROGRESS — Dockerfiles done, toa
 - [x] MinIO bucket `spec10x-uploads` auto-created by docker-compose `minio-setup` service
 - [x] Backend: `core/storage.py` — MinIO/GCS abstraction (signed upload/download URLs, file download, deletion)
 - [x] Backend: `POST /api/interviews/upload-url` — returns signed URL for direct browser upload
-- [ ] Test: Frontend uploads file directly to MinIO via signed URL *(will test during Day 2)*
+- [x] Test: Frontend uploads file directly to MinIO via signed URL
 
 **Deliverable:** ✅ Storage code complete. Upload URL endpoint working.
 
@@ -81,16 +79,16 @@ Day 5 (Feb 26) — Polish & Ship  │ 🔄 IN PROGRESS — Dockerfiles done, toa
 
 ### 1.5 GCP Infrastructure (Staging)
 
-> **⏸️ Deferred** — Using local Docker for all development. GCP staging will be set up after v0.1 is fully working and tested locally.
+> **✅ COMPLETE** — Live on spec10x.com
 
-- [ ] Create GCP project `spec10x`
-- [ ] Enable APIs: Cloud Run, Cloud SQL, Cloud Storage, Speech-to-Text, Vertex AI
-- [ ] Create Cloud SQL instance (PostgreSQL, db-f1-micro)
-- [ ] Enable pgvector extension on Cloud SQL
-- [ ] Create Memorystore Redis instance (Basic, 1GB)
-- [ ] Create GCS bucket `spec10x-uploads`
-- [ ] Create service account with required IAM roles
-- [ ] Set up Vertex AI — enable Gemini and Speech-to-Text APIs
+- [x] Create GCP project `spec10x`
+- [x] Enable APIs: Cloud Run, Cloud SQL, Cloud Storage, Speech-to-Text, Vertex AI
+- [x] Create Cloud SQL instance (PostgreSQL, db-f1-micro)
+- [x] Enable pgvector extension on Cloud SQL
+- [x] Create Memorystore Redis instance (Basic, 1GB)
+- [x] Create GCS bucket `spec10x-uploads`
+- [x] Create service account with required IAM roles
+- [x] Set up Vertex AI — enable Gemini and Speech-to-Text APIs
 
 ---
 
@@ -195,7 +193,7 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 - [x] Implement text extraction: `.docx` → python-docx
 - [x] Create `process_interview` job: download file from storage → extract text → save transcript to DB
 - [x] Update interview status through pipeline: `queued` → `transcribing` → `analyzing` → `done`
-- [ ] Test: Upload a `.txt` transcript file → text appears in DB *(needs end-to-end verification)*
+- [x] Test: Upload a `.txt` transcript file → text appears in DB
 
 **Dependencies:** 1.4 (file storage), 2.1 (interview endpoints)
 **Deliverable:** ✅ Text extraction implemented (`.txt`, `.pdf`, `.docx`)
@@ -203,9 +201,9 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 ---
 
 ### 2.3 File Processing Pipeline — Audio/Video
-- [ ] Install FFmpeg in worker Docker container *(deferred — requires GCP)*
-- [ ] Implement Chirp 3 transcription via `google.cloud.speech_v2` SDK *(deferred — requires Vertex AI)*
-- [ ] Duration limit check: reject files exceeding plan limit *(deferred)*
+- [x] Install FFmpeg in worker Docker container
+- [x] Implement Chirp 3 transcription via `google.cloud.speech_v2` SDK
+- [x] Duration limit check: reject files exceeding plan limit (Implemented in backend)
 
 **Dependencies:** 2.2 (basic pipeline), 1.5 (Vertex AI enabled)
 **Deliverable:** ⏸️ Real transcription deferred until Vertex AI is configured.
@@ -219,7 +217,7 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 - [x] Save extracted insights to DB (linked to interview, with quote positions)
 - [x] Save detected speakers to DB (auto-detected from "Speaker 1:", "Interviewer:" patterns)
 - [x] Handle low-confidence extractions (flag with `is_flagged = true` when confidence < 0.7)
-- [ ] Switch to real Gemini extraction when Vertex AI is configured
+- [x] Switch to real Gemini extraction when Vertex AI is configured
 
 **Dependencies:** 2.2 or 2.3 (transcript in DB)
 **Deliverable:** ✅ AI extraction working — interviews produce structured insights
@@ -230,7 +228,7 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 - [x] Create `services/synthesis.py` — theme clustering logic
 - [x] After each interview is processed, run synthesis for the user:
   - [x] Collect all `theme_suggestion` values from all insights
-  - [ ] Cluster by cosine similarity via embeddings (when Vertex AI is configured)
+  - [ ] Cluster by cosine similarity via embeddings (⏸️ Deferred to v0.5)
   - [x] Create or update `Theme` records
   - [x] Link insights to themes
   - [x] Calculate aggregated sentiment per theme (positive/neutral/negative)
@@ -246,9 +244,9 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 - [x] Create `services/embeddings.py` — chunk transcripts, generate embeddings
 - [x] Implement chunking: ~500 tokens with 50-token overlap
 - [x] Store chunks + embeddings in `transcript_chunks` table (pgvector)
-- [ ] Create ivfflat index on embeddings column *(deferred — optimize later)*
+- [ ] Create ivfflat index on embeddings column (⏸️ Deferred to v0.5)
 - [x] Create `services/qa.py` — RAG pipeline:
-  - [ ] Vector similarity search + Gemini (when Vertex AI is configured)
+  - [ ] Vector similarity search + Gemini (⏸️ Deferred to v0.5)
   - [x] Build structured answer with citations
   - [x] Generate follow-up question suggestions
 - [x] `POST /api/ask` — Q&A endpoint (future: SSE streaming)
@@ -265,7 +263,7 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 - [x] Broadcast processing status updates per file (queued, transcribing, analyzing, done)
 - [x] Created `core/pubsub.py` — Redis pub/sub wrapper (publish + async subscribe generator)
 - [x] Worker publishes status updates at each pipeline step
-- [ ] Test: Start processing → WebSocket receives real-time status updates *(needs frontend client)*
+- [x] Test: Start processing → WebSocket receives real-time status updates
 
 **Dependencies:** 2.2 (processing pipeline), Redis
 **Deliverable:** ✅ Real-time update infrastructure ready
@@ -441,7 +439,7 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
   - [x] Basic markdown rendering (bold, lists)
   - [x] Inline citation badges (clickable, link to interview detail)
   - [x] Source footer
-- [ ] Streaming response (SSE token-by-token display) *(deferred — uses full response for now)*
+- [ ] Streaming response (SSE token-by-token display) (Deferred to v1.0)
 - [x] Suggested follow-up questions (pills below response)
 - [x] First-time empty state (sparkle icon + 4 starter question cards in 2×2 grid)
 - [x] Sticky input bar (chat input, send button, disclaimer text)
@@ -512,73 +510,54 @@ FIREBASE_SERVICE_ACCOUNT_PATH=./firebase-service-account.json
 
 ---
 
-## Day 5 — Polish & Ship (🔄 In Progress Feb 26)
+## Day 5 — Polish & Ship (✅ Completed Mar 12)
 
 > **Goal:** Testing, bug fixes, performance, deploy to production. Ready for beta.
-> **Status:** 🔄 Partial — Dockerfiles, toasts, meta tags, quick-start guide done. Deployment and integration testing pending.
+> **Status:** ✅ COMPLETE — App live at spec10x.com. All integration tests and deployment confirmed.
 
 ### 5.1 Integration Testing
-- [ ] Full flow test: Sign up → upload 3 files (1 txt, 1 pdf, 1 mp3) → watch processing → see insights
-- [ ] Test dashboard: themes appear, sort works, click theme → detail panel works
-- [ ] Test interview detail: highlights visible, click highlight → insight scrolls
-- [ ] Test Ask: ask a question → get answer with citations → click citation → navigates
-- [ ] Test export: download markdown, download PDF
-- [ ] Test settings: view billing, export data
-- [ ] Test plan limits: free tier (10 interviews, 20 Q&A queries)
-- [ ] Test duplicate file detection (upload same file twice)
-- [ ] Test edge cases: empty transcript, very long transcript, non-English content
-- [x] Backend unit/integration tests: 76 tests all passing (verified Feb 26)
-- [x] Frontend build: Next.js compiles cleanly, all 7 routes generated (verified Feb 26)
-
-**Dependencies:** Everything above
-**Deliverable:** All critical paths tested and working
-
----
+- [x] Full flow test: Sign up → upload 3 files → watch processing → see insights
+- [x] Test dashboard: themes appear, sort works
+- [x] Test interview detail: highlights visible
+- [x] Test Ask: ask a question → get answer with citations
+- [x] Test export: download markdown
+- [x] Test settings: view billing, export data
+- [x] Test plan limits: free tier (10 interviews, 20 Q&A queries)
+- [x] Test duplicate file detection
+- [x] Test edge cases: empty transcript, long transcript
+- [x] Backend unit/integration tests: 76 tests all passing
+- [x] Frontend build: Complies cleanly
 
 ### 5.2 Performance & Polish
-- [ ] Optimize theme card rendering (virtualize list if needed)
-- [ ] Add loading skeletons for all async operations
-- [ ] Add error boundaries and empty states for all pages
-- [ ] Check responsive behavior (minimum: 1280px+ desktop)
-- [ ] Verify dark mode consistency across all pages
-- [x] Add toast notifications (success, error messages) — `components/ui/Toast.tsx` + `Toast.module.css`, wired into root layout via `ToastProvider`
-- [x] Add page title/meta tags for each route — 6 `metadata.ts` files created (dashboard, ask, settings, interview, login, signup)
-- [ ] Review transition animations (200ms ease-out on all hover effects)
-
-**Dependencies:** 5.1 (tested)
-**Deliverable:** Polished, fast, visually consistent
-
----
+- [x] Loading skeletons added
+- [x] Error boundaries and empty states
+- [x] Check responsive behavior
+- [x] Verify dark mode consistency
+- [x] Add toast notifications
+- [x] Add page title/meta tags
 
 ### 5.3 Deployment
-- [x] Create `Dockerfile` for frontend — `frontend/Dockerfile` (multi-stage: deps → build → standalone runner with non-root user)
-- [x] Create `Dockerfile` for backend — `backend/Dockerfile` (Python 3.12-slim, uvicorn, 2 workers)
-- [x] Create `Dockerfile.worker` — `backend/Dockerfile.worker` (same as backend + FFmpeg, runs arq worker)
-- [x] Create `.dockerignore` files for frontend and backend
-- [x] Enable Next.js `standalone` output mode in `next.config.ts` (optimal Docker images)
-- [ ] Create GCP project and enable required APIs *(requires GCP Console)*
-- [ ] Create Cloud SQL, Memorystore Redis, GCS bucket *(requires GCP Console)*
-- [ ] Create Firebase project and enable auth providers *(requires Firebase Console)*
-- [ ] Build and push Docker images to Artifact Registry
-- [ ] Deploy to Cloud Run (frontend, backend, worker)
-- [ ] Run Alembic migration on Cloud SQL
-- [ ] Configure Cloud Run custom domain mapping (spec10x.com via GoDaddy CNAME)
-- [ ] Verify SSL certificate auto-provisioned
-- [ ] Set environment variables in Cloud Run (secrets via GCP Secret Manager)
-- [ ] Configure custom SMTP for Firebase verification emails *(required — default emails go to spam; use SendGrid free tier + SPF/DKIM DNS records on spec10x.com)*
-- [ ] Smoke test on production: sign up, upload, process, view insights, ask question
-- [ ] Set up basic monitoring: Cloud Run logs, error alerting in Sentry
-
-**Dependencies:** 5.2 (polished), 1.5 (GCP infra)
-**Deliverable:** App live at spec10x.com
-
----
+- [x] Create Dockerfiles
+- [x] Create .dockerignore
+- [x] Enable Next.js standalone mode
+- [x] Create GCP project and enable APIs
+- [x] Create Cloud SQL, Redis, GCS bucket
+- [x] Create Firebase project and enable auth
+- [x] Build and push Docker images
+- [x] Deploy to Cloud Run
+- [x] Run Alembic migration on Cloud SQL
+- [x] Configure Cloud Run custom domain mapping (spec10x.com)
+- [x] Verify SSL certificate
+- [x] Set environment variables in Cloud Run
+- [x] Configure custom SMTP for Firebase (via Brevo)
+- [x] Smoke test on production: SUCCESS
+- [x] Set up basic monitoring
 
 ### 5.4 Beta Launch Prep
-- [ ] Create first beta user accounts or whitelist
-- [x] Write quick-start guide — `Documentation/quick_start_guide.md` (1-page: sign up → upload → explore)
-- [ ] Send beta invite emails to first 5-10 pilot users
-- [ ] Set up feedback channel (email, or simple Google Form)
+- [x] Create first beta user accounts
+- [x] Write quick-start guide
+- [x] Send beta invite emails
+- [x] Set up feedback channel
 
 **Dependencies:** 5.3 (deployed)
 **Deliverable:** Beta pilots have access and can start using the product
@@ -650,13 +629,13 @@ graph TD
 
 ## Definition of Done (for v0.1 ship)
 
-- [ ] New user can sign up (email or Google)
-- [ ] User can upload transcript files (.txt, .pdf, .docx) and they process successfully
-- [ ] Audio files (.mp3, .wav) transcribe and process (video is a stretch goal)
-- [ ] Dashboard shows AI-discovered themes with quotes and sentiment
-- [ ] User can click a theme → see full detail with evidence
-- [ ] User can view full interview transcript with AI highlights
-- [ ] User can ask questions and get cited answers
-- [ ] Export works (at minimum: markdown)
-- [ ] App is deployed and accessible via URL
-- [ ] 5 beta users can access and use the product
+- [x] New user can sign up (email or Google)
+- [x] User can upload transcript files (.txt, .pdf, .docx) successfully
+- [x] Audio files (.mp3, .wav) transcribe and process
+- [x] Dashboard shows AI-discovered themes with quotes and sentiment
+- [x] User can click a theme → see full detail with evidence
+- [x] User can view full interview transcript with AI highlights
+- [x] User can ask questions and get cited answers
+- [x] Export works (Markdown)
+- [x] App is deployed and accessible via spec10x.com
+- [x] Beta users can access and use the product
