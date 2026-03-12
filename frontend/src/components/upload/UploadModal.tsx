@@ -3,12 +3,23 @@
 import React, { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useWebSocket, ProcessingUpdate } from '@/hooks/useWebSocket';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import DropZone from './DropZone';
 import ProcessingQueue, { QueueFile } from './ProcessingQueue';
 import styles from './UploadModal.module.css';
+
+/**
+ * Compute SHA-256 hash of a file using the Web Crypto API.
+ * Returns a hex string (64 chars).
+ */
+async function computeFileHash(file: File): Promise<string> {
+    const buffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 type UploadStep = 'upload' | 'processing' | 'metadata' | 'complete';
 
@@ -143,13 +154,17 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
                     prev.map((f) => f.id === qf.id ? { ...f, progress: 60 } : f)
                 );
 
-                // 3. Create interview record (triggers processing)
+                // 3. Compute SHA-256 file hash for duplicate detection
+                const fileHash = await computeFileHash(qf.file);
+
+                // 4. Create interview record (triggers processing)
                 const fileExt = qf.file.name.split('.').pop()?.toLowerCase() || 'txt';
                 const interview = await api.createInterview(token, {
                     filename: qf.file.name,
                     file_type: fileExt,
                     file_size_bytes: qf.file.size,
                     storage_path,
+                    file_hash: fileHash,
                 });
 
                 // Store interview ID for WebSocket matching
@@ -162,9 +177,13 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
                 // Real updates come via WebSocket — no fake completion
 
             } catch (err) {
+                const isDuplicate = err instanceof ApiError && err.status === 409;
+                const errorMessage = isDuplicate
+                    ? 'This file has already been uploaded'
+                    : err instanceof Error ? err.message : 'Upload failed';
                 setQueueFiles((prev) =>
                     prev.map((f) => f.id === qf.id
-                        ? { ...f, status: 'error' as const, progress: 100, error: err instanceof Error ? err.message : 'Upload failed' }
+                        ? { ...f, status: 'error' as const, progress: 100, error: errorMessage }
                         : f)
                 );
             }

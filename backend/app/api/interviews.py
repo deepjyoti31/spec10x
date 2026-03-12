@@ -94,10 +94,11 @@ async def create_interview(
             Interview.file_hash == request.file_hash,
         )
         existing = await db.execute(stmt)
-        if existing.scalar_one_or_none():
+        existing_interview = existing.scalar_one_or_none()
+        if existing_interview:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="A file with this content has already been uploaded",
+                detail=f"This file has already been uploaded as '{existing_interview.filename}'",
             )
 
     interview = Interview(
