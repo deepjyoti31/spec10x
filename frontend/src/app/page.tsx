@@ -36,15 +36,11 @@ export default function LandingPage() {
         <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
           <div className="absolute inset-0 hero-gradient -z-10"></div>
           <div className="max-w-7xl mx-auto px-6 text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#5E6AD2]/10 border border-[#5E6AD2]/20 text-[#5E6AD2] text-xs font-semibold uppercase tracking-widest mb-8">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#5E6AD2] animate-pulse"></span>
-              Cursor for Product Managers
-            </div>
             <h1 className="text-6xl lg:text-8xl font-black tracking-tighter text-white leading-[0.9] mb-8">
               Know What to Build.<br />
               <span className="primary-gradient-text">Before You Build It.</span>
             </h1>
-            <p className="text-lg lg:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-10">
+            <p className="text-base lg:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed mb-10">
               Capture every nuance of user discovery. Spec10x transforms messy transcripts into technical specs that engineering teams actually want to build.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -65,15 +61,15 @@ export default function LandingPage() {
           {/* Stats Section */}
           <div className="max-w-7xl mx-auto px-6 mt-32">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="p-8 rounded-2xl glass border-white/5 text-center group transition-all hover:border-[#5E6AD2]/30">
+              <div className="p-8 rounded-2xl text-center group transition-all">
                 <div className="text-5xl font-black text-white mb-3 text-glow">10x</div>
                 <div className="text-slate-400 font-semibold tracking-tight uppercase text-sm">Faster spec writing</div>
               </div>
-              <div className="p-8 rounded-2xl glass border-white/5 text-center group transition-all hover:border-[#00C2FF]/30">
+              <div className="p-8 rounded-2xl text-center group transition-all">
                 <div className="text-5xl font-black text-white mb-3 text-glow">90%</div>
                 <div className="text-slate-400 font-semibold tracking-tight uppercase text-sm">Intent capture accuracy</div>
               </div>
-              <div className="p-8 rounded-2xl glass border-white/5 text-center group transition-all hover:border-[#5E6AD2]/30">
+              <div className="p-8 rounded-2xl text-center group transition-all">
                 <div className="text-5xl font-black text-white mb-3 text-glow">3 hrs</div>
                 <div className="text-slate-400 font-semibold tracking-tight uppercase text-sm">Discovery-to-spec <span className="text-slate-500">(vs. 3 days)</span></div>
               </div>
@@ -88,20 +84,32 @@ export default function LandingPage() {
             <p className="text-slate-400">Stop losing context between Zoom calls and Jira tickets.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-8 rounded-xl glass border-white/5 space-y-4">
-              <span className="material-symbols-outlined text-[#5E6AD2]">summarize</span>
-              <h3 className="font-bold text-lg">Manual Synthesis</h3>
-              <p className="text-sm text-slate-400">Hours wasted re-reading notes and hunting for feature requests in Slack.</p>
+            <div className="p-4 rounded-3xl space-y-6 group transition-all text-center scale-110">
+              <div className="aspect-video w-full rounded-xl overflow-hidden border border-white/10 bg-white/5">
+                <img src="/assets/landing/Manual_Synthesis.jpeg" alt="Manual Synthesis" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+              </div>
+              <div className="px-4 space-y-2 pb-4">
+                <h3 className="font-bold text-xl text-white">Manual Synthesis</h3>
+                <p className="text-sm text-slate-400">Hours wasted re-reading notes and hunting for feature requests in Slack.</p>
+              </div>
             </div>
-            <div className="p-8 rounded-xl glass border-white/5 space-y-4">
-              <span className="material-symbols-outlined text-[#00C2FF]">heart_broken</span>
-              <h3 className="font-bold text-lg">Misalignment</h3>
-              <p className="text-sm text-slate-400">Engineering builds what you wrote, not what the customer actually meant.</p>
+            <div className="p-4 rounded-3xl space-y-6 group transition-all text-center scale-110">
+              <div className="aspect-video w-full rounded-xl overflow-hidden border border-white/10 bg-white/5">
+                <img src="/assets/landing/Misalignment.jpeg" alt="Misalignment" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+              </div>
+              <div className="px-4 space-y-2 pb-4">
+                <h3 className="font-bold text-xl text-white">Misalignment</h3>
+                <p className="text-sm text-slate-400">Engineering builds what you wrote, not what the customer actually meant.</p>
+              </div>
             </div>
-            <div className="p-8 rounded-xl glass border-white/5 space-y-4">
-              <span className="material-symbols-outlined text-[#5E6AD2]">timer</span>
-              <h3 className="font-bold text-lg">Discovery Debt</h3>
-              <p className="text-sm text-slate-400">Valuable insights trapped in Gong recordings that no one ever watches.</p>
+            <div className="p-4 rounded-3xl space-y-6 group transition-all text-center scale-110">
+              <div className="aspect-video w-full rounded-xl overflow-hidden border border-white/10 bg-white/5">
+                <img src="/assets/landing/Discovery_Debt.jpeg" alt="Discovery Debt" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+              </div>
+              <div className="px-4 space-y-2 pb-4">
+                <h3 className="font-bold text-xl text-white">Discovery Debt</h3>
+                <p className="text-sm text-slate-400">Valuable insights trapped in Gong recordings that no one ever watches.</p>
+              </div>
             </div>
           </div>
         </section>

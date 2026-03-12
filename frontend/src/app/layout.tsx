@@ -4,7 +4,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ToastProvider } from "@/components/ui/Toast";
 
 export const metadata: Metadata = {
-  title: "Spec10x — Interview Intelligence Platform",
+  title: "Spec10x - Cursor for Product Managers",
   description: "Upload customer interviews, get AI-powered insights in minutes. Discover themes, pain points, and feature requests automatically.",
 };
 
