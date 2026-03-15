@@ -40,6 +40,8 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
     // Derived state for counts
     const completedCount = queueFiles.filter(f => f.status === 'done').length;
     const errorCount = queueFiles.filter(f => f.status === 'error').length;
+    const duplicateCount = queueFiles.filter(f => f.error === 'This file has already been uploaded').length;
+    const actualErrorCount = errorCount - duplicateCount;
 
     interface FileMetadata {
         speakerId: string | null;
@@ -58,8 +60,9 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
 
         setQueueFiles((prev) =>
             prev.map((qf) => {
-                // Match by interview ID if we have one stored
-                if ((qf as QueueFile & { interviewId?: string }).interviewId === latest.interview_id) {
+                const extendedQf = qf as QueueFile & { interviewId?: string };
+                // Match by interview ID if we have one stored AND the message has one
+                if (latest.interview_id && extendedQf.interviewId === latest.interview_id) {
                     return {
                         ...qf,
                         status: latest.status === 'done' ? 'done' : latest.status === 'error' ? 'error' : latest.status,
@@ -350,22 +353,27 @@ export default function UploadModal({ isOpen, onClose, onComplete }: UploadModal
                 {/* Step: Complete */}
                 {step === 'complete' && (
                     <div className={styles.completion}>
-                        <div className={styles.completionIcon}>{errorCount > 0 && completedCount === 0 ? '❌' : errorCount > 0 ? '⚠️' : '✅'}</div>
+                        <div className={styles.completionIcon}>
+                            {actualErrorCount > 0 ? '⚠️' : (completedCount === 0 && errorCount > 0 ? '❌' : '✅')}
+                        </div>
                         <div className={styles.completionText}>
                             {completedCount > 0 && (
-                                <>{completedCount} interview{completedCount !== 1 ? 's' : ''} processed successfully.</>
+                                <p>{completedCount} interview{completedCount !== 1 ? 's' : ''} processed successfully.</p>
                             )}
-                            {errorCount > 0 && (
-                                <span style={{ color: 'var(--color-error, #ef4444)' }}>
-                                    {errorCount} interview{errorCount !== 1 ? 's' : ''} failed — click on the interview in the sidebar to see the error.
-                                </span>
+                            {duplicateCount > 0 && (
+                                <p>{duplicateCount} duplicate{duplicateCount !== 1 ? 's' : ''} skipped.</p>
+                            )}
+                            {actualErrorCount > 0 && (
+                                <p style={{ color: 'var(--color-error, #ef4444)' }}>
+                                    {actualErrorCount} interview{actualErrorCount !== 1 ? 's' : ''} failed — click on the interview in the sidebar to see the error.
+                                </p>
                             )}
                             {completedCount === 0 && errorCount === 0 && (
-                                <>Processing complete.</>
+                                <p>Processing complete.</p>
                             )}
                         </div>
                         <Button size="lg" onClick={handleViewInsights}>
-                            {errorCount > 0 && completedCount === 0 ? 'Close' : 'View Insights →'}
+                            {actualErrorCount > 0 && completedCount === 0 ? 'Close' : 'View Insights →'}
                         </Button>
                     </div>
                 )}

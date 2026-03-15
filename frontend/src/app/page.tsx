@@ -8,17 +8,18 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#080808] text-slate-100 font-['Inter'] antialiased selection:bg-[#5E6AD2]/30 overflow-x-hidden">
       {/* Navbar */}
       <nav className="fixed top-0 w-full z-50 glass border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <div className="size-8">
-              <img src="/assets/logos/spec10x_logo_transparent_1080.png" alt="Spec10x Logo" className="w-full h-full object-contain" />
+        <div className="w-full px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-12">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+              <div className="size-8">
+                <img src="/assets/logos/spec10x_logo_transparent_1080.png" alt="Spec10x Logo" className="w-full h-full object-contain" />
+              </div>
+              <span className="text-xl font-bold tracking-tight text-white">Spec10x</span>
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">Spec10x</span>
-          </div>
-          <div className="hidden md:flex items-center gap-8">
-            <a className="text-sm font-medium text-slate-400 hover:text-white transition-colors" href="#features">Features</a>
-            <a className="text-sm font-medium text-slate-400 hover:text-white transition-colors" href="#how-it-works">Process</a>
-            <a className="text-sm font-medium text-slate-400 hover:text-white transition-colors" href="#pricing">Pricing</a>
+            <div className="hidden md:flex items-center gap-8">
+              <a className="text-sm font-medium text-slate-400 hover:text-white transition-colors" href="#features">Features</a>
+              <a className="text-sm font-medium text-slate-400 hover:text-white transition-colors" href="#how-it-works">Process</a>
+            </div>
           </div>
           <div className="flex items-center gap-6">
             <Link className="text-sm font-medium text-slate-400 hover:text-white transition-colors" href="/login">Sign In</Link>
@@ -35,26 +36,47 @@ export default function LandingPage() {
         {/* Hero Section */}
         <section className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
           <div className="absolute inset-0 hero-gradient -z-10"></div>
-          <div className="max-w-7xl mx-auto px-6 text-center">
-            <h1 className="text-6xl lg:text-8xl font-black tracking-tighter text-white leading-[0.9] mb-8">
-              Know What to Build.<br />
-              <span className="primary-gradient-text">Before You Build It.</span>
-            </h1>
-            <p className="text-base lg:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed mb-10">
-              Capture every nuance of user discovery. Spec10x transforms messy transcripts into technical specs that engineering teams actually want to build.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/signup" className="w-full sm:w-auto">
-                <button className="w-full h-14 px-10 rounded-xl bg-gradient-to-r from-[#5E6AD2] to-[#00C2FF] text-white font-bold text-lg transition-all hover:scale-[1.02] shadow-[0_0_30px_rgba(94,106,210,0.4)]">
-                  Join For Free
-                </button>
-              </Link>
-              <a href="#features" className="w-full sm:w-auto">
-                <button className="w-full h-14 px-10 rounded-xl glass hover:bg-white/5 text-white font-semibold flex items-center justify-center gap-2 transition-all">
-                  <span className="material-symbols-outlined">play_circle</span>
-                  How it Works
-                </button>
-              </a>
+          <div className="w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-0 items-center">
+              {/* Left Content */}
+              <div className="lg:col-span-5 xl:col-span-6 flex justify-end px-6 lg:px-0">
+                <div className="max-w-2xl w-full lg:pr-16 text-center lg:text-left py-12">
+                  <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tighter text-white leading-[0.9] mb-8 text-balance">
+                    Know What to Build.<br />
+                    <span className="primary-gradient-text">Before You Build It.</span>
+                  </h1>
+                  <p className="text-base lg:text-lg text-slate-400 max-w-xl mx-auto lg:mx-0 leading-relaxed mb-10">
+                    Spec10x’s AI centralizes and analyzes your customer data to pinpoint the work that drives usage and revenue, so your team can build with confidence.
+                  </p>
+                  <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+                    <Link href="/signup" className="w-full sm:w-auto">
+                      <button className="w-full h-11 px-6 rounded-xl bg-white text-black font-bold text-sm transition-all hover:bg-slate-200">
+                        Try Spec10x Free
+                      </button>
+                    </Link>
+                    <a href="#features" className="w-full sm:w-auto">
+                      <button className="w-full h-11 px-6 rounded-xl glass hover:bg-white/5 text-white font-semibold flex items-center justify-center gap-2 transition-all border border-white/10 text-sm">
+                        <span className="material-symbols-outlined !text-lg">play_circle</span>
+                        How it Works
+                      </button>
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Visual */}
+              <div className="lg:col-span-7 xl:col-span-6 relative group">
+                <div className="relative glass-dark rounded-l-3xl overflow-hidden shadow-2xl transition-all duration-500">
+                  <img
+                    src="/assets/landing/spec10x_Hero.png"
+                    alt="Spec10x Platform Preview"
+                    className="w-full h-auto object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#080808]/20 to-transparent pointer-events-none"></div>
+                </div>
+                {/* Subtle Glow behind the image */}
+                <div className="absolute -inset-20 bg-[#5E6AD2]/5 blur-3xl -z-10 rounded-full opacity-50 group-hover:opacity-75 transition-opacity translate-x-1/2"></div>
+              </div>
             </div>
           </div>
 
@@ -62,15 +84,15 @@ export default function LandingPage() {
           <div className="max-w-7xl mx-auto px-6 mt-32">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="p-8 rounded-2xl text-center group transition-all">
-                <div className="text-5xl font-black text-white mb-3 text-glow">10x</div>
+                <div className="text-5xl font-black text-white mb-3 text-glow flex items-center justify-center gap-1"><span className="text-[#5E6AD2] text-3xl">↑</span>10x</div>
                 <div className="text-slate-400 font-semibold tracking-tight uppercase text-sm">Faster spec writing</div>
               </div>
               <div className="p-8 rounded-2xl text-center group transition-all">
-                <div className="text-5xl font-black text-white mb-3 text-glow">90%</div>
+                <div className="text-5xl font-black text-white mb-3 text-glow flex items-center justify-center gap-1"><span className="text-[#5E6AD2] text-3xl">↑</span>90%</div>
                 <div className="text-slate-400 font-semibold tracking-tight uppercase text-sm">Intent capture accuracy</div>
               </div>
               <div className="p-8 rounded-2xl text-center group transition-all">
-                <div className="text-5xl font-black text-white mb-3 text-glow">3 hrs</div>
+                <div className="text-5xl font-black text-white mb-3 text-glow flex items-center justify-center gap-1"><span className="text-[#5E6AD2] text-3xl">↑</span>3 hrs</div>
                 <div className="text-slate-400 font-semibold tracking-tight uppercase text-sm">Discovery-to-spec <span className="text-slate-500">(vs. 3 days)</span></div>
               </div>
             </div>
@@ -283,29 +305,19 @@ export default function LandingPage() {
         {/* Footer */}
         <footer className="border-t border-white/5 py-16 glass">
           <div className="max-w-7xl mx-auto px-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
-              <div className="col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div className="max-w-md">
                 <div className="flex items-center gap-2 mb-6">
                   <div className="size-7">
                     <img src="/assets/logos/spec10x_logo_transparent_1080.png" alt="Spec10x Logo" className="w-full h-full object-contain" />
                   </div>
                   <span className="text-lg font-bold text-white">Spec10x</span>
                 </div>
-                <p className="text-slate-400 max-w-xs text-sm">The world's first intelligence layer for product discovery and engineering alignment.</p>
+                <p className="text-slate-400 text-sm italic">"The world's first intelligence layer for product discovery and engineering alignment."</p>
               </div>
-              <div>
-                <h4 className="text-white font-bold mb-6 text-sm uppercase tracking-widest">Platform</h4>
-                <ul className="space-y-4 text-sm text-slate-400">
-                  <li><a className="hover:text-white transition-colors" href="#">Features</a></li>
-                  <li><a className="hover:text-white transition-colors" href="#">Integrations</a></li>
-                  <li><a className="hover:text-white transition-colors" href="#">Enterprise</a></li>
-                </ul>
-              </div>
-              <div>
+              <div className="flex flex-col md:items-end justify-center">
                 <h4 className="text-white font-bold mb-6 text-sm uppercase tracking-widest">Company</h4>
-                <ul className="space-y-4 text-sm text-slate-400">
-                  <li><Link className="hover:text-white transition-colors" href="/about">About</Link></li>
-                  <li><Link className="hover:text-white transition-colors" href="/careers">Careers</Link></li>
+                <ul className="flex items-center gap-8 text-sm text-slate-400">
                   <li><Link className="hover:text-white transition-colors" href="/privacy">Privacy</Link></li>
                   <li><Link className="hover:text-white transition-colors" href="/terms">Terms</Link></li>
                 </ul>
@@ -313,10 +325,6 @@ export default function LandingPage() {
             </div>
             <div className="mt-16 pt-8 border-t border-white/5 flex justify-between items-center text-xs text-slate-500">
               <p>© 2026 Spec10x. All rights reserved.</p>
-              <div className="flex gap-6">
-                <a className="hover:text-white" href="#">Twitter</a>
-                <a className="hover:text-white" href="#">LinkedIn</a>
-              </div>
             </div>
           </div>
         </footer>

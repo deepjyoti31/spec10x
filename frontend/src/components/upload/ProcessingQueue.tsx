@@ -48,7 +48,7 @@ const STATUS_CLASSES: Record<string, string> = {
 };
 
 export default function ProcessingQueue({ files, onRemove }: ProcessingQueueProps) {
-    const doneCount = files.filter((f) => f.status === 'done').length;
+    const doneCount = files.filter((f) => f.status === 'done' || f.status === 'error').length;
     const totalCount = files.length;
     const overallProgress = totalCount > 0 ? (doneCount / totalCount) * 100 : 0;
     const allDone = doneCount === totalCount;

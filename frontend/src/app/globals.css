@@ -36,6 +36,11 @@
         border: 1px solid var(--color-border-color);
     }
 
+    .glass-dark {
+        background: rgba(8, 8, 8, 0.5);
+        backdrop-filter: blur(8px);
+    }
+
     .hero-gradient {
         background: radial-gradient(circle at top, rgba(94, 106, 210, 0.15) 0%, transparent 70%);
     }
@@ -91,4 +96,8 @@ body {
     background-color: var(--color-background-dark);
     color: #EDEDEF;
     font-family: var(--font-display);
+}
+
+button {
+    cursor: pointer;
 }
