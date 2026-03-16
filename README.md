@@ -62,9 +62,11 @@ spec10x/
 ├── infra/                       # Infrastructure configs
 │   └── init-db.sql             # Enables pgvector extension
 │
-├── Documentation/               # Product & business docs
+├── Documentation/               # Product, business, QA, and ops docs
 │   ├── CEO/                    # Vision, business strategy
-│   └── CTO/                   # Architecture, product spec, project tracker
+│   ├── CTO/                    # Architecture, specs, tracker, v0.5 planning
+│   ├── DevOps/                 # Deployment guides and troubleshooting
+│   └── QA/                     # Testing strategy
 │
 ├── docker-compose.yml           # Local dev services (PostgreSQL, Redis, MinIO)
 ├── .env.example                 # Environment variable template
@@ -276,7 +278,7 @@ See `.env.example` for all available variables and their descriptions.
 
 ## 🧪 Running Tests
 
-See [Testing Strategy](Documentation/CTO/testing_strategy.md) for full details.
+See [Testing Strategy](Documentation/QA/testing_strategy.md) for current backend testing details.
 
 ```powershell
 # Backend (requires Docker services running)
@@ -284,9 +286,11 @@ cd backend
 .\.venv\Scripts\Activate.ps1
 pytest tests/ -v
 
-# Frontend
+# Frontend automated tests are not configured yet.
+# For now, rely on lint + production build:
 cd frontend
-npm test
+npm run lint
+npm run build
 ```
 
 ---
@@ -300,7 +304,8 @@ npm test
 | Technical Architecture | `Documentation/CTO/technical_architecture.md` |
 | Product Specification | `Documentation/CTO/v0.1_product_specification.md` |
 | Project Tracker | `Documentation/CTO/project_tracker_v0.1.md` |
-| Testing Strategy | `Documentation/CTO/testing_strategy.md` |
+| v0.5 Planning Draft | `Documentation/CTO/v0.5_planning.md` |
+| Testing Strategy | `Documentation/QA/testing_strategy.md` |
 
 ---
 
@@ -309,7 +314,7 @@ npm test
 | Version | Focus |
 |---|---|
 | **v0.1** ← *current* | Interview Intelligence — upload, extract, themes, Q&A |
-| **v0.5** | Integration connectors (Zendesk, Mixpanel, Salesforce) |
+| **v0.5** | Multi-source product intelligence — support, surveys, analytics, unified feed, prioritization |
 | **v0.8** | Auto-generated PRDs, wireframes, acceptance criteria |
 | **v1.0** | Full spec generation + PM tool sync (Jira, Linear) |
 

@@ -1,14 +1,14 @@
 # Spec10x — Business Strategy & Go-To-Market Plan
 
-> **Date:** February 23, 2026
-> **Stage:** Pre-launch (v0.1 MVP in development)
+> **Date:** March 15, 2026
+> **Stage:** Post-launch (v0.1 deployed, early beta)
 > **Founder:** Solo founder + AI coding agents
 
 ---
 
 ## 1. Executive Summary
 
-Spec10x is an **AI-native product management platform** — "Cursor for Product Management" — starting with **Interview Intelligence** (v0.1 MVP). It turns messy customer interviews into structured, actionable insights in minutes instead of days.
+Spec10x is an **AI-native product management platform** — "Cursor for Product Management" — currently live with **Interview Intelligence** (v0.1). It turns messy customer interviews into structured, actionable insights in minutes instead of days.
 
 This document covers the complete business strategy: **who we sell to, how we sell, when we sell, what we spend, what we earn, and how big the opportunity is.**
 
@@ -160,7 +160,7 @@ What Spec10x can realistically capture **in the first 12–18 months**.
 
 | Phase | Monthly Burn | Revenue | Net |
 |---|---|---|---|
-| **Pre-launch** (Now) | ~$110 | $0 | -$110 |
+| **Post-launch beta** (Now) | ~$110 | $0 | -$110 |
 | **Beta** (Month 1–3) | ~$150 | $60–$200 | -$90 to +$50 |
 | **Growth** (Month 3–6) | ~$200 | $500–$1.2K | +$300 to +$1K |
 | **Scale** (Month 6–12) | ~$300–$500 | $2K–$6K | +$1.5K to +$5.5K |
@@ -486,11 +486,11 @@ Create high-value content targeting PMs searching for solutions:
 
 ---
 
-## 12. Timeline — First 6 Months
+## 12. Timeline — Next 6 Months From Launch
 
 ```
-WEEK 1-2  │ Build & ship v0.1 MVP
-          │ Private beta with 5–10 hand-picked users
+WEEK 1-2  │ Stabilize launched v0.1
+          │ Onboard first beta users and collect feedback
           │
 MONTH 1   │ Iterate based on beta feedback
           │ Fix bugs, improve AI prompts
@@ -501,7 +501,7 @@ MONTH 2   │ Expand to 30–50 users
           │ Start content marketing (2 blog posts)
           │ Collect testimonials from beta users
           │
-MONTH 3   │ Product Hunt launch
+MONTH 3   │ Public launch push
           │ Enable Stripe payments (Pro + Business tiers)
           │ Target: 100 signups, 10–15 paid users
           │
@@ -528,7 +528,7 @@ Here are additional strategic considerations not covered in your original reques
 - **Data residency** — Some customers may require data to stay in specific regions
 
 ### 13.2 Customer Success & Onboarding
-- **Quick-start guide** — 1-page document for beta users
+- **Keep onboarding docs current** — lightweight in-product guidance and beta onboarding notes should evolve with the product
 - **Onboarding email sequence** — Day 0: Welcome + quick start. Day 1: "Did you upload your first interview?" Day 3: "Have you tried Ask?" Day 7: "Here's what other PMs are discovering"
 - **Feedback mechanism** — In-app feedback widget + monthly beta user calls
 

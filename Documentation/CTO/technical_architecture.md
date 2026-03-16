@@ -150,15 +150,16 @@ spec10x/
 │   │   ├── core/                # Config, auth, database setup
 │   │   └── prompts/             # Gemini prompt templates
 │   ├── alembic/                 # Database migrations
-│   └── tests/                   # 76 tests (unit + integration + pipeline)
+│   └── tests/                   # Backend unit + integration tests
 │
 ├── infra/                       # Infrastructure configs
 │   └── init-db.sql              # PostgreSQL init (pgvector extension)
 │
 ├── Documentation/               # Project documentation
-│   ├── CTO/                     # Technical docs
-│   ├── CEO/                     # Business & product docs
-│   └── quick_start_guide.md     # Beta tester onboarding guide
+│   ├── CEO/                     # Vision and business docs
+│   ├── CTO/                     # Technical docs, specs, tracker, planning
+│   ├── DevOps/                  # Deployment guides and troubleshooting
+│   └── QA/                      # Testing strategy
 │
 └── docker-compose.yml           # Local dev infra (PostgreSQL, Redis, MinIO)
 ```
@@ -413,15 +414,15 @@ User drops files
 
 **Step 6 — Cluster/Synthesize** (background worker)
 - After each new interview, re-run cross-interview synthesis
-- Algorithm:
+- Current algorithm:
   1. Get all `theme_suggestion` values from all insights for this user
-  2. Embed theme suggestions
-  3. Cluster by cosine similarity (threshold: 0.85)
-  4. For each cluster: create or update a `themes` row
+  2. Normalize theme names and remove generic noise terms
+  3. Merge near-duplicate suggestions with fuzzy matching
+  4. Create or update `themes` rows
   5. Link insights to themes
   6. Calculate sentiment aggregation per theme
   7. Mark new/emerging themes with `is_new = true`
-- This is lightweight — runs in seconds for dozens of interviews
+- This is lightweight and works well for v0.1 scale. Embedding-driven clustering remains a v0.5 improvement area.
 
 **Step 7 — Notify** (WebSocket & DB)
 - Push real-time updates to the frontend at every step via WebSocket
@@ -630,7 +631,7 @@ GET    /health                        → API health check
 ```
 git push to main
   → Cloud Build triggers
-  → Run tests (pytest backend, jest frontend)
+  → Run tests (pytest backend) + frontend lint/build
   → Build Docker images
   → Push to Artifact Registry
   → Deploy to Cloud Run (rolling update)
