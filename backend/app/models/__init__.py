@@ -22,6 +22,7 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     JSON,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -37,6 +38,11 @@ class PlanType(str, enum.Enum):
     free = "free"
     pro = "pro"
     business = "business"
+
+
+class WorkspaceKind(str, enum.Enum):
+    personal = "personal"
+    shared = "shared"
 
 
 class FileType(str, enum.Enum):
@@ -72,6 +78,54 @@ class ThemeStatus(str, enum.Enum):
 class MessageRole(str, enum.Enum):
     user = "user"
     assistant = "assistant"
+
+
+class SourceType(str, enum.Enum):
+    interview = "interview"
+    support = "support"
+    survey = "survey"
+    analytics = "analytics"
+
+
+class ConnectionMethod(str, enum.Enum):
+    native_upload = "native_upload"
+    api_token = "api_token"
+    csv_upload = "csv_upload"
+    oauth = "oauth"
+
+
+class SourceConnectionStatus(str, enum.Enum):
+    configured = "configured"
+    validating = "validating"
+    connected = "connected"
+    syncing = "syncing"
+    error = "error"
+    disconnected = "disconnected"
+
+
+class SyncRunType(str, enum.Enum):
+    backfill = "backfill"
+    incremental = "incremental"
+    manual = "manual"
+
+
+class SyncRunStatus(str, enum.Enum):
+    running = "running"
+    succeeded = "succeeded"
+    failed = "failed"
+
+
+class SignalKind(str, enum.Enum):
+    insight = "insight"
+    ticket = "ticket"
+    survey_response = "survey_response"
+    metric_window = "metric_window"
+
+
+class SignalStatus(str, enum.Enum):
+    active = "active"
+    hidden = "hidden"
+    error = "error"
 
 
 # ─── Models ──────────────────────────────────────────────
@@ -115,6 +169,287 @@ class User(Base):
     )
     notifications: Mapped[list["Notification"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
+    )
+    workspaces: Mapped[list["Workspace"]] = relationship(
+        back_populates="owner_user", cascade="all, delete-orphan"
+    )
+    created_source_connections: Mapped[list["SourceConnection"]] = relationship(
+        back_populates="created_by_user"
+    )
+
+
+class Workspace(Base):
+    __tablename__ = "workspaces"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")
+    )
+    name: Mapped[str] = mapped_column(String(255))
+    slug: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    kind: Mapped[WorkspaceKind] = mapped_column(
+        Enum(WorkspaceKind, name="workspace_kind"), default=WorkspaceKind.personal
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    owner_user: Mapped["User"] = relationship(back_populates="workspaces")
+    source_connections: Mapped[list["SourceConnection"]] = relationship(
+        back_populates="workspace", cascade="all, delete-orphan"
+    )
+    source_items: Mapped[list["SourceItem"]] = relationship(
+        back_populates="workspace", cascade="all, delete-orphan"
+    )
+    signals: Mapped[list["Signal"]] = relationship(
+        back_populates="workspace", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        Index("ix_workspaces_owner_kind", "owner_user_id", "kind"),
+    )
+
+
+class DataSource(Base):
+    __tablename__ = "data_sources"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    source_type: Mapped[SourceType] = mapped_column(
+        Enum(SourceType, name="source_type")
+    )
+    provider: Mapped[str] = mapped_column(String(100))
+    display_name: Mapped[str] = mapped_column(String(255))
+    connection_method: Mapped[ConnectionMethod] = mapped_column(
+        Enum(ConnectionMethod, name="connection_method")
+    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    source_connections: Mapped[list["SourceConnection"]] = relationship(
+        back_populates="data_source"
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "source_type", "provider", name="uq_data_sources_source_type_provider"
+        ),
+        Index("ix_data_sources_active_type", "is_active", "source_type"),
+    )
+
+
+class SourceConnection(Base):
+    __tablename__ = "source_connections"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE")
+    )
+    created_by_user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")
+    )
+    data_source_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("data_sources.id", ondelete="RESTRICT")
+    )
+    status: Mapped[SourceConnectionStatus] = mapped_column(
+        Enum(SourceConnectionStatus, name="source_connection_status"),
+        default=SourceConnectionStatus.configured,
+    )
+    secret_ref: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    config_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    last_synced_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_error_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    workspace: Mapped["Workspace"] = relationship(back_populates="source_connections")
+    created_by_user: Mapped["User"] = relationship(
+        back_populates="created_source_connections"
+    )
+    data_source: Mapped["DataSource"] = relationship(back_populates="source_connections")
+    sync_runs: Mapped[list["SyncRun"]] = relationship(
+        back_populates="source_connection",
+        cascade="all, delete-orphan",
+        order_by=lambda: SyncRun.started_at.desc(),
+    )
+    source_items: Mapped[list["SourceItem"]] = relationship(
+        back_populates="source_connection", cascade="all, delete-orphan"
+    )
+    signals: Mapped[list["Signal"]] = relationship(
+        back_populates="source_connection", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        Index("ix_source_connections_workspace_status", "workspace_id", "status"),
+        Index("ix_source_connections_data_source_status", "data_source_id", "status"),
+    )
+
+
+class SyncRun(Base):
+    __tablename__ = "sync_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    source_connection_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("source_connections.id", ondelete="CASCADE")
+    )
+    run_type: Mapped[SyncRunType] = mapped_column(
+        Enum(SyncRunType, name="sync_run_type")
+    )
+    status: Mapped[SyncRunStatus] = mapped_column(
+        Enum(SyncRunStatus, name="sync_run_status"), default=SyncRunStatus.running
+    )
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    cursor_in: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    cursor_out: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    records_seen: Mapped[int] = mapped_column(Integer, default=0)
+    records_created: Mapped[int] = mapped_column(Integer, default=0)
+    records_updated: Mapped[int] = mapped_column(Integer, default=0)
+    error_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    retry_of_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("sync_runs.id", ondelete="SET NULL"), nullable=True
+    )
+
+    source_connection: Mapped["SourceConnection"] = relationship(
+        back_populates="sync_runs"
+    )
+    retry_of_run: Mapped["SyncRun | None"] = relationship(
+        remote_side=lambda: SyncRun.id
+    )
+
+    __table_args__ = (
+        Index("ix_sync_runs_connection_status", "source_connection_id", "status"),
+        Index("ix_sync_runs_connection_started", "source_connection_id", "started_at"),
+    )
+
+
+class SourceItem(Base):
+    __tablename__ = "source_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE")
+    )
+    source_connection_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("source_connections.id", ondelete="CASCADE")
+    )
+    external_id: Mapped[str] = mapped_column(String(255))
+    source_record_type: Mapped[str] = mapped_column(String(100))
+    external_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    native_entity_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    native_entity_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
+    checksum: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    first_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    last_seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    workspace: Mapped["Workspace"] = relationship(back_populates="source_items")
+    source_connection: Mapped["SourceConnection"] = relationship(
+        back_populates="source_items"
+    )
+    signals: Mapped[list["Signal"]] = relationship(
+        back_populates="source_item", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "source_connection_id",
+            "external_id",
+            name="uq_source_items_connection_external_id",
+        ),
+        Index("ix_source_items_workspace_connection", "workspace_id", "source_connection_id"),
+    )
+
+
+class Signal(Base):
+    __tablename__ = "signals"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE")
+    )
+    source_connection_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("source_connections.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    source_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("source_items.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    source_type: Mapped[SourceType] = mapped_column(
+        Enum(SourceType, name="source_type")
+    )
+    provider: Mapped[str] = mapped_column(String(100))
+    signal_kind: Mapped[SignalKind] = mapped_column(
+        Enum(SignalKind, name="signal_kind")
+    )
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    title: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    content_text: Mapped[str] = mapped_column(Text)
+    author_or_speaker: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    sentiment: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    source_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    metadata_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    native_entity_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    native_entity_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
+    status: Mapped[SignalStatus] = mapped_column(
+        Enum(SignalStatus, name="signal_status"), default=SignalStatus.active
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    workspace: Mapped["Workspace"] = relationship(back_populates="signals")
+    source_connection: Mapped["SourceConnection | None"] = relationship(
+        back_populates="signals"
+    )
+    source_item: Mapped["SourceItem | None"] = relationship(back_populates="signals")
+
+    __table_args__ = (
+        Index("ix_signals_workspace_source_type", "workspace_id", "source_type"),
+        Index("ix_signals_workspace_occurred_at", "workspace_id", "occurred_at"),
     )
 
 

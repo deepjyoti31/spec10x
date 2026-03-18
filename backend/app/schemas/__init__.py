@@ -9,9 +9,14 @@ from pydantic import BaseModel, EmailStr
 
 from app.models import (
     PlanType,
+    ConnectionMethod,
     FileType,
     InterviewStatus,
     InsightCategory,
+    SourceConnectionStatus,
+    SourceType,
+    SyncRunStatus,
+    SyncRunType,
     ThemeStatus,
     MessageRole,
 )
@@ -202,3 +207,59 @@ class UsageResponse(BaseModel):
     storage_bytes_used: int
 
     model_config = {"from_attributes": True}
+
+
+# â”€â”€â”€ Source Foundation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+class DataSourceResponse(BaseModel):
+    id: uuid.UUID
+    source_type: SourceType
+    provider: str
+    display_name: str
+    connection_method: ConnectionMethod
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class SourceConnectionCreate(BaseModel):
+    data_source_id: uuid.UUID
+    secret_ref: Optional[str] = None
+    config_json: Optional[dict] = None
+
+
+class SyncRunResponse(BaseModel):
+    id: uuid.UUID
+    run_type: SyncRunType
+    status: SyncRunStatus
+    started_at: datetime
+    finished_at: Optional[datetime] = None
+    cursor_in: Optional[dict] = None
+    cursor_out: Optional[dict] = None
+    records_seen: int
+    records_created: int
+    records_updated: int
+    error_summary: Optional[str] = None
+    retry_of_run_id: Optional[uuid.UUID] = None
+
+    model_config = {"from_attributes": True}
+
+
+class SourceConnectionResponse(BaseModel):
+    id: uuid.UUID
+    workspace_id: uuid.UUID
+    created_by_user_id: uuid.UUID
+    status: SourceConnectionStatus
+    last_synced_at: Optional[datetime] = None
+    last_error_summary: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    data_source: DataSourceResponse
+
+    model_config = {"from_attributes": True}
+
+
+class SourceConnectionDetailResponse(SourceConnectionResponse):
+    sync_runs: list[SyncRunResponse] = []

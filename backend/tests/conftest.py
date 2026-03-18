@@ -30,6 +30,22 @@ TEST_USER_UID = "test-user-uid-001"
 TEST_USER_EMAIL = "test@spec10x.local"
 
 
+async def _get_or_create_test_user(session: AsyncSession) -> User:
+    stmt = select(User).where(User.firebase_uid == TEST_USER_UID)
+    result = await session.execute(stmt)
+    user = result.scalar_one_or_none()
+    if user is None:
+        user = User(
+            firebase_uid=TEST_USER_UID,
+            email=TEST_USER_EMAIL,
+            name="Test User",
+        )
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+    return user
+
+
 @pytest_asyncio.fixture
 async def client():
     """Async HTTP client. Auth is mocked so no real Firebase token is needed."""
@@ -54,19 +70,7 @@ async def client():
     async def _override_current_user():
         # Get a fresh session since the dependency may be called outside db override
         async with session_factory() as session:
-            stmt = select(User).where(User.firebase_uid == TEST_USER_UID)
-            result = await session.execute(stmt)
-            user = result.scalar_one_or_none()
-            if user is None:
-                user = User(
-                    firebase_uid=TEST_USER_UID,
-                    email=TEST_USER_EMAIL,
-                    name="Test User",
-                )
-                session.add(user)
-                await session.commit()
-                await session.refresh(user)
-            return user
+            return await _get_or_create_test_user(session)
 
     app.dependency_overrides[get_db] = _override_db
     app.dependency_overrides[get_current_user] = _override_current_user
@@ -78,6 +82,26 @@ async def client():
     app.dependency_overrides.clear()
     interviews_module._arq_pool = None
     await engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def db_session():
+    engine = create_async_engine(settings.database_url, echo=False)
+    session_factory = async_sessionmaker(
+        engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+    )
+
+    async with session_factory() as session:
+        yield session
+
+    await engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def test_user(db_session: AsyncSession):
+    return await _get_or_create_test_user(db_session)
 
 
 # ─── Helper: create data via API ─────────────────────────

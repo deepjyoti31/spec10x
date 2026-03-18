@@ -291,6 +291,45 @@ class ApiClient {
       token,
     });
   }
+  // === Sources & Integrations ===
+
+  async listDataSources(token: string) {
+    return this.request<DataSourceResponse[]>('/api/data-sources', { token });
+  }
+
+  async listSourceConnections(token: string) {
+    return this.request<SourceConnectionResponse[]>('/api/source-connections', { token });
+  }
+
+  async getSourceConnection(token: string, id: string) {
+    return this.request<SourceConnectionDetailResponse>(
+      `/api/source-connections/${id}`,
+      { token }
+    );
+  }
+
+  async createSourceConnection(token: string, data: SourceConnectionCreate) {
+    return this.request<SourceConnectionResponse>('/api/source-connections', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      token,
+    });
+  }
+
+  async disconnectSourceConnection(token: string, id: string) {
+    return this.request<SourceConnectionResponse>(`/api/source-connections/${id}`, {
+      method: 'DELETE',
+      token,
+    });
+  }
+
+  async listSyncRuns(token: string, connectionId: string, status?: string) {
+    const qs = status ? `?status=${status}` : '';
+    return this.request<SyncRunResponse[]>(
+      `/api/source-connections/${connectionId}/sync-runs${qs}`,
+      { token }
+    );
+  }
 }
 
 // === Error class ===
@@ -503,6 +542,68 @@ export interface NotificationResponse {
   created_at: string;
 }
 
+// --- Sources & Integrations ---
+
+export type SourceType = 'interview' | 'support' | 'survey' | 'analytics';
+export type ConnectionMethod = 'native_upload' | 'api_token' | 'csv_upload' | 'oauth';
+export type SourceConnectionStatus =
+  | 'configured'
+  | 'validating'
+  | 'connected'
+  | 'syncing'
+  | 'error'
+  | 'disconnected';
+export type SyncRunStatus = 'running' | 'succeeded' | 'failed';
+
+export interface DataSourceResponse {
+  id: string;
+  source_type: SourceType;
+  provider: string;
+  display_name: string;
+  connection_method: ConnectionMethod;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SourceConnectionResponse {
+  id: string;
+  workspace_id: string;
+  created_by_user_id: string;
+  status: SourceConnectionStatus;
+  last_synced_at?: string;
+  last_error_summary?: string;
+  created_at: string;
+  updated_at: string;
+  data_source: DataSourceResponse;
+}
+
+export interface SourceConnectionDetailResponse extends SourceConnectionResponse {
+  sync_runs: SyncRunResponse[];
+}
+
+export interface SourceConnectionCreate {
+  data_source_id: string;
+  secret_ref?: string;
+  config_json?: Record<string, unknown>;
+}
+
+export interface SyncRunResponse {
+  id: string;
+  run_type: string;
+  status: SyncRunStatus;
+  started_at: string;
+  finished_at?: string;
+  cursor_in?: Record<string, unknown>;
+  cursor_out?: Record<string, unknown>;
+  records_seen: number;
+  records_created: number;
+  records_updated: number;
+  error_summary?: string;
+  retry_of_run_id?: string;
+}
+
 // === Singleton export ===
 
 export const api = new ApiClient(API_BASE_URL);
+
