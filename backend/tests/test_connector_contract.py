@@ -64,7 +64,11 @@ class TestZendeskConnector:
         assert connector.base_url == "https://test-workspace.zendesk.com/api/v2"
 
     @pytest.mark.asyncio
-    async def test_validate_stub_succeeds(self, db_session, test_user):
+    async def test_validate_succeeds_with_mocked_api(self, db_session, test_user):
+        """Validate now calls the real Zendesk API — mock it to test flow."""
+        from unittest.mock import patch, AsyncMock
+        from httpx import Response, Request
+
         workspace = await get_or_create_default_workspace(db_session, test_user)
         await seed_default_data_sources(db_session)
 
@@ -80,11 +84,20 @@ class TestZendeskConnector:
             created_by_user=test_user,
             data_source=zendesk_source,
             secret_ref="projects/test/secrets/zd-token",
-            config_json={"subdomain": "test-workspace"},
+            config_json={"subdomain": "test-workspace", "email": "admin@test.com"},
         )
 
         connector = ZendeskConnector(db=db_session, connection=connection)
-        result = await connector.validate()
+
+        mock_response = Response(
+            200,
+            json={"user": {"email": "admin@test.com", "role": "admin"}},
+            request=Request("GET", "https://test-workspace.zendesk.com/api/v2/users/me.json"),
+        )
+
+        with patch("httpx.AsyncClient.get", new_callable=AsyncMock, return_value=mock_response):
+            result = await connector.validate()
+
         assert result is True
         assert connection.status == SourceConnectionStatus.connected
 

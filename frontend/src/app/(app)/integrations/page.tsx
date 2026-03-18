@@ -16,6 +16,7 @@ import {
     SourceConnectionStatus,
 } from '@/lib/api';
 import styles from './integrations.module.css';
+import ConnectModal from '@/components/integrations/ConnectModal';
 
 // ── Provider visual config ──────────────────────────────
 
@@ -96,6 +97,7 @@ export default function IntegrationsPage() {
     const [connections, setConnections] = useState<SourceConnectionResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [connectingSource, setConnectingSource] = useState<DataSourceResponse | null>(null);
 
     const fetchData = useCallback(async () => {
         if (!token) return;
@@ -329,7 +331,10 @@ export default function IntegrationsPage() {
                                                 Go to Dashboard
                                             </button>
                                         ) : (
-                                            <button className={styles.connectBtn}>
+                                            <button
+                                                className={styles.connectBtn}
+                                                onClick={() => setConnectingSource(source)}
+                                            >
                                                 Connect
                                             </button>
                                         )}
@@ -379,6 +384,18 @@ export default function IntegrationsPage() {
                     ))}
                 </div>
             </section>
+
+            {/* Connect Modal */}
+            {connectingSource && (
+                <ConnectModal
+                    source={connectingSource}
+                    onClose={() => setConnectingSource(null)}
+                    onConnected={() => {
+                        setConnectingSource(null);
+                        fetchData();
+                    }}
+                />
+            )}
         </div>
     );
 }

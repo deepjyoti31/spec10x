@@ -168,6 +168,50 @@ async def disconnect_connection(
     return connection
 
 
+@router.post(
+    "/source-connections/{connection_id}/validate",
+    response_model=SourceConnectionResponse,
+)
+async def validate_connection(
+    connection_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    workspace = await _get_user_workspace(current_user, db)
+
+    stmt = (
+        select(SourceConnection)
+        .where(
+            SourceConnection.id == connection_id,
+            SourceConnection.workspace_id == workspace.id,
+        )
+        .options(selectinload(SourceConnection.data_source))
+    )
+    result = await db.execute(stmt)
+    connection = result.scalar_one_or_none()
+
+    if connection is None:
+        raise HTTPException(status_code=404, detail="Source connection not found")
+
+    # Look up the connector from the registry
+    from app.connectors import get_connector
+    connector_cls = get_connector(
+        connection.data_source.source_type.value,
+        connection.data_source.provider,
+    )
+    if connector_cls is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No connector available for {connection.data_source.provider}",
+        )
+
+    connector = connector_cls(db=db, connection=connection)
+    await connector.validate()
+    await db.commit()
+    await db.refresh(connection)
+    return connection
+
+
 @router.get(
     "/source-connections/{connection_id}/sync-runs",
     response_model=list[SyncRunResponse],

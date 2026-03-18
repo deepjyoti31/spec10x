@@ -22,6 +22,7 @@ from app.api import (
     demo,
     notifications,
     sources,
+    survey_import,
 )
 
 settings = get_settings()
@@ -76,6 +77,7 @@ app.include_router(websocket.router)
 app.include_router(demo.router)
 app.include_router(notifications.router)
 app.include_router(sources.router)
+app.include_router(survey_import.router)
 
 
 @app.get("/health")

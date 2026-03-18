@@ -330,6 +330,43 @@ class ApiClient {
       { token }
     );
   }
+
+  async validateSourceConnection(token: string, connectionId: string) {
+    return this.request<SourceConnectionResponse>(
+      `/api/source-connections/${connectionId}/validate`,
+      { method: 'POST', token }
+    );
+  }
+
+  async validateSurveyCSV(token: string, file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${this.baseUrl}/api/survey-import/validate`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.detail || `Upload failed (${response.status})`);
+    }
+
+    return response.json();
+  }
+
+  async downloadSurveyTemplate(token: string): Promise<Blob> {
+    const response = await fetch(`${this.baseUrl}/api/survey-import/template`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to download template');
+    }
+
+    return response.blob();
+  }
 }
 
 // === Error class ===

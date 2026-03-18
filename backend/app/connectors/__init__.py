@@ -54,6 +54,10 @@ def _auto_discover() -> None:
         import app.connectors.zendesk  # noqa: F401
     except ImportError:
         logger.debug("Zendesk connector not available")
+    try:
+        import app.connectors.csv_import  # noqa: F401
+    except ImportError:
+        logger.debug("CSV import connector not available")
 
 
 _auto_discover()
