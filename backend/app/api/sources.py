@@ -274,3 +274,94 @@ async def get_sync_run(
     if sync_run is None:
         raise HTTPException(status_code=404, detail="Sync run not found")
     return sync_run
+
+
+@router.post(
+    "/source-connections/{connection_id}/backfill",
+    response_model=SyncRunResponse,
+)
+async def trigger_backfill(
+    connection_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Start a historical backfill for the given connection."""
+    workspace = await _get_user_workspace(current_user, db)
+
+    stmt = (
+        select(SourceConnection)
+        .where(
+            SourceConnection.id == connection_id,
+            SourceConnection.workspace_id == workspace.id,
+        )
+        .options(selectinload(SourceConnection.data_source))
+    )
+    result = await db.execute(stmt)
+    connection = result.scalar_one_or_none()
+
+    if connection is None:
+        raise HTTPException(status_code=404, detail="Source connection not found")
+
+    if connection.status not in {
+        SourceConnectionStatus.connected,
+        SourceConnectionStatus.error,
+    }:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Connection must be in 'connected' or 'error' state to backfill (current: {connection.status.value})",
+        )
+
+    from app.services.sync_orchestrator import run_backfill
+
+    sync_run = await run_backfill(
+        db, connection=connection, data_source=connection.data_source
+    )
+    await db.commit()
+    await db.refresh(sync_run)
+    return sync_run
+
+
+@router.post(
+    "/source-connections/{connection_id}/sync",
+    response_model=SyncRunResponse,
+)
+async def trigger_sync(
+    connection_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Trigger an incremental sync for the given connection."""
+    workspace = await _get_user_workspace(current_user, db)
+
+    stmt = (
+        select(SourceConnection)
+        .where(
+            SourceConnection.id == connection_id,
+            SourceConnection.workspace_id == workspace.id,
+        )
+        .options(selectinload(SourceConnection.data_source))
+    )
+    result = await db.execute(stmt)
+    connection = result.scalar_one_or_none()
+
+    if connection is None:
+        raise HTTPException(status_code=404, detail="Source connection not found")
+
+    if connection.status not in {
+        SourceConnectionStatus.connected,
+        SourceConnectionStatus.error,
+    }:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Connection must be in 'connected' or 'error' state to sync (current: {connection.status.value})",
+        )
+
+    from app.services.sync_orchestrator import run_incremental_sync
+
+    sync_run = await run_incremental_sync(
+        db, connection=connection, data_source=connection.data_source
+    )
+    await db.commit()
+    await db.refresh(sync_run)
+    return sync_run
+
