@@ -164,6 +164,14 @@ spec10x/
 └── docker-compose.yml           # Local dev infra (PostgreSQL, Redis, MinIO)
 ```
 
+### v0.5 Additions In The Current Codebase
+
+- frontend protected routes now include `/feed` and `/integrations` alongside dashboard, ask, interview detail, and settings
+- the feed UI lives in `frontend/src/app/(app)/feed/` and uses query-param state for filters and selected evidence
+- integrations UI now includes `frontend/src/components/integrations/ConnectModal.tsx` and `ConnectionDetailModal.tsx`
+- backend route modules now include `backend/app/api/feed.py`, `sources.py`, and `survey_import.py`
+- backend multi-source orchestration now lives in `backend/app/services/signals.py`, `sources.py`, and `sync_orchestrator.py`
+
 ---
 
 ## 4. Data Model (PostgreSQL)
@@ -307,6 +315,24 @@ CREATE INDEX ON interviews (user_id, status);
 CREATE INDEX ON interviews (file_hash);  -- duplicate detection
 CREATE INDEX ON themes (user_id, status);
 ```
+
+### v0.5 Multi-Source Addendum
+
+The current `v0.5` codebase extends the original interview-centric schema with a shared source foundation:
+
+- `workspaces` provide the durable container for connected and imported sources
+- `data_sources` stores provider metadata such as source type and provider id
+- `source_connections` stores connection status, secret reference, config, and last-sync state
+- `sync_runs` records backfill and incremental sync execution history
+- `source_items` deduplicates provider records before they are materialized into product-facing evidence
+- `signals` is the shared evidence table used by feed, source-aware themes, and Impact Score v1
+
+Important `signals` conventions in the implemented system:
+
+- native interview evidence is materialized as one active signal per non-dismissed insight via `native_entity_type` and `native_entity_id`
+- support and survey theme association is persisted in `signals.metadata_json.theme_match = { theme_id, strategy, score }`
+- interview-derived signals use `strategy = "native"`; support and survey signals use `strategy = "deterministic_v1"`
+- theme detail, feed detail, and urgency sort all read from the shared signal layer rather than source-specific query paths
 
 ---
 
@@ -512,9 +538,15 @@ POST   /api/demo/load-sample-data     → Populates DB with 3 sample interviews 
 
 ### Themes
 ```
-GET    /api/themes                    → List themes (sorted, paginated, top 10 + show more)
-GET    /api/themes/:id                → Theme detail (quotes, sources, segments)
+GET    /api/themes                    → List themes (supports `sort=urgency|frequency|sentiment|recency`)
+GET    /api/themes/:id                → Theme detail + source_breakdown + supporting_evidence + optional impact_score
 PATCH  /api/themes/:id                → Rename theme
+```
+
+### Feed
+```
+GET    /api/feed                      → Mixed-source evidence feed with `source`, `sentiment`, `date_from`, `date_to`
+GET    /api/feed/:id                  → Full normalized evidence detail for the selected signal
 ```
 
 ### Insights
@@ -523,6 +555,24 @@ POST   /api/insights                  → Manually add insight (user-created)
 PATCH  /api/insights/:id              → Edit category, title, theme assignment
 DELETE /api/insights/:id              → Dismiss insight (soft delete)
 POST   /api/insights/:id/flag         → Flag as uncertain
+```
+
+### Source Foundation And Survey Import
+```
+GET    /api/data-sources                              → List supported source definitions
+POST   /api/source-connections                        → Create a source connection
+GET    /api/source-connections                        → List workspace source connections
+GET    /api/source-connections/:id                    → Connection detail + sync runs
+DELETE /api/source-connections/:id                    → Disconnect source connection
+POST   /api/source-connections/:id/validate           → Validate connector credentials
+GET    /api/source-connections/:id/sync-runs          → List sync history for a connection
+GET    /api/source-connections/:id/sync-runs/:run_id  → Get one sync run
+POST   /api/source-connections/:id/backfill           → Trigger bounded historical backfill
+POST   /api/source-connections/:id/sync               → Trigger incremental sync
+GET    /api/survey-import/template                    → Download survey/NPS CSV template
+POST   /api/survey-import/validate                    → Validate CSV and return preview
+POST   /api/survey-import/confirm                     → Execute import and normalize rows into signals
+GET    /api/survey-import/history                     → List prior CSV imports with counts and status
 ```
 
 ### Ask (Q&A)
@@ -686,7 +736,7 @@ git push to main
 | Version | What Changes in the Stack |
 |---|---|
 | **v0.1** | Full stack as described above. Monolith backend, single DB |
-| **v0.5** | Add integration connectors (Zendesk, Mixpanel) as new `services/connectors/` modules. Add `data_sources` table. Same DB, same infra |
+| **v0.5** | Add the source foundation (`workspaces`, `data_sources`, `source_connections`, `sync_runs`, `source_items`, `signals`), Zendesk support sync, repeatable survey CSV import, `/api/feed`, source-aware theme detail, and Impact Score v1. Same DB and infra; more query paths now run through shared signals |
 | **v0.8** | Add spec generation service (new Gemini prompts). Add `specs`, `wireframes` tables. May need a dedicated worker pool for heavier AI tasks |
 | **v1.0** | Add PM tool sync (webhook endpoints), task export, roadmap data. Consider splitting workers into a separate service. May migrate pgvector to dedicated vector DB (Qdrant) if scale demands. Consider GKE if Cloud Run limits hit |
 

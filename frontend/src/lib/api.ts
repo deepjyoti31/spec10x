@@ -190,6 +190,27 @@ class ApiClient {
     });
   }
 
+  // === Feed ===
+
+  async listFeed(token: string, filters: FeedFilters = {}) {
+    const params = new URLSearchParams();
+
+    if (filters.source) params.set('source', filters.source);
+    if (filters.sentiment) params.set('sentiment', filters.sentiment);
+    if (filters.date_from) params.set('date_from', filters.date_from);
+    if (filters.date_to) params.set('date_to', filters.date_to);
+
+    const qs = params.toString();
+    return this.request<FeedSignalResponse[]>(
+      `/api/feed${qs ? `?${qs}` : ''}`,
+      { token }
+    );
+  }
+
+  async getFeedSignal(token: string, id: string) {
+    return this.request<FeedSignalDetailResponse>(`/api/feed/${id}`, { token });
+  }
+
   // === Insights ===
 
   async createInsight(token: string, data: InsightCreate) {
@@ -338,6 +359,20 @@ class ApiClient {
     );
   }
 
+  async triggerSourceConnectionBackfill(token: string, connectionId: string) {
+    return this.request<SyncRunResponse>(
+      `/api/source-connections/${connectionId}/backfill`,
+      { method: 'POST', token }
+    );
+  }
+
+  async triggerSourceConnectionSync(token: string, connectionId: string) {
+    return this.request<SyncRunResponse>(
+      `/api/source-connections/${connectionId}/sync`,
+      { method: 'POST', token }
+    );
+  }
+
   async validateSurveyCSV(token: string, file: File) {
     const formData = new FormData();
     formData.append('file', file);
@@ -354,6 +389,34 @@ class ApiClient {
     }
 
     return response.json();
+  }
+
+  async confirmSurveyImport(token: string, file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${this.baseUrl}/api/survey-import/confirm`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      const detail =
+        typeof body.detail === 'string'
+          ? body.detail
+          : body.detail?.message || `Import failed (${response.status})`;
+      throw new Error(detail);
+    }
+
+    return response.json() as Promise<SurveyImportConfirmResponse>;
+  }
+
+  async getSurveyImportHistory(token: string) {
+    return this.request<SurveyImportHistoryResponse>('/api/survey-import/history', {
+      token,
+    });
   }
 
   async downloadSurveyTemplate(token: string): Promise<Blob> {
@@ -457,12 +520,61 @@ export interface ThemeResponse {
   sentiment_negative: number;
   is_new: boolean;
   status: string;
+  impact_score?: number;
   created_at: string;
+}
+
+export interface ThemeChipResponse {
+  id: string;
+  name: string;
+}
+
+export interface SignalLinkResponse {
+  kind: 'internal' | 'external';
+  href: string;
+  label: string;
+}
+
+export interface FeedSignalResponse {
+  id: string;
+  source_type: SourceType;
+  source_label: string;
+  provider: string;
+  provider_label: string;
+  signal_kind: string;
+  signal_kind_label: string;
+  occurred_at: string;
+  title?: string;
+  excerpt: string;
+  author_or_speaker?: string;
+  sentiment?: 'positive' | 'neutral' | 'negative';
+  theme_chip?: ThemeChipResponse | null;
+  link?: SignalLinkResponse | null;
+}
+
+export interface FeedSignalDetailResponse extends FeedSignalResponse {
+  content_text?: string;
+  metadata_json?: Record<string, unknown> | null;
+}
+
+export interface SourceBreakdownResponse {
+  source_type: SourceType;
+  label: string;
+  count: number;
+}
+
+export interface SupportingEvidenceGroupResponse {
+  source_type: SourceType;
+  label: string;
+  count: number;
+  items: FeedSignalResponse[];
 }
 
 export interface ThemeDetailResponse extends ThemeResponse {
   sub_themes: { id: string; name: string }[];
   insights: InsightResponse[];
+  source_breakdown: SourceBreakdownResponse[];
+  supporting_evidence: SupportingEvidenceGroupResponse[];
 }
 
 export interface InsightResponse {
@@ -638,6 +750,40 @@ export interface SyncRunResponse {
   records_updated: number;
   error_summary?: string;
   retry_of_run_id?: string;
+}
+
+export interface SurveyImportConfirmResponse {
+  status: string;
+  import_name: string;
+  connection_id: string;
+  sync_run_id: string;
+  records_seen: number;
+  records_created: number;
+  records_updated: number;
+}
+
+export interface SurveyImportHistoryItem {
+  id: string;
+  connection_id: string;
+  import_name: string;
+  status: SyncRunStatus;
+  started_at?: string;
+  finished_at?: string;
+  records_seen: number;
+  records_created: number;
+  records_updated: number;
+  error_summary?: string;
+}
+
+export interface SurveyImportHistoryResponse {
+  imports: SurveyImportHistoryItem[];
+}
+
+export interface FeedFilters {
+  source?: SourceType;
+  sentiment?: 'positive' | 'neutral' | 'negative';
+  date_from?: string;
+  date_to?: string;
 }
 
 // === Singleton export ===

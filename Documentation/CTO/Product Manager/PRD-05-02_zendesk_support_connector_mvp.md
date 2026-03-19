@@ -1,7 +1,7 @@
 # PRD-05-02: Zendesk Support Connector MVP
 
 > Date: March 16, 2026
-> Status: Draft
+> Status: Accepted for Sprint 4 and Sprint 5 scope
 > Release: `v0.5`
 > Owner: Founder acting as Product Manager
 > Epic: `EPIC-05-02`
@@ -23,6 +23,15 @@ The connector should:
 - run incremental syncs safely
 - normalize Zendesk evidence into shared `signals`
 - expose sync status, error state, and manual re-sync controls
+
+## Implementation Update (March 19, 2026)
+
+Sprint 4 and Sprint 5 scope for this PRD is now implemented.
+
+- Zendesk tickets normalize through the shared signal persistence path in `backend/app/services/signals.py`
+- normalized rows retain provider metadata and linkback data for feed and theme evidence views
+- the integrations shell now exposes last sync state, last error, recent sync runs, and manual sync and backfill actions
+- release-level trust copy and observability review surfaces remain Sprint 6 follow-on work
 
 ## Why Zendesk
 
@@ -106,7 +115,9 @@ The connector should:
 - `US-05-02-04`
 - `US-05-02-05`
 
-## Open Questions
+## Decisions Locked
 
-- whether the normalized Zendesk evidence unit is one ticket, one comment, or a documented hybrid rule for `v0.5`
-- what historical backfill window should be the default for pilot accounts
+- the normalized Zendesk evidence unit for `v0.5` is one normalized ticket-level signal row produced through the shared persistence path
+- non-interview theme association is persisted on the signal in `signals.metadata_json.theme_match`
+- manual sync and backfill remain exposed in the integrations detail UI and continue to record sync-run history
+- historical backfill remains intentionally bounded for pilot accounts and is configured through the connection flow rather than a second product-level design pass

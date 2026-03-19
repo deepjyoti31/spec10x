@@ -22,9 +22,10 @@ interface SearchResult {
 }
 
 const PAGE_RESULTS: SearchResult[] = [
-    { id: 'page-dashboard', type: 'page', icon: '📊', label: 'Dashboard', href: '/dashboard' },
-    { id: 'page-ask', type: 'page', icon: '✨', label: 'Ask Your Interviews', href: '/ask' },
-    { id: 'page-settings', type: 'page', icon: '⚙️', label: 'Settings', href: '/settings' },
+    { id: 'page-dashboard', type: 'page', icon: 'DB', label: 'Dashboard', href: '/dashboard' },
+    { id: 'page-ask', type: 'page', icon: 'QA', label: 'Ask Your Interviews', href: '/ask' },
+    { id: 'page-feed', type: 'page', icon: 'FD', label: 'Feed', href: '/feed' },
+    { id: 'page-settings', type: 'page', icon: 'ST', label: 'Settings', href: '/settings' },
 ];
 
 export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
@@ -36,9 +37,9 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     const [interviews, setInterviews] = useState<InterviewResponse[]>([]);
     const [themes, setThemes] = useState<ThemeResponse[]>([]);
 
-    // Fetch data when opened
     useEffect(() => {
         if (!isOpen || !token) return;
+
         const fetchData = async () => {
             try {
                 const [interviewData, themeData] = await Promise.all([
@@ -48,69 +49,61 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                 setInterviews(interviewData);
                 setThemes(themeData);
             } catch {
-                // silently fail
+                // Silently fail in the palette.
             }
         };
+
         fetchData();
     }, [isOpen, token]);
 
-    // Focus input when opened
     useEffect(() => {
-        if (isOpen) {
-            setQuery('');
-            setActiveIdx(0);
-            setTimeout(() => inputRef.current?.focus(), 50);
-        }
+        if (!isOpen) return;
+        setQuery('');
+        setActiveIdx(0);
+        setTimeout(() => inputRef.current?.focus(), 50);
     }, [isOpen]);
 
-    // Build filtered results
     const results = useMemo(() => {
         const q = query.toLowerCase().trim();
         const items: SearchResult[] = [];
 
-        // Pages
-        const pageMatches = PAGE_RESULTS.filter(
-            (p) => !q || p.label.toLowerCase().includes(q)
+        items.push(...PAGE_RESULTS.filter((page) => !q || page.label.toLowerCase().includes(q)));
+
+        items.push(
+            ...interviews
+                .filter((interview) => !q || interview.filename.toLowerCase().includes(q))
+                .slice(0, 5)
+                .map((interview) => ({
+                    id: `interview-${interview.id}`,
+                    type: 'interview' as const,
+                    icon: 'IV',
+                    label: interview.filename,
+                    hint: interview.status,
+                    href: `/interview/${interview.id}`,
+                }))
         );
-        items.push(...pageMatches);
 
-        // Interviews
-        const interviewMatches = interviews
-            .filter((i) => !q || i.filename.toLowerCase().includes(q))
-            .slice(0, 5)
-            .map((i) => ({
-                id: `interview-${i.id}`,
-                type: 'interview' as const,
-                icon: '📄',
-                label: i.filename,
-                hint: i.status,
-                href: `/interview/${i.id}`,
-            }));
-        items.push(...interviewMatches);
-
-        // Themes
-        const themeMatches = themes
-            .filter((t) => !q || t.name.toLowerCase().includes(q))
-            .slice(0, 5)
-            .map((t) => ({
-                id: `theme-${t.id}`,
-                type: 'theme' as const,
-                icon: '🏷️',
-                label: t.name,
-                hint: `${t.mention_count} mentions`,
-                href: `/dashboard`,
-            }));
-        items.push(...themeMatches);
+        items.push(
+            ...themes
+                .filter((theme) => !q || theme.name.toLowerCase().includes(q))
+                .slice(0, 5)
+                .map((theme) => ({
+                    id: `theme-${theme.id}`,
+                    type: 'theme' as const,
+                    icon: 'TH',
+                    label: theme.name,
+                    hint: `${theme.mention_count} mentions`,
+                    href: '/dashboard',
+                }))
+        );
 
         return items;
-    }, [query, interviews, themes]);
+    }, [interviews, query, themes]);
 
-    // Reset active index when results change
     useEffect(() => {
         setActiveIdx(0);
     }, [results.length]);
 
-    // Navigate to result
     const handleSelect = useCallback(
         (result: SearchResult) => {
             onClose();
@@ -119,49 +112,49 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         [onClose, router]
     );
 
-    // Keyboard navigation
     const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent) => {
-            switch (e.key) {
+        (event: React.KeyboardEvent) => {
+            switch (event.key) {
                 case 'ArrowDown':
-                    e.preventDefault();
+                    event.preventDefault();
                     setActiveIdx((prev) => Math.min(prev + 1, results.length - 1));
                     break;
                 case 'ArrowUp':
-                    e.preventDefault();
+                    event.preventDefault();
                     setActiveIdx((prev) => Math.max(prev - 1, 0));
                     break;
                 case 'Enter':
-                    e.preventDefault();
-                    if (results[activeIdx]) handleSelect(results[activeIdx]);
+                    event.preventDefault();
+                    if (results[activeIdx]) {
+                        handleSelect(results[activeIdx]);
+                    }
                     break;
                 case 'Escape':
-                    e.preventDefault();
+                    event.preventDefault();
                     onClose();
                     break;
             }
         },
-        [results, activeIdx, handleSelect, onClose]
+        [activeIdx, handleSelect, onClose, results]
     );
 
     if (!isOpen) return null;
 
-    // Group results by type
-    const pageResults = results.filter((r) => r.type === 'page');
-    const interviewResults = results.filter((r) => r.type === 'interview');
-    const themeResults = results.filter((r) => r.type === 'theme');
+    const pageResults = results.filter((result) => result.type === 'page');
+    const interviewResults = results.filter((result) => result.type === 'interview');
+    const themeResults = results.filter((result) => result.type === 'theme');
 
     let globalIdx = 0;
 
     return (
         <div className={styles.overlay} onClick={onClose}>
-            <div className={styles.palette} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.palette} onClick={(event) => event.stopPropagation()}>
                 <input
                     ref={inputRef}
                     className={styles.searchInput}
-                    placeholder="Search interviews, themes, pages…"
+                    placeholder="Search interviews, themes, pages..."
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={(event) => setQuery(event.target.value)}
                     onKeyDown={handleKeyDown}
                 />
 
@@ -173,18 +166,17 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                             {pageResults.length > 0 && (
                                 <>
                                     <div className={styles.groupLabel}>Pages</div>
-                                    {pageResults.map((r) => {
+                                    {pageResults.map((result) => {
                                         const idx = globalIdx++;
                                         return (
                                             <div
-                                                key={r.id}
-                                                className={`${styles.resultItem} ${idx === activeIdx ? styles.resultItemActive : ''
-                                                    }`}
-                                                onClick={() => handleSelect(r)}
+                                                key={result.id}
+                                                className={`${styles.resultItem} ${idx === activeIdx ? styles.resultItemActive : ''}`}
+                                                onClick={() => handleSelect(result)}
                                                 onMouseEnter={() => setActiveIdx(idx)}
                                             >
-                                                <span className={styles.resultIcon}>{r.icon}</span>
-                                                <span className={styles.resultLabel}>{r.label}</span>
+                                                <span className={styles.resultIcon}>{result.icon}</span>
+                                                <span className={styles.resultLabel}>{result.label}</span>
                                             </div>
                                         );
                                     })}
@@ -194,20 +186,19 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                             {interviewResults.length > 0 && (
                                 <>
                                     <div className={styles.groupLabel}>Interviews</div>
-                                    {interviewResults.map((r) => {
+                                    {interviewResults.map((result) => {
                                         const idx = globalIdx++;
                                         return (
                                             <div
-                                                key={r.id}
-                                                className={`${styles.resultItem} ${idx === activeIdx ? styles.resultItemActive : ''
-                                                    }`}
-                                                onClick={() => handleSelect(r)}
+                                                key={result.id}
+                                                className={`${styles.resultItem} ${idx === activeIdx ? styles.resultItemActive : ''}`}
+                                                onClick={() => handleSelect(result)}
                                                 onMouseEnter={() => setActiveIdx(idx)}
                                             >
-                                                <span className={styles.resultIcon}>{r.icon}</span>
-                                                <span className={styles.resultLabel}>{r.label}</span>
-                                                {r.hint && (
-                                                    <span className={styles.resultHint}>{r.hint}</span>
+                                                <span className={styles.resultIcon}>{result.icon}</span>
+                                                <span className={styles.resultLabel}>{result.label}</span>
+                                                {result.hint && (
+                                                    <span className={styles.resultHint}>{result.hint}</span>
                                                 )}
                                             </div>
                                         );
@@ -218,20 +209,19 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                             {themeResults.length > 0 && (
                                 <>
                                     <div className={styles.groupLabel}>Themes</div>
-                                    {themeResults.map((r) => {
+                                    {themeResults.map((result) => {
                                         const idx = globalIdx++;
                                         return (
                                             <div
-                                                key={r.id}
-                                                className={`${styles.resultItem} ${idx === activeIdx ? styles.resultItemActive : ''
-                                                    }`}
-                                                onClick={() => handleSelect(r)}
+                                                key={result.id}
+                                                className={`${styles.resultItem} ${idx === activeIdx ? styles.resultItemActive : ''}`}
+                                                onClick={() => handleSelect(result)}
                                                 onMouseEnter={() => setActiveIdx(idx)}
                                             >
-                                                <span className={styles.resultIcon}>{r.icon}</span>
-                                                <span className={styles.resultLabel}>{r.label}</span>
-                                                {r.hint && (
-                                                    <span className={styles.resultHint}>{r.hint}</span>
+                                                <span className={styles.resultIcon}>{result.icon}</span>
+                                                <span className={styles.resultLabel}>{result.label}</span>
+                                                {result.hint && (
+                                                    <span className={styles.resultHint}>{result.hint}</span>
                                                 )}
                                             </div>
                                         );
@@ -243,8 +233,8 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                 </div>
 
                 <div className={styles.footer}>
-                    <span><span className={styles.kbd}>↑↓</span> Navigate</span>
-                    <span><span className={styles.kbd}>↵</span> Select</span>
+                    <span><span className={styles.kbd}>Up/Down</span> Navigate</span>
+                    <span><span className={styles.kbd}>Enter</span> Select</span>
                     <span><span className={styles.kbd}>Esc</span> Close</span>
                 </div>
             </div>

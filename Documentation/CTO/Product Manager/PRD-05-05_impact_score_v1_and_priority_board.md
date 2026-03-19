@@ -1,7 +1,7 @@
 # PRD-05-05: Impact Score v1 and Priority Board
 
 > Date: March 16, 2026
-> Status: Draft
+> Status: Impact Score v1 accepted; priority board deferred to Sprint 6
 > Release: `v0.5`
 > Owner: Founder acting as Product Manager
 > Epic: `EPIC-05-05`
@@ -14,14 +14,30 @@ The product needs a lightweight decision surface that ranks what looks important
 
 ## Solution
 
-Ship:
+Ship this epic in two steps:
 
-- Impact Score v1
-- an evidence-first priority board
-- score breakdown UI
-- lightweight manual override through pin or monitor states
+- Sprint 5: Impact Score v1 plus urgency sorting and theme-detail visibility
+- Sprint 6: an evidence-first priority board, score breakdown UI, and lightweight manual override through pin or monitor states
 
-Score v1 stays intentionally simple and explainable.
+Impact Score v1 stays intentionally simple and explainable.
+
+## Implementation Update (March 19, 2026)
+
+The Sprint 5 portion of this PRD is now implemented.
+
+- `GET /api/themes?sort=urgency` now uses Impact Score v1 ordering
+- theme detail responses can include `impact_score` alongside source breakdown and supporting evidence
+- the dedicated board view, expanded score breakdown UI, and pin or monitor controls remain Sprint 6 work and are intentionally not part of the accepted Sprint 4 and Sprint 5 scope
+
+## Impact Score v1 Formula
+
+Balanced formula locked for `v0.5`:
+
+- `frequency = min(themed_evidence_count, 10) / 10 * 40`
+- `negative = negative_ratio * 25`
+- `recency = 20 / 14 / 8 / 3` for newest evidence age buckets `<= 7d / <= 30d / <= 90d / older`
+- `source_diversity = distinct_source_types / 3 * 15`
+- `impact_total = round(sum, 1)`
 
 ## Why Now
 
@@ -42,9 +58,9 @@ Score v1 stays intentionally simple and explainable.
 
 - score inputs: frequency, recency, negative sentiment weight, source diversity
 - deterministic score output
-- score explanation in theme detail and board views
-- ranked board cards with evidence preview
-- pin or monitor state
+- score visibility in theme detail and urgency sort for Sprint 5
+- ranked board cards with evidence preview in Sprint 6
+- pin or monitor state in Sprint 6
 
 ## Out of Scope
 
@@ -56,11 +72,11 @@ Score v1 stays intentionally simple and explainable.
 
 ## User Flow
 
-1. PM views the priority board
-2. Product ranks themes using score v1
-3. PM expands a card to see why it ranked there
-4. PM follows evidence links into theme or feed views
-5. PM pins or monitors a theme if they want lightweight manual control
+1. PM sorts themes by urgency in the dashboard
+2. Product ranks themes using Impact Score v1
+3. PM opens theme detail to inspect impact score, source breakdown, and supporting evidence
+4. PM follows evidence links into feed or interview views
+5. Sprint 6 adds the dedicated board surface plus pin or monitor controls
 
 ## Key Requirements
 
@@ -98,7 +114,8 @@ Score v1 stays intentionally simple and explainable.
 - `US-05-05-04`
 - `US-05-05-05` as optional support scope
 
-## Open Questions
+## Decisions Locked
 
-- whether board cards should show trend placeholders in `v0.5` or wait for `v0.52`
-- what minimum evidence preview is enough to make the board useful without overwhelming the card layout
+- Impact Score v1 uses the balanced formula above and no extra hidden weights
+- the board remains a Sprint 6 surface; Sprint 5 acceptance does not require a new `/board` route or board nav item
+- trend placeholders and board-card evidence preview stay deferred until the Sprint 6 board implementation

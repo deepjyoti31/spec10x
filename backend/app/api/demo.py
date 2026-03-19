@@ -259,6 +259,7 @@ async def load_sample_data(
     theme_map: dict[str, Theme] = {}
     interviews_created = 0
     insights_created = 0
+    created_interview_ids: list[uuid.UUID] = []
 
     for sample in SAMPLE_INTERVIEWS:
         # Create interview
@@ -273,6 +274,7 @@ async def load_sample_data(
         )
         db.add(interview)
         await db.flush()
+        created_interview_ids.append(interview.id)
 
         # Create speakers
         for sp in sample["speakers"]:
@@ -349,6 +351,14 @@ async def load_sample_data(
             theme.sentiment_positive /= total
             theme.sentiment_neutral /= total
             theme.sentiment_negative /= total
+
+    from app.services.signals import sync_interview_signals_for_interview
+
+    for interview_id in created_interview_ids:
+        await sync_interview_signals_for_interview(
+            db,
+            interview_id=interview_id,
+        )
 
     await db.commit()
 

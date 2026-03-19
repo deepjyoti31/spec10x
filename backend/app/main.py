@@ -21,6 +21,7 @@ from app.api import (
     websocket,
     demo,
     notifications,
+    feed,
     sources,
     survey_import,
 )
@@ -76,6 +77,7 @@ app.include_router(billing.router)
 app.include_router(websocket.router)
 app.include_router(demo.router)
 app.include_router(notifications.router)
+app.include_router(feed.router)
 app.include_router(sources.router)
 app.include_router(survey_import.router)
 

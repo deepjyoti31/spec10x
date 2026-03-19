@@ -1,0 +1,217 @@
+.overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(6px);
+    z-index: 1000;
+}
+
+.modal {
+    width: min(760px, 100%);
+    max-height: 88vh;
+    overflow-y: auto;
+    border-radius: 24px;
+    border: 1px solid var(--color-border);
+    background: linear-gradient(180deg, rgba(79, 140, 255, 0.08), transparent 22%), var(--color-bg-elevated);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+    padding: 24px;
+}
+
+.header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+}
+
+.title {
+    margin: 6px 0 0;
+    font-size: 28px;
+    color: var(--color-text-primary);
+}
+
+.subtitle {
+    margin: 8px 0 0;
+    color: var(--color-text-secondary);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.closeBtn {
+    border: none;
+    background: var(--color-bg-card);
+    color: var(--color-text-muted);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 14px;
+}
+
+.summaryGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.summaryCard {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px;
+    border-radius: 18px;
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border);
+}
+
+.summaryLabel {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+}
+
+.summaryValue {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--color-text-primary);
+}
+
+.actionRow {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.primaryButton,
+.secondaryButton {
+    padding: 10px 16px;
+    border-radius: var(--radius-md);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.primaryButton {
+    border: none;
+    background: var(--color-accent);
+    color: #fff;
+}
+
+.secondaryButton {
+    border: 1px solid var(--color-border);
+    background: transparent;
+    color: var(--color-text-primary);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.helperText {
+    margin-top: 10px;
+    color: var(--color-text-muted);
+    font-size: 12px;
+}
+
+.errorBox {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    background: rgba(248, 113, 113, 0.1);
+    color: var(--color-danger);
+    font-size: 12px;
+}
+
+.section {
+    margin-top: 24px;
+}
+
+.sectionTitle {
+    margin-bottom: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.runList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.runCard {
+    padding: 14px;
+    border-radius: 18px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-card);
+}
+
+.runHeader,
+.runMeta,
+.runStats {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.runHeader {
+    margin-bottom: 8px;
+}
+
+.runType,
+.runStatus {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    text-transform: capitalize;
+}
+
+.runMeta,
+.runStats,
+.runError,
+.loading,
+.emptyRuns {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+.runStats {
+    margin-top: 8px;
+}
+
+.runError {
+    margin-top: 8px;
+    color: var(--color-danger);
+}
+
+@media (max-width: 720px) {
+    .summaryGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .actionRow {
+        flex-direction: column;
+    }
+
+    .runHeader,
+    .runMeta,
+    .runStats {
+        flex-direction: column;
+    }
+}

@@ -11,7 +11,13 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useInterviews } from '@/hooks/useInterviews';
 import { useThemes } from '@/hooks/useThemes';
-import { api, ThemeResponse, InterviewResponse, InsightResponse } from '@/lib/api';
+import {
+    api,
+    ThemeResponse,
+    ThemeDetailResponse,
+    InterviewResponse,
+    InsightResponse,
+} from '@/lib/api';
 import InterviewSidebar from '@/components/dashboard/InterviewSidebar';
 import ThemeArea from '@/components/dashboard/ThemeArea';
 import DetailPanel from '@/components/dashboard/DetailPanel';
@@ -24,6 +30,7 @@ export default function DashboardPage() {
     const { activeThemes, previousThemes, loading: themesLoading, sort: themeSort, setSort: setThemeSort, refetch: refetchThemes } = useThemes();
 
     const [selectedTheme, setSelectedTheme] = useState<ThemeResponse | null>(null);
+    const [selectedThemeDetail, setSelectedThemeDetail] = useState<ThemeDetailResponse | null>(null);
     const [selectedInterview, setSelectedInterview] = useState<InterviewResponse | null>(null);
     const [themeInsights, setThemeInsights] = useState<InsightResponse[]>([]);
     const [interviewInsights, setInterviewInsights] = useState<InsightResponse[]>([]);
@@ -31,10 +38,12 @@ export default function DashboardPage() {
 
     useEffect(() => {
         if (!token || !selectedTheme) {
+            setSelectedThemeDetail(null);
             setThemeInsights([]);
             return;
         }
         api.getTheme(token, selectedTheme.id).then(data => {
+            setSelectedThemeDetail(data);
             setThemeInsights(data.insights || []);
         }).catch(err => console.error('Failed to fetch theme details:', err));
     }, [token, selectedTheme]);
@@ -51,6 +60,7 @@ export default function DashboardPage() {
 
     const handleThemeSelect = useCallback((theme: ThemeResponse) => {
         setSelectedTheme(theme);
+        setSelectedThemeDetail(null);
         setSelectedInterview(null);
     }, []);
 
@@ -66,6 +76,7 @@ export default function DashboardPage() {
             refetchThemes();
             if (selectedTheme?.id === id) {
                 setSelectedTheme((prev) => prev ? { ...prev, name } : null);
+                setSelectedThemeDetail((prev) => prev ? { ...prev, name } : null);
             }
         } catch (err) {
             console.error('Failed to rename theme:', err);
@@ -122,6 +133,7 @@ export default function DashboardPage() {
                 {/* Right — Detail Panel */}
                 <DetailPanel
                     selectedTheme={selectedTheme}
+                    selectedThemeDetail={selectedThemeDetail}
                     selectedInterview={selectedInterview}
                     themeInsights={themeInsights}
                     interviewInsights={interviewInsights}

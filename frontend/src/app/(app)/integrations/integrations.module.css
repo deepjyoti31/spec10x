@@ -266,6 +266,13 @@
     line-height: 1.4;
 }
 
+.cardCaption {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+    margin-top: 8px;
+}
+
 /* Card Actions */
 .cardActions {
     display: flex;
@@ -370,6 +377,47 @@
     color: var(--color-text-muted);
     margin: 0;
     max-width: 320px;
+}
+
+.historyList {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.historyCard {
+    padding: 18px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    background: linear-gradient(180deg, rgba(52, 211, 153, 0.06), transparent 100%), var(--color-bg-card);
+}
+
+.historyHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.historyTitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.historyMeta {
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--color-text-muted);
+}
+
+.historyStats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    font-size: 12px;
+    color: var(--color-text-secondary);
 }
 
 /* Loading State */

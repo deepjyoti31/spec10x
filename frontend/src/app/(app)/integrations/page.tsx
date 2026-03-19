@@ -1,32 +1,24 @@
 'use client';
 
-/**
- * Spec10x — Integrations Page (US-05-01-05)
- *
- * Shows available data sources and active connections.
- * Allows users to connect/disconnect providers.
- */
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import {
     api,
     DataSourceResponse,
     SourceConnectionResponse,
-    SourceConnectionStatus,
+    SurveyImportHistoryItem,
 } from '@/lib/api';
 import styles from './integrations.module.css';
 import ConnectModal from '@/components/integrations/ConnectModal';
-
-// ── Provider visual config ──────────────────────────────
+import ConnectionDetailModal from '@/components/integrations/ConnectionDetailModal';
 
 const PROVIDER_CONFIG: Record<string, { icon: string; label: string }> = {
-    zendesk: { icon: '🎫', label: 'Zendesk' },
-    csv_import: { icon: '📊', label: 'Survey CSV Import' },
-    native_upload: { icon: '🎤', label: 'Interview Uploads' },
-    fireflies: { icon: '🔥', label: 'Fireflies' },
-    intercom: { icon: '💬', label: 'Intercom' },
-    mixpanel: { icon: '📈', label: 'Mixpanel' },
+    zendesk: { icon: 'ZD', label: 'Zendesk' },
+    csv_import: { icon: 'CSV', label: 'Survey CSV Import' },
+    native_upload: { icon: 'INT', label: 'Interview Uploads' },
+    fireflies: { icon: 'FF', label: 'Fireflies' },
+    intercom: { icon: 'IC', label: 'Intercom' },
+    mixpanel: { icon: 'MP', label: 'Mixpanel' },
 };
 
 const SOURCE_TYPE_LABELS: Record<string, string> = {
@@ -37,20 +29,23 @@ const SOURCE_TYPE_LABELS: Record<string, string> = {
 };
 
 const CONNECTION_METHOD_LABELS: Record<string, { icon: string; label: string }> = {
-    api_token: { icon: '🔑', label: 'API Token' },
-    csv_upload: { icon: '📁', label: 'CSV Upload' },
-    native_upload: { icon: '⬆️', label: 'File Upload' },
-    oauth: { icon: '🔐', label: 'OAuth' },
+    api_token: { icon: 'KEY', label: 'API Token' },
+    csv_upload: { icon: 'CSV', label: 'CSV Upload' },
+    native_upload: { icon: 'UP', label: 'File Upload' },
+    oauth: { icon: 'OA', label: 'OAuth' },
 };
 
-function getStatusStyle(status: SourceConnectionStatus): string {
-    const map: Record<SourceConnectionStatus, string> = {
+function getStatusStyle(status: string): string {
+    const map: Record<string, string> = {
         connected: styles.statusConnected,
         configured: styles.statusConfigured,
         syncing: styles.statusSyncing,
         error: styles.statusError,
         disconnected: styles.statusDisconnected,
         validating: styles.statusValidating,
+        running: styles.statusSyncing,
+        succeeded: styles.statusConnected,
+        failed: styles.statusError,
     };
     return map[status] || '';
 }
@@ -89,25 +84,57 @@ function formatLastSynced(dateStr?: string): string {
     return `${diffDays}d ago`;
 }
 
-// ── Integrations Page ───────────────────────────────────
+function formatDate(dateStr?: string) {
+    if (!dateStr) return 'Unknown';
+    return new Date(dateStr).toLocaleString();
+}
+
+function renderHistoryCard(item: SurveyImportHistoryItem) {
+    return (
+        <div key={item.id} className={styles.historyCard}>
+            <div className={styles.historyHeader}>
+                <div>
+                    <div className={styles.historyTitle}>{item.import_name}</div>
+                    <div className={styles.historyMeta}>{formatDate(item.started_at)}</div>
+                </div>
+                <div className={`${styles.statusBadge} ${getStatusStyle(item.status)}`}>
+                    <span className={styles.statusDot} />
+                    {item.status}
+                </div>
+            </div>
+            <div className={styles.historyStats}>
+                <span>{item.records_seen} rows</span>
+                <span>{item.records_created} created</span>
+                <span>{item.records_updated} updated</span>
+            </div>
+            {item.error_summary && (
+                <div className={styles.errorSummary}>{item.error_summary}</div>
+            )}
+        </div>
+    );
+}
 
 export default function IntegrationsPage() {
     const { token } = useAuth();
     const [dataSources, setDataSources] = useState<DataSourceResponse[]>([]);
     const [connections, setConnections] = useState<SourceConnectionResponse[]>([]);
+    const [surveyImports, setSurveyImports] = useState<SurveyImportHistoryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [connectingSource, setConnectingSource] = useState<DataSourceResponse | null>(null);
+    const [detailConnectionId, setDetailConnectionId] = useState<string | null>(null);
 
     const fetchData = useCallback(async () => {
         if (!token) return;
         try {
-            const [sources, conns] = await Promise.all([
+            const [sources, conns, importHistory] = await Promise.all([
                 api.listDataSources(token),
                 api.listSourceConnections(token),
+                api.getSurveyImportHistory(token),
             ]);
             setDataSources(sources);
             setConnections(conns);
+            setSurveyImports(importHistory.imports);
         } catch (err) {
             console.error('Failed to load integrations data', err);
         } finally {
@@ -132,15 +159,16 @@ export default function IntegrationsPage() {
         }
     };
 
-    // Separate active connections from available (unconnected) sources
     const activeConnections = connections.filter(
-        (c) => c.status !== 'disconnected'
+        (connection) =>
+            connection.data_source.provider !== 'csv_import' &&
+            connection.status !== 'disconnected'
     );
-    const connectedSourceIds = new Set(
-        activeConnections.map((c) => c.data_source.id)
-    );
+
+    const connectedSourceIds = new Set(activeConnections.map((connection) => connection.data_source.id));
+
     const availableSources = dataSources.filter(
-        (ds) => !connectedSourceIds.has(ds.id)
+        (source) => source.provider === 'csv_import' || !connectedSourceIds.has(source.id)
     );
 
     if (loading) {
@@ -148,7 +176,7 @@ export default function IntegrationsPage() {
             <div className={styles.container}>
                 <div className={styles.loading}>
                     <div className={styles.loadingSpinner} />
-                    Loading integrations…
+                    Loading integrations...
                 </div>
             </div>
         );
@@ -156,91 +184,80 @@ export default function IntegrationsPage() {
 
     return (
         <div className={styles.container}>
-            {/* Page Header */}
             <div className={styles.pageHeader}>
                 <h1 className={styles.pageTitle}>Integrations</h1>
                 <p className={styles.pageSubtitle}>
-                    Connect your tools to bring all your product evidence into one place.
-                    Spec10x will pull insights from support tickets, surveys, and interviews automatically.
+                    Connect live providers, inspect sync health, and run repeatable survey imports
+                    without turning CSV uploads into a one-time connection slot.
                 </p>
             </div>
 
-            {/* Active Connections */}
             {activeConnections.length > 0 && (
                 <section className={styles.section}>
                     <h2 className={styles.sectionTitle}>
                         Active Connections
-                        <span className={styles.sectionCount}>
-                            {activeConnections.length}
-                        </span>
+                        <span className={styles.sectionCount}>{activeConnections.length}</span>
                     </h2>
                     <div className={styles.sourceGrid}>
-                        {activeConnections.map((conn) => {
-                            const provider = PROVIDER_CONFIG[conn.data_source.provider] || {
-                                icon: '🔗',
-                                label: conn.data_source.display_name,
+                        {activeConnections.map((connection) => {
+                            const provider = PROVIDER_CONFIG[connection.data_source.provider] || {
+                                icon: 'SRC',
+                                label: connection.data_source.display_name,
                             };
                             const method =
-                                CONNECTION_METHOD_LABELS[conn.data_source.connection_method];
+                                CONNECTION_METHOD_LABELS[connection.data_source.connection_method];
+
                             return (
                                 <div
-                                    key={conn.id}
-                                    className={`${styles.sourceCard} ${getCardTypeStyle(conn.data_source.source_type)}`}
+                                    key={connection.id}
+                                    className={`${styles.sourceCard} ${getCardTypeStyle(connection.data_source.source_type)}`}
                                 >
                                     <div className={styles.cardHeader}>
                                         <div className={styles.providerInfo}>
-                                            <div
-                                                className={`${styles.providerIcon} ${getIconStyle(conn.data_source.source_type)}`}
-                                            >
+                                            <div className={`${styles.providerIcon} ${getIconStyle(connection.data_source.source_type)}`}>
                                                 {provider.icon}
                                             </div>
                                             <div>
-                                                <div className={styles.providerName}>
-                                                    {provider.label}
-                                                </div>
+                                                <div className={styles.providerName}>{provider.label}</div>
                                                 <div className={styles.providerType}>
-                                                    {SOURCE_TYPE_LABELS[conn.data_source.source_type] ||
-                                                        conn.data_source.source_type}
+                                                    {SOURCE_TYPE_LABELS[connection.data_source.source_type] || connection.data_source.source_type}
                                                 </div>
                                             </div>
                                         </div>
-                                        <div
-                                            className={`${styles.statusBadge} ${getStatusStyle(conn.status)}`}
-                                        >
+                                        <div className={`${styles.statusBadge} ${getStatusStyle(connection.status)}`}>
                                             <span className={styles.statusDot} />
-                                            {conn.status}
+                                            {connection.status}
                                         </div>
                                     </div>
 
                                     <div className={styles.cardBody}>
                                         {method && (
                                             <div className={styles.connectionMethod}>
-                                                <span className={styles.connectionMethodIcon}>
-                                                    {method.icon}
-                                                </span>
+                                                <span className={styles.connectionMethodIcon}>{method.icon}</span>
                                                 {method.label}
                                             </div>
                                         )}
                                         <div className={styles.lastSynced}>
-                                            Last synced: {formatLastSynced(conn.last_synced_at)}
+                                            Last synced: {formatLastSynced(connection.last_synced_at)}
                                         </div>
-                                        {conn.last_error_summary && (
-                                            <div className={styles.errorSummary}>
-                                                ⚠️ {conn.last_error_summary}
-                                            </div>
+                                        {connection.last_error_summary && (
+                                            <div className={styles.errorSummary}>{connection.last_error_summary}</div>
                                         )}
                                     </div>
 
                                     <div className={styles.cardActions}>
-                                        <button className={styles.viewBtn}>View Details</button>
+                                        <button
+                                            className={styles.viewBtn}
+                                            onClick={() => setDetailConnectionId(connection.id)}
+                                        >
+                                            View Details
+                                        </button>
                                         <button
                                             className={styles.disconnectBtn}
-                                            onClick={() => handleDisconnect(conn.id)}
-                                            disabled={actionLoading === conn.id}
+                                            onClick={() => handleDisconnect(connection.id)}
+                                            disabled={actionLoading === connection.id}
                                         >
-                                            {actionLoading === conn.id
-                                                ? 'Disconnecting…'
-                                                : 'Disconnect'}
+                                            {actionLoading === connection.id ? 'Disconnecting...' : 'Disconnect'}
                                         </button>
                                     </div>
                                 </div>
@@ -250,121 +267,114 @@ export default function IntegrationsPage() {
                 </section>
             )}
 
-            {/* Available Sources */}
             <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>
-                    Available Sources
-                    <span className={styles.sectionCount}>
-                        {availableSources.length}
-                    </span>
+                    Survey CSV Imports
+                    <span className={styles.sectionCount}>{surveyImports.length}</span>
                 </h2>
-
-                {availableSources.length === 0 && activeConnections.length > 0 ? (
-                    <div className={styles.emptyState}>
-                        <div className={styles.emptyIcon}>✅</div>
-                        <div className={styles.emptyTitle}>All sources connected</div>
-                        <p className={styles.emptyText}>
-                            You've connected all available data sources. More integrations are coming soon.
-                        </p>
-                    </div>
+                {surveyImports.length > 0 ? (
+                    <div className={styles.historyList}>{surveyImports.slice(0, 8).map(renderHistoryCard)}</div>
                 ) : (
-                    <div className={styles.sourceGrid}>
-                        {availableSources.map((source) => {
-                            const provider = PROVIDER_CONFIG[source.provider] || {
-                                icon: '🔗',
-                                label: source.display_name,
-                            };
-                            const method =
-                                CONNECTION_METHOD_LABELS[source.connection_method];
-                            const isNativeUpload =
-                                source.connection_method === 'native_upload';
-
-                            return (
-                                <div
-                                    key={source.id}
-                                    className={`${styles.sourceCard} ${getCardTypeStyle(source.source_type)}`}
-                                >
-                                    <div className={styles.cardHeader}>
-                                        <div className={styles.providerInfo}>
-                                            <div
-                                                className={`${styles.providerIcon} ${getIconStyle(source.source_type)}`}
-                                            >
-                                                {provider.icon}
-                                            </div>
-                                            <div>
-                                                <div className={styles.providerName}>
-                                                    {provider.label}
-                                                </div>
-                                                <div className={styles.providerType}>
-                                                    {SOURCE_TYPE_LABELS[source.source_type] ||
-                                                        source.source_type}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        {isNativeUpload && (
-                                            <span className={styles.comingSoon}>
-                                                Built-in
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <div className={styles.cardBody}>
-                                        {method && (
-                                            <div className={styles.connectionMethod}>
-                                                <span className={styles.connectionMethodIcon}>
-                                                    {method.icon}
-                                                </span>
-                                                {method.label}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className={styles.cardActions}>
-                                        {isNativeUpload ? (
-                                            <button
-                                                className={styles.viewBtn}
-                                                style={{ flex: 1 }}
-                                                onClick={() =>
-                                                    (window.location.href = '/dashboard')
-                                                }
-                                            >
-                                                Go to Dashboard
-                                            </button>
-                                        ) : (
-                                            <button
-                                                className={styles.connectBtn}
-                                                onClick={() => setConnectingSource(source)}
-                                            >
-                                                Connect
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
+                    <div className={styles.emptyState}>
+                        <div className={styles.emptyTitle}>No survey imports yet</div>
+                        <p className={styles.emptyText}>
+                            Upload a survey or NPS CSV from the available sources section to start building survey evidence history.
+                        </p>
                     </div>
                 )}
             </section>
 
-            {/* Coming Soon Section */}
+            <section className={styles.section}>
+                <h2 className={styles.sectionTitle}>
+                    Available Sources
+                    <span className={styles.sectionCount}>{availableSources.length}</span>
+                </h2>
+
+                <div className={styles.sourceGrid}>
+                    {availableSources.map((source) => {
+                        const provider = PROVIDER_CONFIG[source.provider] || {
+                            icon: 'SRC',
+                            label: source.display_name,
+                        };
+                        const method = CONNECTION_METHOD_LABELS[source.connection_method];
+                        const isNativeUpload = source.connection_method === 'native_upload';
+                        const isSurveyImport = source.provider === 'csv_import';
+
+                        return (
+                            <div
+                                key={source.id}
+                                className={`${styles.sourceCard} ${getCardTypeStyle(source.source_type)}`}
+                            >
+                                <div className={styles.cardHeader}>
+                                    <div className={styles.providerInfo}>
+                                        <div className={`${styles.providerIcon} ${getIconStyle(source.source_type)}`}>
+                                            {provider.icon}
+                                        </div>
+                                        <div>
+                                            <div className={styles.providerName}>{provider.label}</div>
+                                            <div className={styles.providerType}>
+                                                {SOURCE_TYPE_LABELS[source.source_type] || source.source_type}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {isNativeUpload && (
+                                        <span className={styles.comingSoon}>Built-in</span>
+                                    )}
+                                    {isSurveyImport && (
+                                        <span className={styles.comingSoon}>Repeatable</span>
+                                    )}
+                                </div>
+
+                                <div className={styles.cardBody}>
+                                    {method && (
+                                        <div className={styles.connectionMethod}>
+                                            <span className={styles.connectionMethodIcon}>{method.icon}</span>
+                                            {method.label}
+                                        </div>
+                                    )}
+                                    {isSurveyImport && (
+                                        <div className={styles.cardCaption}>
+                                            Validate and import survey evidence as often as needed. Each upload keeps its own history entry.
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className={styles.cardActions}>
+                                    {isNativeUpload ? (
+                                        <button
+                                            className={styles.viewBtn}
+                                            style={{ flex: 1 }}
+                                            onClick={() => (window.location.href = '/dashboard')}
+                                        >
+                                            Go to Dashboard
+                                        </button>
+                                    ) : (
+                                        <button
+                                            className={styles.connectBtn}
+                                            onClick={() => setConnectingSource(source)}
+                                        >
+                                            {isSurveyImport ? 'Import CSV' : 'Connect'}
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </section>
+
             <section className={styles.section}>
                 <h2 className={styles.sectionTitle}>Coming Soon</h2>
                 <div className={styles.sourceGrid}>
                     {[
-                        { icon: '🔥', name: 'Fireflies', type: 'Interview', method: 'API Token' },
-                        { icon: '💬', name: 'Intercom', type: 'Support', method: 'OAuth' },
-                        { icon: '📈', name: 'Mixpanel', type: 'Analytics', method: 'API Token' },
+                        { icon: 'FF', name: 'Fireflies', type: 'Interview', method: 'API Token' },
+                        { icon: 'IC', name: 'Intercom', type: 'Support', method: 'OAuth' },
+                        { icon: 'MP', name: 'Mixpanel', type: 'Analytics', method: 'API Token' },
                     ].map((item) => (
-                        <div
-                            key={item.name}
-                            className={styles.sourceCard}
-                            style={{ opacity: 0.55 }}
-                        >
+                        <div key={item.name} className={styles.sourceCard} style={{ opacity: 0.55 }}>
                             <div className={styles.cardHeader}>
                                 <div className={styles.providerInfo}>
-                                    <div
-                                        className={`${styles.providerIcon} ${styles.providerIconAnalytics}`}
-                                    >
+                                    <div className={`${styles.providerIcon} ${styles.providerIconAnalytics}`}>
                                         {item.icon}
                                     </div>
                                     <div>
@@ -376,7 +386,7 @@ export default function IntegrationsPage() {
                             </div>
                             <div className={styles.cardBody}>
                                 <div className={styles.connectionMethod}>
-                                    <span className={styles.connectionMethodIcon}>🔑</span>
+                                    <span className={styles.connectionMethodIcon}>KEY</span>
                                     {item.method}
                                 </div>
                             </div>
@@ -385,7 +395,6 @@ export default function IntegrationsPage() {
                 </div>
             </section>
 
-            {/* Connect Modal */}
             {connectingSource && (
                 <ConnectModal
                     source={connectingSource}
@@ -394,6 +403,14 @@ export default function IntegrationsPage() {
                         setConnectingSource(null);
                         fetchData();
                     }}
+                />
+            )}
+
+            {detailConnectionId && (
+                <ConnectionDetailModal
+                    connectionId={detailConnectionId}
+                    onClose={() => setDetailConnectionId(null)}
+                    onUpdated={fetchData}
                 />
             )}
         </div>

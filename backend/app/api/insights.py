@@ -9,8 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
-from app.models import User, Insight
+from app.models import User, Insight, Theme
 from app.schemas import InsightResponse, InsightCreate, InsightUpdate
+from app.services.signals import sync_interview_signals_for_interview
 
 router = APIRouter(prefix="/api/insights", tags=["Insights"])
 
@@ -22,6 +23,12 @@ async def create_insight(
     db: AsyncSession = Depends(get_db),
 ):
     """Manually add an insight (user-created)."""
+    theme_name = None
+    if request.theme_id is not None:
+        theme = await db.get(Theme, request.theme_id)
+        if theme is not None and theme.user_id == current_user.id:
+            theme_name = theme.name
+
     insight = Insight(
         user_id=current_user.id,
         interview_id=request.interview_id,
@@ -33,9 +40,14 @@ async def create_insight(
         theme_id=request.theme_id,
         is_manual=True,
         confidence=1.0,
+        theme_suggestion=theme_name,
     )
     db.add(insight)
     await db.flush()
+    await sync_interview_signals_for_interview(
+        db,
+        interview_id=insight.interview_id,
+    )
     return insight
 
 
@@ -61,10 +73,20 @@ async def update_insight(
         insight.category = update.category
     if update.title is not None:
         insight.title = update.title
-    if update.theme_id is not None:
+    if "theme_id" in update.model_fields_set:
         insight.theme_id = update.theme_id
+        if update.theme_id is None:
+            insight.theme_suggestion = None
+        else:
+            theme = await db.get(Theme, update.theme_id)
+            if theme is not None and theme.user_id == current_user.id:
+                insight.theme_suggestion = theme.name
 
     await db.flush()
+    await sync_interview_signals_for_interview(
+        db,
+        interview_id=insight.interview_id,
+    )
     return insight
 
 
@@ -87,6 +109,10 @@ async def dismiss_insight(
 
     insight.is_dismissed = True
     await db.flush()
+    await sync_interview_signals_for_interview(
+        db,
+        interview_id=insight.interview_id,
+    )
 
 
 @router.post("/{insight_id}/flag", response_model=InsightResponse)

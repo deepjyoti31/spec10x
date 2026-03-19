@@ -7,7 +7,23 @@ Dev-mode mock auth is used (no Firebase needed).
 
 import uuid
 import pytest
+from datetime import datetime, timezone
+from sqlalchemy import select
 
+from app.models import (
+    FileType,
+    Insight,
+    InsightCategory,
+    Interview,
+    InterviewStatus,
+    Signal,
+    Speaker,
+    Theme,
+    ThemeStatus,
+    TranscriptChunk,
+)
+from app.services.signals import sync_interview_signals_for_interview
+from app.services.sources import get_or_create_default_workspace
 from tests.conftest import AUTH_HEADER, create_test_interview
 
 
@@ -112,3 +128,183 @@ class TestDeleteInterview:
         fake_id = str(uuid.uuid4())
         response = await client.delete(f"/api/interviews/{fake_id}", headers=AUTH_HEADER)
         assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_delete_cleans_up_native_signals(
+        self,
+        client,
+        db_session,
+        test_user,
+    ):
+        theme = Theme(
+            user_id=test_user.id,
+            name=f"Delete Cleanup Theme {uuid.uuid4()}",
+            mention_count=1,
+            sentiment_positive=0.0,
+            sentiment_neutral=0.0,
+            sentiment_negative=1.0,
+            status=ThemeStatus.active,
+        )
+        db_session.add(theme)
+        await db_session.flush()
+
+        interview = Interview(
+            user_id=test_user.id,
+            filename="delete_cleanup.txt",
+            file_type=FileType.txt,
+            file_size_bytes=42,
+            storage_path=f"tests/{uuid.uuid4()}.txt",
+            status=InterviewStatus.done,
+            transcript="Delete cleanup transcript",
+        )
+        db_session.add(interview)
+        await db_session.flush()
+
+        speaker = Speaker(
+            interview_id=interview.id,
+            speaker_label="Speaker 1",
+            name="Cleanup User",
+            auto_detected=True,
+        )
+        db_session.add(speaker)
+        await db_session.flush()
+
+        insight = Insight(
+            user_id=test_user.id,
+            interview_id=interview.id,
+            theme_id=theme.id,
+            category=InsightCategory.pain_point,
+            title="Delete cleanup insight",
+            quote="This should disappear from signals",
+            speaker_id=speaker.id,
+            confidence=0.9,
+            theme_suggestion=theme.name,
+            sentiment="negative",
+            created_at=datetime.now(timezone.utc),
+        )
+        db_session.add(insight)
+        await db_session.flush()
+        await sync_interview_signals_for_interview(db_session, interview_id=interview.id)
+        await db_session.commit()
+
+        workspace = await get_or_create_default_workspace(db_session, test_user)
+        pre_delete_signal = await db_session.execute(
+            select(Signal).where(
+                Signal.workspace_id == workspace.id,
+                Signal.provider == "native_upload",
+                Signal.native_entity_id == insight.id,
+            )
+        )
+        assert pre_delete_signal.scalar_one_or_none() is not None
+
+        response = await client.delete(f"/api/interviews/{interview.id}", headers=AUTH_HEADER)
+        assert response.status_code == 204
+
+        signal_result = await db_session.execute(
+            select(Signal).where(
+                Signal.workspace_id == workspace.id,
+                Signal.provider == "native_upload",
+                Signal.native_entity_id == insight.id,
+            )
+        )
+        assert signal_result.scalar_one_or_none() is None
+
+
+class TestReanalyzeInterview:
+    @pytest.mark.asyncio
+    async def test_reanalyze_cleans_existing_interview_artifacts(
+        self,
+        client,
+        db_session,
+        test_user,
+    ):
+        theme = Theme(
+            user_id=test_user.id,
+            name=f"Reanalyze Theme {uuid.uuid4()}",
+            mention_count=1,
+            sentiment_positive=0.0,
+            sentiment_neutral=0.0,
+            sentiment_negative=1.0,
+            status=ThemeStatus.active,
+        )
+        db_session.add(theme)
+        await db_session.flush()
+
+        interview = Interview(
+            user_id=test_user.id,
+            filename="reanalyze_cleanup.txt",
+            file_type=FileType.txt,
+            file_size_bytes=100,
+            storage_path=f"tests/{uuid.uuid4()}.txt",
+            status=InterviewStatus.done,
+            transcript="Old transcript",
+        )
+        db_session.add(interview)
+        await db_session.flush()
+
+        speaker = Speaker(
+            interview_id=interview.id,
+            speaker_label="Speaker 1",
+            name="Cleanup User",
+            auto_detected=True,
+        )
+        db_session.add(speaker)
+        await db_session.flush()
+
+        insight = Insight(
+            user_id=test_user.id,
+            interview_id=interview.id,
+            theme_id=theme.id,
+            category=InsightCategory.pain_point,
+            title="Old insight",
+            quote="Old quote",
+            speaker_id=speaker.id,
+            confidence=0.9,
+            theme_suggestion=theme.name,
+            sentiment="negative",
+            created_at=datetime.now(timezone.utc),
+        )
+        db_session.add(insight)
+        db_session.add(
+            TranscriptChunk(
+                interview_id=interview.id,
+                chunk_index=0,
+                content="Old chunk",
+            )
+        )
+        await db_session.flush()
+        await sync_interview_signals_for_interview(db_session, interview_id=interview.id)
+        await db_session.commit()
+
+        workspace = await get_or_create_default_workspace(db_session, test_user)
+
+        response = await client.post(
+            f"/api/interviews/{interview.id}/reanalyze",
+            headers=AUTH_HEADER,
+        )
+        assert response.status_code == 200
+        assert response.json()["status"] == "queued"
+
+        signal_result = await db_session.execute(
+            select(Signal).where(
+                Signal.workspace_id == workspace.id,
+                Signal.provider == "native_upload",
+                Signal.native_entity_id == insight.id,
+            )
+        )
+        assert signal_result.scalar_one_or_none() is None
+
+        insight_result = await db_session.execute(
+            select(Insight).where(Insight.interview_id == interview.id)
+        )
+        assert insight_result.scalars().all() == []
+
+        chunk_result = await db_session.execute(
+            select(TranscriptChunk).where(TranscriptChunk.interview_id == interview.id)
+        )
+        assert chunk_result.scalars().all() == []
+
+        speaker_result = await db_session.execute(
+            select(Speaker).where(Speaker.interview_id == interview.id)
+        )
+        assert speaker_result.scalars().all() == []

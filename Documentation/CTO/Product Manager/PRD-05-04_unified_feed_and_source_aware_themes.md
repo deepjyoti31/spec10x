@@ -1,7 +1,7 @@
 # PRD-05-04: Unified Feed and Source-Aware Themes
 
 > Date: March 16, 2026
-> Status: Draft
+> Status: Accepted for Sprint 4 and Sprint 5 scope
 > Release: `v0.5`
 > Owner: Founder acting as Product Manager
 > Epic: `EPIC-05-04`
@@ -20,6 +20,16 @@ Ship two connected surfaces:
 - source-aware theme detail views
 
 The feed proves the shared model works. Source-aware theme views explain where a theme is coming from and keep the product from sounding more certain than the evidence supports.
+
+## Implementation Update (March 19, 2026)
+
+Sprint 4 and Sprint 5 scope for this PRD is now implemented.
+
+- the unified feed now ships as a distinct `/feed` route with shared app navigation
+- feed filters for source, sentiment, and date persist in query params, and the selected signal is also query-param addressable
+- `GET /api/feed` and `GET /api/feed/{signal_id}` provide the normalized evidence payload used by the feed list and detail panel
+- dashboard theme detail now includes `source_breakdown` plus grouped `supporting_evidence` for interview, support, and survey signals
+- support and survey evidence cards deep-link into `/feed?signal=...`; interview evidence links back to the native interview view
 
 ## Why Now
 
@@ -97,7 +107,9 @@ The feed proves the shared model works. Source-aware theme views explain where a
 - `US-05-04-04`
 - `US-05-04-05` as optional support scope
 
-## Open Questions
+## Decisions Locked
 
-- whether the unified feed lives inside the existing dashboard or as a distinct view with shared navigation
-- whether saved views are worth shipping in `v0.5` if core feed adoption is not yet proven
+- the unified feed lives on a distinct `/feed` route with shared navigation, not inside the existing dashboard page
+- source-aware theme matching for non-interview evidence is deterministic for `v0.5` and persists the primary match in `signals.metadata_json.theme_match`
+- linkback behavior is source-specific: interview links stay inside the product, Zendesk links open the provider record, and survey evidence stays in the internal feed detail view with imported CSV context
+- saved views remain below the Sprint 4 and Sprint 5 cut line and stay deferred until Sprint 6 or later

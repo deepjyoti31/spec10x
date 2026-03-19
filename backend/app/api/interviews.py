@@ -17,7 +17,15 @@ from app.core.auth import get_current_user
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.storage import generate_upload_url
-from app.models import User, Interview, FileType, InterviewStatus, Speaker
+from app.models import (
+    User,
+    Interview,
+    FileType,
+    InterviewStatus,
+    Speaker,
+    Insight,
+    TranscriptChunk,
+)
 from app.schemas import (
     UploadUrlRequest,
     UploadUrlResponse,
@@ -27,6 +35,11 @@ from app.schemas import (
     SpeakerUpdate,
     SpeakerResponse,
 )
+from app.services.signals import (
+    cleanup_interview_native_signals,
+    refresh_external_signal_theme_matches,
+)
+from app.services.synthesis import synthesize_themes
 
 router = APIRouter(prefix="/api/interviews", tags=["Interviews"])
 
@@ -190,10 +203,21 @@ async def delete_interview(
     if not interview:
         raise HTTPException(status_code=404, detail="Interview not found")
 
+    await cleanup_interview_native_signals(
+        db,
+        interview_id=interview.id,
+    )
     await db.delete(interview)
+    await db.flush()
+
+    await synthesize_themes(db, current_user.id)
+    await refresh_external_signal_theme_matches(
+        db,
+        user_id=current_user.id,
+    )
 
     # TODO: Delete file from storage
-    # TODO: Recalculate themes after deletion
+    await db.flush()
 
 
 @router.post("/{interview_id}/reanalyze", response_model=InterviewResponse)
@@ -219,10 +243,32 @@ async def reanalyze_interview(
             detail="Interview is still processing",
         )
 
+    await cleanup_interview_native_signals(
+        db,
+        interview_id=interview.id,
+    )
+    await db.execute(
+        delete(TranscriptChunk).where(TranscriptChunk.interview_id == interview.id)
+    )
+    await db.execute(
+        delete(Insight).where(Insight.interview_id == interview.id)
+    )
+    await db.execute(
+        delete(Speaker).where(Speaker.interview_id == interview.id)
+    )
+
+    await synthesize_themes(db, current_user.id)
+    await refresh_external_signal_theme_matches(
+        db,
+        user_id=current_user.id,
+    )
+
     # Reset status and re-enqueue
     interview.status = InterviewStatus.queued
+    interview.transcript = None
     interview.error_message = None
     await db.flush()
+    await db.refresh(interview)
 
     pool = await _get_arq_pool()
     await pool.enqueue_job(
@@ -232,6 +278,8 @@ async def reanalyze_interview(
     )
 
     return interview
+
+
 @router.put("/{interview_id}/speakers/{speaker_id}", response_model=SpeakerResponse)
 async def update_speaker(
     interview_id: uuid.UUID,

@@ -114,14 +114,63 @@ class ThemeResponse(BaseModel):
     sentiment_negative: float
     is_new: bool
     status: ThemeStatus
+    impact_score: Optional[float] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
 
 
+class ThemeChipResponse(BaseModel):
+    id: str
+    name: str
+
+
+class SignalLinkResponse(BaseModel):
+    kind: str
+    href: str
+    label: str
+
+
+class FeedSignalResponse(BaseModel):
+    id: str
+    source_type: str
+    source_label: str
+    provider: str
+    provider_label: str
+    signal_kind: str
+    signal_kind_label: str
+    occurred_at: datetime
+    title: Optional[str] = None
+    excerpt: str
+    author_or_speaker: Optional[str] = None
+    sentiment: Optional[str] = None
+    theme_chip: Optional[ThemeChipResponse] = None
+    link: Optional[SignalLinkResponse] = None
+
+
+class FeedSignalDetailResponse(FeedSignalResponse):
+    content_text: Optional[str] = None
+    metadata_json: Optional[dict] = None
+
+
+class SourceBreakdownResponse(BaseModel):
+    source_type: str
+    label: str
+    count: int
+
+
+class SupportingEvidenceGroupResponse(BaseModel):
+    source_type: str
+    label: str
+    count: int
+    items: list[FeedSignalResponse] = []
+
+
 class ThemeDetailResponse(ThemeResponse):
     sub_themes: list["SubThemeResponse"] = []
     insights: list["InsightResponse"] = []
+    source_breakdown: list[SourceBreakdownResponse] = []
+    supporting_evidence: list[SupportingEvidenceGroupResponse] = []
 
 
 class ThemeUpdate(BaseModel):

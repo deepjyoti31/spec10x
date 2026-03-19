@@ -20,21 +20,17 @@ from app.connectors.csv_import import (
     TEMPLATE_CSV,
     validate_csv_bytes,
     CSVImportConnector,
-    _parse_datetime,
 )
 from app.models import (
     DataSource,
-    Signal,
-    SignalKind,
-    SignalStatus,
     SourceConnection,
     SourceConnectionStatus,
     SourceType,
     SyncRun,
-    SyncRunStatus,
     SyncRunType,
     User,
 )
+from app.services.signals import upsert_external_signals
 from app.services.sources import (
     create_source_connection,
     get_or_create_default_workspace,
@@ -42,7 +38,6 @@ from app.services.sources import (
     start_sync_run,
     complete_sync_run,
     fail_sync_run,
-    upsert_source_item,
 )
 
 router = APIRouter(prefix="/api/survey-import", tags=["Survey Import"])
@@ -190,50 +185,12 @@ async def confirm_import(
 
         signals = await connector.normalize(all_rows)
 
-        records_created = 0
-        records_updated = 0
-
-        for i, sig in enumerate(signals):
-            external_id = sig.external_id or f"row-{i+1}"
-
-            # Parse occurred_at
-            if isinstance(sig.occurred_at, str):
-                try:
-                    occurred_at = _parse_datetime(sig.occurred_at)
-                except ValueError:
-                    from datetime import datetime, timezone
-                    occurred_at = datetime.now(timezone.utc)
-            else:
-                occurred_at = sig.occurred_at
-
-            source_item, is_new = await upsert_source_item(
-                db,
-                workspace_id=workspace.id,
-                source_connection_id=connection.id,
-                external_id=external_id,
-                source_record_type="survey_response",
-            )
-
-            if is_new:
-                records_created += 1
-                signal_row = Signal(
-                    workspace_id=workspace.id,
-                    source_connection_id=connection.id,
-                    source_item_id=source_item.id,
-                    source_type=SourceType.survey,
-                    provider="csv_import",
-                    signal_kind=SignalKind.survey_response,
-                    occurred_at=occurred_at,
-                    title=sig.title,
-                    content_text=sig.content_text or "",
-                    author_or_speaker=sig.author_or_speaker,
-                    sentiment=sig.sentiment,
-                    metadata_json=sig.metadata_json,
-                    status=SignalStatus.active,
-                )
-                db.add(signal_row)
-            else:
-                records_updated += 1
+        records_created, records_updated = await upsert_external_signals(
+            db,
+            connection=connection,
+            data_source=data_source,
+            signals=signals,
+        )
 
         complete_sync_run(
             sync_run,

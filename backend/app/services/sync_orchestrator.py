@@ -22,22 +22,17 @@ from app.connectors import get_connector
 from app.connectors.base import BaseConnector, ConnectorError, NormalizedSignal, SyncResult
 from app.models import (
     DataSource,
-    Signal,
-    SignalKind,
-    SignalStatus,
     SourceConnection,
     SourceConnectionStatus,
-    SourceItem,
-    SourceType,
     SyncRun,
     SyncRunStatus,
     SyncRunType,
 )
+from app.services.signals import upsert_external_signals
 from app.services.sources import (
     complete_sync_run,
     fail_sync_run,
     start_sync_run,
-    upsert_source_item,
 )
 
 logger = logging.getLogger(__name__)
@@ -50,72 +45,13 @@ async def _persist_signals(
     data_source: DataSource,
     signals: list[NormalizedSignal],
 ) -> tuple[int, int]:
-    """Upsert source items and create signals for each NormalizedSignal.
-
-    Returns (records_created, records_updated).
-    """
-    created = 0
-    updated = 0
-
-    for sig in signals:
-        source_item, is_new = await upsert_source_item(
-            db,
-            workspace_id=connection.workspace_id,
-            source_connection_id=connection.id,
-            external_id=sig.external_id,
-            source_record_type=sig.source_record_type,
-            external_updated_at=(
-                sig.occurred_at if isinstance(sig.occurred_at, datetime) else None
-            ),
-            checksum=sig.checksum,
-        )
-
-        if is_new:
-            created += 1
-
-            # Parse signal_kind to enum
-            try:
-                kind = SignalKind(sig.signal_kind)
-            except ValueError:
-                kind = SignalKind.ticket
-
-            # Parse occurred_at
-            if isinstance(sig.occurred_at, datetime):
-                occurred_at = sig.occurred_at
-            elif isinstance(sig.occurred_at, str):
-                try:
-                    occurred_at = datetime.fromisoformat(
-                        sig.occurred_at.replace("Z", "+00:00")
-                    )
-                except ValueError:
-                    occurred_at = datetime.now(timezone.utc)
-            else:
-                occurred_at = datetime.now(timezone.utc)
-
-            signal_row = Signal(
-                workspace_id=connection.workspace_id,
-                source_connection_id=connection.id,
-                source_item_id=source_item.id,
-                source_type=data_source.source_type,
-                provider=data_source.provider,
-                signal_kind=kind,
-                occurred_at=occurred_at,
-                title=sig.title,
-                content_text=sig.content_text or "",
-                author_or_speaker=sig.author_or_speaker,
-                sentiment=sig.sentiment,
-                source_url=sig.source_url,
-                metadata_json=sig.metadata_json,
-                status=SignalStatus.active,
-            )
-            db.add(signal_row)
-        else:
-            updated += 1
-            # Optionally: update existing signal content if checksum changed.
-            # For Sprint 3 MVP we just count re-seen items.
-
-    await db.flush()
-    return created, updated
+    """Upsert source items and normalized signals for a source connection."""
+    return await upsert_external_signals(
+        db,
+        connection=connection,
+        data_source=data_source,
+        signals=signals,
+    )
 
 
 async def run_backfill(

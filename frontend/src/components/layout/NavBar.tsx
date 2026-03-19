@@ -65,6 +65,7 @@ export default function NavBar({ onSearchClick }: NavBarProps = {}) {
 
     const isDashboard = pathname === '/dashboard' || pathname.startsWith('/interview/');
     const isAsk = pathname === '/ask';
+    const isFeed = pathname === '/feed';
     const isIntegrations = pathname === '/integrations';
 
     const initials = user?.name
@@ -92,6 +93,12 @@ export default function NavBar({ onSearchClick }: NavBarProps = {}) {
                     className={`${styles.navLink} ${isAsk ? styles.navLinkActive : ''}`}
                 >
                     Ask
+                </a>
+                <a
+                    href="/feed"
+                    className={`${styles.navLink} ${isFeed ? styles.navLinkActive : ''}`}
+                >
+                    Feed
                 </a>
                 <a
                     href="/integrations"

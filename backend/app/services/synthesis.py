@@ -94,7 +94,16 @@ async def synthesize_themes(
     insights = result.scalars().all()
 
     if not insights:
-        logger.info("No insights found — nothing to synthesize")
+        logger.info("No insights found — marking existing themes as previous")
+        existing_stmt = select(Theme).where(Theme.user_id == user_id)
+        existing_result = await db.execute(existing_stmt)
+        for theme in existing_result.scalars().all():
+            theme.status = ThemeStatus.previous
+            theme.mention_count = 0
+            theme.sentiment_positive = 0.0
+            theme.sentiment_negative = 0.0
+            theme.sentiment_neutral = 0.0
+        await db.flush()
         return 0
 
     logger.info(f"Found {len(insights)} insights to synthesize")

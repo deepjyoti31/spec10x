@@ -63,6 +63,18 @@
     line-height: 1.6;
 }
 
+.impactScore {
+    display: inline-flex;
+    align-items: center;
+    margin-left: var(--space-2);
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-accent-border);
+    background: var(--color-accent-subtle);
+    color: var(--color-accent);
+    font-weight: var(--font-semibold);
+}
+
 .section {
     margin-bottom: var(--space-5);
 }
@@ -85,6 +97,29 @@
     margin-top: var(--space-2);
     font-size: 11px;
     color: var(--color-text-muted);
+}
+
+.breakdownRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.breakdownChip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 6px 10px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-card);
+    font-size: 11px;
+    color: var(--color-text-secondary);
+}
+
+.breakdownChip strong {
+    color: var(--color-text-primary);
+    font-size: 12px;
 }
 
 /* Quote cards */
@@ -144,6 +179,103 @@
 .quoteSource {
     font-size: var(--text-xs);
     color: var(--color-text-muted);
+}
+
+.evidenceGroups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.evidenceGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.evidenceGroupHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    font-weight: var(--font-semibold);
+}
+
+.evidenceGroupCount {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: var(--radius-full);
+    background: var(--color-bg-hover);
+    color: var(--color-text-primary);
+    font-size: 11px;
+}
+
+.evidenceList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.evidenceCard {
+    width: 100%;
+    text-align: left;
+    border: 1px solid var(--color-border);
+    background: linear-gradient(180deg, rgba(79, 140, 255, 0.06), transparent 65%), var(--color-bg-card);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    transition: border-color var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
+}
+
+.evidenceCard:hover {
+    border-color: var(--color-accent-border);
+    transform: translateY(-1px);
+    background: linear-gradient(180deg, rgba(79, 140, 255, 0.1), transparent 70%), var(--color-bg-card);
+}
+
+.evidenceCardTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+    font-size: 11px;
+}
+
+.evidenceSource {
+    color: var(--color-accent);
+    font-weight: var(--font-semibold);
+}
+
+.evidenceTime {
+    color: var(--color-text-muted);
+}
+
+.evidenceTitle {
+    font-size: 13px;
+    font-weight: var(--font-semibold);
+    color: var(--color-text-primary);
+    margin-bottom: 6px;
+}
+
+.evidenceExcerpt {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+
+.evidenceFooter {
+    margin-top: var(--space-3);
+}
+
+.evidenceAction {
+    font-size: 11px;
+    color: var(--color-accent);
+    font-weight: var(--font-semibold);
 }
 
 .contextToggle {

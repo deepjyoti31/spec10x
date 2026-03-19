@@ -149,7 +149,19 @@ async def process_interview(interview_id: str) -> dict:
             # ── Step 5: Cross-interview synthesis ──
             logger.info(f"Step 5: Synthesizing themes for user {user_id}")
             from app.services.synthesis import synthesize_themes
+            from app.services.signals import (
+                refresh_external_signal_theme_matches,
+                sync_interview_signals_for_interview,
+            )
             themes_count = await synthesize_themes(db, interview.user_id)
+            await sync_interview_signals_for_interview(
+                db,
+                interview_id=interview.id,
+            )
+            await refresh_external_signal_theme_matches(
+                db,
+                user_id=interview.user_id,
+            )
             logger.info(f"✅ Synthesis complete: {themes_count} themes")
 
             # ── Step 6: Mark done ──
