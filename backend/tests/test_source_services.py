@@ -84,6 +84,7 @@ class TestSourceFoundationServices:
             records_seen=12,
             records_created=10,
             records_updated=2,
+            records_unchanged=0,
         )
         await db_session.commit()
 
@@ -124,7 +125,7 @@ class TestSourceFoundationServices:
         )
 
         external_id = f"ticket-{uuid.uuid4()}"
-        item, created = await upsert_source_item(
+        item, created, unchanged = await upsert_source_item(
             db_session,
             workspace_id=workspace.id,
             source_connection_id=connection.id,
@@ -132,7 +133,7 @@ class TestSourceFoundationServices:
             source_record_type="ticket",
             checksum="checksum-v1",
         )
-        updated_item, created_again = await upsert_source_item(
+        updated_item, created_again, unchanged_again = await upsert_source_item(
             db_session,
             workspace_id=workspace.id,
             source_connection_id=connection.id,
@@ -154,8 +155,56 @@ class TestSourceFoundationServices:
         ).scalar_one()
 
         assert created is True
+        assert unchanged is False
         assert created_again is False
+        assert unchanged_again is False
         assert item.id == updated_item.id
         assert updated_item.checksum == "checksum-v2"
         assert updated_item.last_seen_at >= updated_item.first_seen_at
         assert count == 1
+
+    @pytest.mark.asyncio
+    async def test_sync_run_tracks_unchanged_records(
+        self,
+        db_session,
+        test_user,
+    ):
+        workspace = await get_or_create_default_workspace(db_session, test_user)
+        await seed_default_data_sources(db_session)
+        zendesk_source = (
+            await db_session.execute(
+                select(DataSource).where(DataSource.provider == "zendesk")
+            )
+        ).scalar_one()
+
+        connection = await create_source_connection(
+            db_session,
+            workspace=workspace,
+            created_by_user=test_user,
+            data_source=zendesk_source,
+            secret_ref="projects/test/secrets/zendesk-token",
+        )
+        transition_source_connection(connection, SourceConnectionStatus.validating)
+        transition_source_connection(connection, SourceConnectionStatus.connected)
+
+        sync_run = await start_sync_run(
+            db_session,
+            connection=connection,
+            run_type=SyncRunType.incremental,
+            cursor_in={"cursor": "page-1"},
+        )
+        complete_sync_run(
+            sync_run,
+            connection=connection,
+            cursor_out={"cursor": "page-2"},
+            records_seen=12,
+            records_created=3,
+            records_updated=4,
+            records_unchanged=5,
+        )
+        await db_session.commit()
+
+        persisted = (
+            await db_session.execute(select(SyncRun).where(SyncRun.id == sync_run.id))
+        ).scalar_one()
+        assert persisted.records_unchanged == 5

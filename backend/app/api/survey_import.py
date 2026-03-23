@@ -185,7 +185,7 @@ async def confirm_import(
 
         signals = await connector.normalize(all_rows)
 
-        records_created, records_updated = await upsert_external_signals(
+        records_created, records_updated, records_unchanged = await upsert_external_signals(
             db,
             connection=connection,
             data_source=data_source,
@@ -198,6 +198,7 @@ async def confirm_import(
             records_seen=len(all_rows),
             records_created=records_created,
             records_updated=records_updated,
+            records_unchanged=records_unchanged,
         )
 
         await db.commit()
@@ -210,6 +211,7 @@ async def confirm_import(
             "records_seen": len(all_rows),
             "records_created": records_created,
             "records_updated": records_updated,
+            "records_unchanged": records_unchanged,
         }
 
     except Exception as exc:
@@ -271,6 +273,7 @@ async def import_history(
             "records_seen": run.records_seen,
             "records_created": run.records_created,
             "records_updated": run.records_updated,
+            "records_unchanged": run.records_unchanged,
             "error_summary": run.error_summary,
         })
 

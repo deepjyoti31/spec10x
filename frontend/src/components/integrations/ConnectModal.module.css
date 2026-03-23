@@ -135,6 +135,38 @@
     line-height: 1.4;
 }
 
+.trustNote {
+    margin-top: 18px;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: rgba(79, 140, 255, 0.08);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.trustNote strong {
+    color: var(--color-text-primary);
+}
+
+.trustLinks {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.trustLink {
+    color: var(--color-accent);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.trustLink:hover {
+    color: var(--color-accent-hover);
+}
+
 .footer {
     display: flex;
     align-items: center;

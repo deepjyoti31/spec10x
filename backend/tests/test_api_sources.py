@@ -129,6 +129,7 @@ class TestSourceConnectionsApi:
         failed_run_payload = next(run for run in runs if run["id"] == str(failed_run.id))
         assert failed_run_payload["status"] == "failed"
         assert failed_run_payload["error_summary"] == "Zendesk rate limited the backfill"
+        assert failed_run_payload["records_unchanged"] == 0
 
         detail_response = await client.get(
             f"/api/source-connections/{connection.id}/sync-runs/{failed_run.id}",
@@ -136,3 +137,4 @@ class TestSourceConnectionsApi:
         )
         assert detail_response.status_code == 200
         assert detail_response.json()["id"] == str(failed_run.id)
+        assert detail_response.json()["records_unchanged"] == 0

@@ -122,6 +122,36 @@
     font-size: 12px;
 }
 
+.scoreGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2);
+}
+
+.scoreCard {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background:
+        linear-gradient(180deg, rgba(79, 140, 255, 0.08), transparent 100%),
+        var(--color-bg-card);
+}
+
+.scoreCard strong {
+    font-size: 16px;
+    color: var(--color-text-primary);
+}
+
+.scoreLabel {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+}
+
 /* Quote cards */
 .quoteCard {
     background: var(--color-bg-card);

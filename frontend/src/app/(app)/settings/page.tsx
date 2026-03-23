@@ -76,7 +76,7 @@ export default function SettingsPage() {
         setIsDeletingData(true);
         try {
             await api.deleteData(token);
-            alert("All your data has been successfully deleted.");
+            alert("Interview library data has been successfully deleted.");
             // Refresh limits after deletion
             const data = await api.getLimits(token);
             setLimits(data);
@@ -182,15 +182,19 @@ export default function SettingsPage() {
                 <div className={styles.dangerCard}>
                     <div className={styles.dangerRow}>
                         <div className={styles.dangerText}>
-                            <h4>Delete all data</h4>
-                            <p>Permanently remove all interviews, insights, and themes</p>
+                            <h4>Delete interview library data</h4>
+                            <p>
+                                Permanently remove uploaded interviews, generated insights,
+                                themes, and Ask history. Connected-source copies are handled
+                                separately.
+                            </p>
                         </div>
                         <button
                             className={styles.dangerBtn}
                             onClick={() => setShowDeleteDataModal(true)}
                             disabled={isDeletingData}
                         >
-                            {isDeletingData ? 'Deleting...' : 'Delete All Data'}
+                            {isDeletingData ? 'Deleting...' : 'Delete Interview Data'}
                         </button>
                     </div>
                     <div className={styles.dangerRow}>
@@ -216,8 +220,11 @@ export default function SettingsPage() {
                 width={480}
             >
                 <div className={styles.modalContent}>
-                    <h3>Delete all data?</h3>
-                    <p>Are you SURE you want to delete all your interviews, insights, and themes? This action cannot be undone.</p>
+                    <h3>Delete interview library data?</h3>
+                    <p>
+                        This removes uploaded interviews, generated insights, themes, and Ask
+                        history. Connected-source copied data is not removed by this action.
+                    </p>
                     <div className={styles.modalActions}>
                         <button
                             className={styles.cancelBtn}
@@ -230,7 +237,7 @@ export default function SettingsPage() {
                             onClick={handleDeleteData}
                             disabled={isDeletingData}
                         >
-                            {isDeletingData ? 'Deleting...' : 'Yes, Delete All Data'}
+                            {isDeletingData ? 'Deleting...' : 'Yes, Delete Interview Data'}
                         </button>
                     </div>
                 </div>

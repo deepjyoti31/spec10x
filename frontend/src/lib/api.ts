@@ -182,12 +182,20 @@ class ApiClient {
     return this.request<ThemeDetailResponse>(`/api/themes/${id}`, { token });
   }
 
-  async renameTheme(token: string, id: string, name: string) {
+  async getThemeBoard(token: string) {
+    return this.request<BoardThemeCardResponse[]>('/api/themes/board', { token });
+  }
+
+  async updateTheme(token: string, id: string, data: ThemeUpdateRequest) {
     return this.request<ThemeResponse>(`/api/themes/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(data),
       token,
     });
+  }
+
+  async renameTheme(token: string, id: string, name: string) {
+    return this.updateTheme(token, id, { name });
   }
 
   // === Feed ===
@@ -520,8 +528,19 @@ export interface ThemeResponse {
   sentiment_negative: number;
   is_new: boolean;
   status: string;
+  priority_state: ThemePriorityState;
   impact_score?: number;
   created_at: string;
+}
+
+export type ThemePriorityState = 'default' | 'pinned' | 'monitoring';
+
+export interface ThemeImpactBreakdownResponse {
+  total: number;
+  frequency: number;
+  negative: number;
+  recency: number;
+  source_diversity: number;
 }
 
 export interface ThemeChipResponse {
@@ -573,8 +592,20 @@ export interface SupportingEvidenceGroupResponse {
 export interface ThemeDetailResponse extends ThemeResponse {
   sub_themes: { id: string; name: string }[];
   insights: InsightResponse[];
+  impact_breakdown?: ThemeImpactBreakdownResponse;
   source_breakdown: SourceBreakdownResponse[];
   supporting_evidence: SupportingEvidenceGroupResponse[];
+}
+
+export interface BoardThemeCardResponse extends ThemeResponse {
+  impact_breakdown: ThemeImpactBreakdownResponse;
+  source_breakdown: SourceBreakdownResponse[];
+  evidence_preview: FeedSignalResponse[];
+}
+
+export interface ThemeUpdateRequest {
+  name?: string;
+  priority_state?: ThemePriorityState;
 }
 
 export interface InsightResponse {
@@ -748,6 +779,7 @@ export interface SyncRunResponse {
   records_seen: number;
   records_created: number;
   records_updated: number;
+  records_unchanged: number;
   error_summary?: string;
   retry_of_run_id?: string;
 }
@@ -760,6 +792,7 @@ export interface SurveyImportConfirmResponse {
   records_seen: number;
   records_created: number;
   records_updated: number;
+  records_unchanged?: number;
 }
 
 export interface SurveyImportHistoryItem {
@@ -772,6 +805,7 @@ export interface SurveyImportHistoryItem {
   records_seen: number;
   records_created: number;
   records_updated: number;
+  records_unchanged?: number;
   error_summary?: string;
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import {
     api,
@@ -190,6 +191,24 @@ export default function IntegrationsPage() {
                     Connect live providers, inspect sync health, and run repeatable survey imports
                     without turning CSV uploads into a one-time connection slot.
                 </p>
+                <div className={styles.trustCallout}>
+                    <div>
+                        <div className={styles.trustTitle}>Trust and permissions</div>
+                        <p className={styles.trustText}>
+                            Spec10x is positioned as a read-oriented analysis layer. Disconnect
+                            stops future syncs, and copied data deletion is separate from upstream
+                            provider records.
+                        </p>
+                    </div>
+                    <div className={styles.trustLinks}>
+                        <Link href="/trust" className={styles.trustLink}>
+                            Read trust overview
+                        </Link>
+                        <Link href="/privacy" className={styles.trustLinkSecondary}>
+                            Privacy and terms
+                        </Link>
+                    </div>
+                </div>
             </div>
 
             {activeConnections.length > 0 && (
@@ -239,6 +258,10 @@ export default function IntegrationsPage() {
                                         )}
                                         <div className={styles.lastSynced}>
                                             Last synced: {formatLastSynced(connection.last_synced_at)}
+                                        </div>
+                                        <div className={styles.trustSnippet}>
+                                            Disconnect stops future syncs. Copied data stays in
+                                            Spec10x until deleted separately.
                                         </div>
                                         {connection.last_error_summary && (
                                             <div className={styles.errorSummary}>{connection.last_error_summary}</div>
@@ -335,6 +358,13 @@ export default function IntegrationsPage() {
                                     {isSurveyImport && (
                                         <div className={styles.cardCaption}>
                                             Validate and import survey evidence as often as needed. Each upload keeps its own history entry.
+                                        </div>
+                                    )}
+                                    {!isNativeUpload && (
+                                        <div className={styles.trustSnippet}>
+                                            Read-oriented access where possible. Connection secrets
+                                            are not returned in API responses, and disconnect stops
+                                            future syncs.
                                         </div>
                                     )}
                                 </div>

@@ -318,6 +318,7 @@ export default function LandingPage() {
               <div className="flex flex-col md:items-end justify-center">
                 <h4 className="text-white font-bold mb-6 text-sm uppercase tracking-widest">Company</h4>
                 <ul className="flex items-center gap-8 text-sm text-slate-400">
+                  <li><Link className="hover:text-white transition-colors" href="/trust">Trust</Link></li>
                   <li><Link className="hover:text-white transition-colors" href="/privacy">Privacy</Link></li>
                   <li><Link className="hover:text-white transition-colors" href="/terms">Terms</Link></li>
                 </ul>

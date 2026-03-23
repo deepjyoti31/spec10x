@@ -23,6 +23,7 @@ interface SearchResult {
 
 const PAGE_RESULTS: SearchResult[] = [
     { id: 'page-dashboard', type: 'page', icon: 'DB', label: 'Dashboard', href: '/dashboard' },
+    { id: 'page-board', type: 'page', icon: 'BD', label: 'Priority Board', href: '/board' },
     { id: 'page-ask', type: 'page', icon: 'QA', label: 'Ask Your Interviews', href: '/ask' },
     { id: 'page-feed', type: 'page', icon: 'FD', label: 'Feed', href: '/feed' },
     { id: 'page-settings', type: 'page', icon: 'ST', label: 'Settings', href: '/settings' },
@@ -93,7 +94,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                     icon: 'TH',
                     label: theme.name,
                     hint: `${theme.mention_count} mentions`,
-                    href: '/dashboard',
+                    href: `/dashboard?theme=${theme.id}`,
                 }))
         );
 

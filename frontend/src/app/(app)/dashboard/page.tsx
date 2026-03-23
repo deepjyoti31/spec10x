@@ -8,6 +8,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useInterviews } from '@/hooks/useInterviews';
 import { useThemes } from '@/hooks/useThemes';
@@ -26,6 +27,7 @@ import styles from './dashboard.module.css';
 
 export default function DashboardPage() {
     const { token } = useAuth();
+    const searchParams = useSearchParams();
     const { interviews, loading: interviewsLoading, sort: interviewSort, setSort: setInterviewSort, refetch: refetchInterviews } = useInterviews();
     const { activeThemes, previousThemes, loading: themesLoading, sort: themeSort, setSort: setThemeSort, refetch: refetchThemes } = useThemes();
 
@@ -35,6 +37,23 @@ export default function DashboardPage() {
     const [themeInsights, setThemeInsights] = useState<InsightResponse[]>([]);
     const [interviewInsights, setInterviewInsights] = useState<InsightResponse[]>([]);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const requestedThemeId = searchParams.get('theme');
+    const allThemes = [...activeThemes, ...previousThemes];
+
+    useEffect(() => {
+        if (!requestedThemeId) {
+            return;
+        }
+
+        const matchedTheme = allThemes.find((theme) => theme.id === requestedThemeId);
+        if (!matchedTheme || selectedTheme?.id === matchedTheme.id) {
+            return;
+        }
+
+        setSelectedTheme(matchedTheme);
+        setSelectedThemeDetail(null);
+        setSelectedInterview(null);
+    }, [allThemes, requestedThemeId, selectedTheme?.id]);
 
     useEffect(() => {
         if (!token || !selectedTheme) {

@@ -64,6 +64,7 @@ export default function NavBar({ onSearchClick }: NavBarProps = {}) {
     };
 
     const isDashboard = pathname === '/dashboard' || pathname.startsWith('/interview/');
+    const isBoard = pathname === '/board';
     const isAsk = pathname === '/ask';
     const isFeed = pathname === '/feed';
     const isIntegrations = pathname === '/integrations';
@@ -87,6 +88,12 @@ export default function NavBar({ onSearchClick }: NavBarProps = {}) {
                     className={`${styles.navLink} ${isDashboard ? styles.navLinkActive : ''}`}
                 >
                     Dashboard
+                </a>
+                <a
+                    href="/board"
+                    className={`${styles.navLink} ${isBoard ? styles.navLinkActive : ''}`}
+                >
+                    Board
                 </a>
                 <a
                     href="/ask"

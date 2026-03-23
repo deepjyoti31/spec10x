@@ -235,6 +235,7 @@ def complete_sync_run(
     records_seen: int = 0,
     records_created: int = 0,
     records_updated: int = 0,
+    records_unchanged: int = 0,
 ) -> SyncRun:
     sync_run.status = SyncRunStatus.succeeded
     sync_run.finished_at = datetime.now(timezone.utc)
@@ -242,6 +243,7 @@ def complete_sync_run(
     sync_run.records_seen = records_seen
     sync_run.records_created = records_created
     sync_run.records_updated = records_updated
+    sync_run.records_unchanged = records_unchanged
     sync_run.error_summary = None
 
     connection.last_synced_at = sync_run.finished_at
@@ -258,6 +260,7 @@ def fail_sync_run(
     records_seen: int = 0,
     records_created: int = 0,
     records_updated: int = 0,
+    records_unchanged: int = 0,
 ) -> SyncRun:
     sync_run.status = SyncRunStatus.failed
     sync_run.finished_at = datetime.now(timezone.utc)
@@ -265,6 +268,7 @@ def fail_sync_run(
     sync_run.records_seen = records_seen
     sync_run.records_created = records_created
     sync_run.records_updated = records_updated
+    sync_run.records_unchanged = records_unchanged
     sync_run.error_summary = error_summary
 
     transition_source_connection(
@@ -286,7 +290,7 @@ async def upsert_source_item(
     native_entity_type: str | None = None,
     native_entity_id: uuid.UUID | None = None,
     checksum: str | None = None,
-) -> tuple[SourceItem, bool]:
+) -> tuple[SourceItem, bool, bool]:
     stmt = select(SourceItem).where(
         SourceItem.source_connection_id == source_connection_id,
         SourceItem.external_id == external_id,
@@ -309,8 +313,9 @@ async def upsert_source_item(
         )
         db.add(source_item)
         await db.flush()
-        return source_item, True
+        return source_item, True, False
 
+    is_unchanged = source_item.checksum == checksum
     source_item.source_record_type = source_record_type
     source_item.external_updated_at = external_updated_at
     source_item.native_entity_type = native_entity_type
@@ -318,4 +323,4 @@ async def upsert_source_item(
     source_item.checksum = checksum
     source_item.last_seen_at = now
     await db.flush()
-    return source_item, False
+    return source_item, False, is_unchanged

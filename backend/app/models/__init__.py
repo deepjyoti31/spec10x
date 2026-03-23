@@ -75,6 +75,12 @@ class ThemeStatus(str, enum.Enum):
     previous = "previous"
 
 
+class ThemePriorityState(str, enum.Enum):
+    default = "default"
+    pinned = "pinned"
+    monitoring = "monitoring"
+
+
 class MessageRole(str, enum.Enum):
     user = "user"
     assistant = "assistant"
@@ -330,6 +336,7 @@ class SyncRun(Base):
     records_seen: Mapped[int] = mapped_column(Integer, default=0)
     records_created: Mapped[int] = mapped_column(Integer, default=0)
     records_updated: Mapped[int] = mapped_column(Integer, default=0)
+    records_unchanged: Mapped[int] = mapped_column(Integer, default=0)
     error_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
     retry_of_run_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("sync_runs.id", ondelete="SET NULL"), nullable=True
@@ -549,6 +556,10 @@ class Theme(Base):
     status: Mapped[ThemeStatus] = mapped_column(
         Enum(ThemeStatus, name="theme_status"), default=ThemeStatus.active
     )
+    priority_state: Mapped[ThemePriorityState] = mapped_column(
+        Enum(ThemePriorityState, name="theme_priority_state"),
+        default=ThemePriorityState.default,
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -566,6 +577,7 @@ class Theme(Base):
     # Indexes
     __table_args__ = (
         Index("ix_themes_user_status", "user_id", "status"),
+        Index("ix_themes_user_priority_state", "user_id", "priority_state"),
     )
 
 

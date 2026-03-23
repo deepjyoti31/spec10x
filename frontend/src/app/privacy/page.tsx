@@ -1,204 +1,138 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
+import LegalPageShell from '@/components/legal/LegalPageShell';
 
-export default function PrivacyPage() {
-  return (
-    <div className="min-h-screen bg-[#080808] text-slate-100 font-['Inter'] antialiased selection:bg-[#5E6AD2]/30 overflow-x-hidden">
-      {/* Navbar */}
-      <nav className="fixed top-0 w-full z-50 glass border-b border-white/5">
-        <div className="w-full px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="size-8">
-              <img src="/assets/logos/spec10x_logo_transparent_1080.png" alt="Spec10x Logo" className="w-full h-full object-contain" />
+function Section({
+    title,
+    children,
+}: {
+    title: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <section className="glass p-8 rounded-[28px] border border-white/5 space-y-5">
+            <h2 className="text-2xl font-bold text-white">{title}</h2>
+            <div className="space-y-4 text-slate-400 leading-relaxed text-sm md:text-base">
+                {children}
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">Spec10x</span>
-          </Link>
-          <Link href="/" className="text-sm font-medium text-slate-400 hover:text-white transition-colors flex items-center gap-2">
-            <span className="material-symbols-outlined !text-sm">arrow_back</span>
-            Back to Home
-          </Link>
-        </div>
-      </nav>
-
-      <main className="relative pt-32 pb-32 max-w-4xl mx-auto px-6">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-[#5E6AD2]/5 blur-[120px] -z-10 rounded-full"></div>
-        
-        <header className="mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-[#5E6AD2] mb-6">
-            Privacy Framework
-          </div>
-          <h1 className="text-5xl lg:text-7xl font-black tracking-tighter text-white mb-6 leading-[0.8] primary-gradient-text">
-            Privacy Policy
-          </h1>
-          <p className="text-slate-400 text-lg">
-            Last Updated: <span className="text-white">March 15, 2026</span>
-          </p>
-        </header>
-
-        <div className="prose prose-invert prose-slate max-w-none space-y-16">
-          <section className="glass p-8 rounded-3xl border border-white/5 hover:border-white/10 transition-colors">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-              <span className="size-2 rounded-full bg-[#5E6AD2]"></span>
-              1. Introduction
-            </h2>
-            <div className="space-y-4 text-slate-400 leading-relaxed">
-              <p>
-                Welcome to Spec10x. This Privacy Policy describes how <strong>VertiTech Inc</strong> ("the Company", "we", "us", or "our"), a company registered in Newark, Delaware, USA, collects, uses, and discloses your information when you use our platform.
-              </p>
-              <p>
-                We provide an intelligence layer for product discovery, and protecting the sensitive customer data you entrust to us is our highest priority. By using Spec10x, you agree to the collection and use of information in accordance with this policy.
-              </p>
-            </div>
-          </section>
-
-          <section className="space-y-8">
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                <span className="size-2 rounded-full bg-[#5E6AD2]"></span>
-                2. Information We Collect
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="glass-dark p-6 rounded-2xl border border-white/5">
-                  <h3 className="text-white font-bold mb-3">Personal Data</h3>
-                  <p className="text-sm text-slate-400 leading-relaxed">
-                    While using our Service, we may ask you to provide us with certain personally identifiable information that can be used to contact or identify you, including your name, email address, and billing information.
-                  </p>
-                </div>
-                <div className="glass-dark p-6 rounded-2xl border border-white/5">
-                  <h3 className="text-white font-bold mb-3">User Content</h3>
-                  <p className="text-sm text-slate-400 leading-relaxed">
-                    We collect the files you upload (audio, video, transcripts) and the metadata associated with them. This content is processed solely to provide insights for your organization.
-                  </p>
-                </div>
-                <div className="glass-dark p-6 rounded-2xl border border-white/5">
-                  <h3 className="text-white font-bold mb-3">Usage Data</h3>
-                  <p className="text-sm text-slate-400 leading-relaxed">
-                    This includes your device's IP address, browser type, pages visited, and time spent on the platform to help us optimize the performance and security of our services.
-                  </p>
-                </div>
-                <div className="glass-dark p-6 rounded-2xl border border-white/5">
-                  <h3 className="text-white font-bold mb-3">Cookies</h3>
-                  <p className="text-sm text-slate-400 leading-relaxed">
-                    We use administrative cookies and similar tracking technologies to handle sessions and maintain your authenticated state across the platform.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="glass p-8 rounded-3xl border border-white/5">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-              <span className="size-2 rounded-full bg-[#5E6AD2]"></span>
-              3. Data Processing and AI
-            </h2>
-            <div className="space-y-6 text-slate-400 leading-relaxed">
-              <p>
-                Our core service involves the use of artificial intelligence to analyze, cluster, and synthesize customer feedback. Your data is processed using secure, enterprise-grade inference models.
-              </p>
-              <div className="p-6 rounded-2xl bg-[#5E6AD2]/5 border border-[#5E6AD2]/20">
-                <h4 className="text-[#5E6AD2] font-bold mb-2">Zero Training Guarantee</h4>
-                <p className="text-sm italic">
-                  We do NOT use your proprietary interview data, transcripts, or strategic documents to train base foundation models. Your data remains isolated to your organization's environment.
-                </p>
-              </div>
-              <p>
-                We only use sub-processors that meet strict security and confidentiality standards. These partners are prohibited from using your data for any other purpose than providing specific infra services to us.
-              </p>
-            </div>
-          </section>
-
-          <section className="space-y-6 text-slate-400 leading-relaxed">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-              <span className="size-2 rounded-full bg-[#5E6AD2]"></span>
-              4. Data Infrastructure & Security
-            </h2>
-            <div className="space-y-4">
-              <p>
-                The security and integrity of your product discovery data are foundational to our platform. We utilize <strong>Google Cloud Platform (GCP)</strong> to host our infrastructure, benefiting from world-class physical and network security.
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-                <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
-                  <h4 className="text-white font-bold mb-2 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#5E6AD2] text-sm">lock</span>
-                    Encryption
-                  </h4>
-                  <p className="text-xs leading-relaxed">
-                    All data is encrypted using industry-standard protocols. We employ AES-256 encryption for data at rest and TLS 1.2+ for all data in transit. 
-                  </p>
-                </div>
-                <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
-                  <h4 className="text-white font-bold mb-2 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#5E6AD2] text-sm">cloud_done</span>
-                    Resiliency
-                  </h4>
-                  <p className="text-xs leading-relaxed">
-                    Data is stored in high-availability, multi-region configurations within GCP to ensure durability and continuous access even in the event of regional failures.
-                  </p>
-                </div>
-                <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
-                  <h4 className="text-white font-bold mb-2 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#5E6AD2] text-sm">admin_panel_settings</span>
-                    Access Control
-                  </h4>
-                  <p className="text-xs leading-relaxed">
-                    We implement the principle of least privilege. Access to production environments is strictly gated via multi-factor authentication and role-based access controls (RBAC).
-                  </p>
-                </div>
-                <div className="p-5 rounded-2xl bg-white/5 border border-white/10">
-                  <h4 className="text-white font-bold mb-2 flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[#5E6AD2] text-sm">monitoring</span>
-                    Audit Logs
-                  </h4>
-                  <p className="text-xs leading-relaxed">
-                    All administrative access and critical system activities are logged and monitored to detect and respond to potential security incidents in real-time.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="space-y-6 text-slate-400 leading-relaxed">
-            <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-              <span className="size-2 rounded-full bg-[#5E6AD2]"></span>
-              5. Your Rights and Ownership
-            </h2>
-            <p>
-              You maintain full ownership of all content uploaded to the platform. You have the right to access, update, export, or delete your data at any time through the platform settings or by contacting our support team.
-            </p>
-            <ul className="list-disc pl-6 space-y-3">
-              <li><strong>Deletion:</strong> You can purge your entire workspace and all associated transcripts instantly.</li>
-              <li><strong>Portability:</strong> You can export your insights and summaries at any time.</li>
-              <li><strong>Opt-out:</strong> You can unsubscribe from marketing communications while retaining service-essential emails.</li>
-            </ul>
-          </section>
-
-          <section className="glass p-12 rounded-[40px] border border-white/5 text-center">
-            <h2 className="text-3xl font-black text-white mb-6">Contact Us</h2>
-            <p className="text-slate-400 mb-8 max-w-sm mx-auto">
-              If you have any questions about this Privacy Policy or our data practices, please reach out to our legal team.
-            </p>
-            <div className="space-y-4">
-              <a href="mailto:hello@spec10x.com" className="text-2xl font-bold text-[#5E6AD2] hover:text-[#5E6AD2]/80 transition-colors block">
-                hello@spec10x.com
-              </a>
-              <div className="text-sm text-slate-500">
-                <p className="font-bold text-slate-300">VertiTech Inc</p>
-                <p>Newark, Delaware</p>
-                <p>United States of America</p>
-              </div>
-            </div>
-          </section>
-        </div>
-      </main>
-
-      <footer className="border-t border-white/5 py-12 opacity-50">
-        <div className="max-w-7xl mx-auto px-6 text-center text-xs text-slate-500">
-          <p>© 2026 Spec10x by VertiTech Inc. All rights reserved.</p>
-        </div>
-      </footer>
-    </div>
-  );
+        </section>
+    );
 }
 
+export default function PrivacyPage() {
+    return (
+        <LegalPageShell
+            eyebrow="Privacy Framework"
+            title="Privacy Policy"
+            updatedAt="March 23, 2026"
+            summary="This policy explains what Spec10x reads, what it stores, how it uses that data to deliver the product, and the boundaries of our current trust promises."
+        >
+            <Section title="1. Information We Collect">
+                <p>
+                    We collect account information such as name, email address, and
+                    authentication identifiers so you can sign in and use the service.
+                </p>
+                <p>
+                    We collect customer content you choose to upload or connect, including
+                    interviews, transcripts, normalized support evidence, survey imports,
+                    related metadata, and the links or IDs needed to trace evidence back to
+                    its source.
+                </p>
+                <p>
+                    We also collect operational data such as connection status, sync history,
+                    usage activity, and error logs so the product remains usable and
+                    supportable.
+                </p>
+            </Section>
+
+            <Section title="2. How We Use Data">
+                <p>
+                    We use customer content to provide Spec10x features such as analysis,
+                    search, evidence feeds, theme clustering, prioritization, and product
+                    support.
+                </p>
+                <p>
+                    We use account and operational data to authenticate users, keep
+                    integrations running, investigate failures, enforce product limits, and
+                    improve reliability.
+                </p>
+                <p>
+                    We do not use customer content to train Spec10x&apos;s own generalized
+                    models.
+                </p>
+            </Section>
+
+            <Section title="3. AI and Model Providers">
+                <p>
+                    Some product workflows send content to model or infrastructure providers
+                    so we can generate transcripts, embeddings, summaries, or answers.
+                </p>
+                <p>
+                    We do not claim stronger provider-side retention guarantees than the
+                    active production configuration and vendor terms support. Where a model
+                    provider may apply logging, abuse monitoring, caching, or temporary
+                    retention, that possibility is part of the processing path.
+                </p>
+            </Section>
+
+            <Section title="4. Storage, Disconnect, and Delete">
+                <p>
+                    Spec10x stores the minimum durable copy needed to make the product useful.
+                    That can include transcript text where required for analysis, normalized
+                    evidence rows, embeddings, source links and IDs, sync cursors, sync
+                    status, and metadata needed for evidence views and debugging.
+                </p>
+                <p>
+                    Disconnect means Spec10x stops future syncs for that connection. It does
+                    not delete records in the upstream provider.
+                </p>
+                <p>
+                    Imported-data delete means deleting copied data held by Spec10x. It does
+                    not delete the upstream provider&apos;s records. Current self-serve controls
+                    include connection disconnect in Integrations and account deletion in
+                    Settings. Narrower source-scoped copied-data requests may require support
+                    handling while the product surface stays lightweight.
+                </p>
+            </Section>
+
+            <Section title="5. Security and Credentials">
+                <p>
+                    Provider credentials are not exposed back through normal application
+                    responses. Production deployments should back connected-source credentials
+                    with secret-reference storage before public rollout.
+                </p>
+                <p>
+                    We use access controls, operational logging, and managed infrastructure
+                    services to reduce risk, but no system can guarantee absolute security.
+                </p>
+            </Section>
+
+            <Section title="6. Subprocessors and Contact">
+                <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                        <h3 className="text-white font-semibold mb-2">
+                            Google Cloud Platform and Vertex AI
+                        </h3>
+                        <p className="text-sm text-slate-400">
+                            Hosting, storage, database, queueing, secret management, logging,
+                            and model inference.
+                        </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                        <h3 className="text-white font-semibold mb-2">
+                            Firebase Authentication
+                        </h3>
+                        <p className="text-sm text-slate-400">
+                            User authentication and identity management.
+                        </p>
+                    </div>
+                </div>
+                <p>
+                    If you have questions about this policy or want to request data deletion,
+                    contact <a className="text-[#5E6AD2] hover:text-[#7d87df]" href="mailto:hello@spec10x.com">hello@spec10x.com</a>.
+                </p>
+            </Section>
+        </LegalPageShell>
+    );
+}

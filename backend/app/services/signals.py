@@ -264,7 +264,7 @@ async def upsert_external_signals(
     connection: SourceConnection,
     data_source: DataSource,
     signals: list[NormalizedSignal],
-) -> tuple[int, int]:
+) -> tuple[int, int, int]:
     owner_user_id = await _get_workspace_owner_user_id(db, connection.workspace_id)
     themes_result = await db.execute(
         select(Theme).where(
@@ -276,9 +276,10 @@ async def upsert_external_signals(
 
     created = 0
     updated = 0
+    unchanged = 0
 
     for normalized in signals:
-        source_item, is_new_item = await upsert_source_item(
+        source_item, _, source_item_unchanged = await upsert_source_item(
             db,
             workspace_id=connection.workspace_id,
             source_connection_id=connection.id,
@@ -315,6 +316,26 @@ async def upsert_external_signals(
             )
             db.add(signal_row)
         else:
+            signal_is_unchanged = (
+                source_item_unchanged
+                and signal_row.source_connection_id == connection.id
+                and signal_row.source_item_id == source_item.id
+                and signal_row.source_type == data_source.source_type
+                and signal_row.provider == data_source.provider
+                and signal_row.signal_kind == _signal_kind_from_string(normalized.signal_kind)
+                and signal_row.occurred_at == _parse_occurred_at(normalized.occurred_at)
+                and signal_row.title == normalized.title
+                and signal_row.content_text == (normalized.content_text or "")
+                and signal_row.author_or_speaker == normalized.author_or_speaker
+                and signal_row.sentiment == normalized.sentiment
+                and signal_row.source_url == normalized.source_url
+                and signal_row.metadata_json == metadata_json
+                and signal_row.status == SignalStatus.active
+            )
+            if signal_is_unchanged:
+                unchanged += 1
+                continue
+
             updated += 1
             signal_row.source_connection_id = connection.id
             signal_row.source_item_id = source_item.id
@@ -331,7 +352,7 @@ async def upsert_external_signals(
             signal_row.status = SignalStatus.active
 
     await db.flush()
-    return created, updated
+    return created, updated, unchanged
 
 
 async def refresh_external_signal_theme_matches(
@@ -649,6 +670,16 @@ def build_theme_score_map(
     return {
         theme.id: calculate_impact_score(theme_id=theme.id, signals=signals)
         for theme in themes
+    }
+
+
+def serialize_impact_breakdown(result: ImpactScoreResult) -> dict[str, float]:
+    return {
+        "total": result.total,
+        "frequency": result.frequency,
+        "negative": result.negative,
+        "recency": result.recency,
+        "source_diversity": result.source_diversity,
     }
 
 

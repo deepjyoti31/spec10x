@@ -127,6 +127,15 @@ export default function ConnectionDetailModal({
                             </div>
                         )}
 
+                        <div className={styles.trustNote}>
+                            Disconnect stops future syncs for this connection. It does not delete
+                            upstream provider records, and copied data in Spec10x is deleted
+                            separately.
+                            <a href="/trust" className={styles.trustLink}>
+                                Read the trust overview
+                            </a>
+                        </div>
+
                         {error && <div className={styles.errorBox}>{error}</div>}
 
                         <div className={styles.section}>

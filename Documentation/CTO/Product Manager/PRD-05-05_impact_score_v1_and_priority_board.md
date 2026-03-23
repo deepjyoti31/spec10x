@@ -1,7 +1,7 @@
 # PRD-05-05: Impact Score v1 and Priority Board
 
 > Date: March 16, 2026
-> Status: Impact Score v1 accepted; priority board deferred to Sprint 6
+> Status: Sprint 6 implemented; Sprint 7 hardening next
 > Release: `v0.5`
 > Owner: Founder acting as Product Manager
 > Epic: `EPIC-05-05`
@@ -21,13 +21,16 @@ Ship this epic in two steps:
 
 Impact Score v1 stays intentionally simple and explainable.
 
-## Implementation Update (March 19, 2026)
+## Implementation Update (March 23, 2026)
 
-The Sprint 5 portion of this PRD is now implemented.
+This PRD is now implemented through Sprint 6.
 
-- `GET /api/themes?sort=urgency` now uses Impact Score v1 ordering
-- theme detail responses can include `impact_score` alongside source breakdown and supporting evidence
-- the dedicated board view, expanded score breakdown UI, and pin or monitor controls remain Sprint 6 work and are intentionally not part of the accepted Sprint 4 and Sprint 5 scope
+- `GET /api/themes?sort=urgency` uses Impact Score v1 ordering
+- theme detail responses now include `impact_score`, `impact_breakdown`, source breakdown, and supporting evidence
+- `GET /api/themes/board` now drives the dedicated `/board` route
+- board cards show ranked themes, source breakdown, evidence preview, and lightweight `pin` or `monitor` overrides
+- `PATCH /api/themes/{id}` now accepts `priority_state` without changing rename behavior
+- Sprint 7 still owns smoke coverage and any below-the-line stretch work
 
 ## Impact Score v1 Formula
 
@@ -58,9 +61,9 @@ Balanced formula locked for `v0.5`:
 
 - score inputs: frequency, recency, negative sentiment weight, source diversity
 - deterministic score output
-- score visibility in theme detail and urgency sort for Sprint 5
-- ranked board cards with evidence preview in Sprint 6
-- pin or monitor state in Sprint 6
+- score visibility in theme detail, urgency sort, and board expansion
+- ranked board cards with evidence preview
+- pin or monitor state
 
 ## Out of Scope
 
@@ -76,7 +79,7 @@ Balanced formula locked for `v0.5`:
 2. Product ranks themes using Impact Score v1
 3. PM opens theme detail to inspect impact score, source breakdown, and supporting evidence
 4. PM follows evidence links into feed or interview views
-5. Sprint 6 adds the dedicated board surface plus pin or monitor controls
+5. PM uses the dedicated board surface to pin, monitor, or inspect a ranked theme without turning the board into a task tracker
 
 ## Key Requirements
 
@@ -117,5 +120,5 @@ Balanced formula locked for `v0.5`:
 ## Decisions Locked
 
 - Impact Score v1 uses the balanced formula above and no extra hidden weights
-- the board remains a Sprint 6 surface; Sprint 5 acceptance does not require a new `/board` route or board nav item
-- trend placeholders and board-card evidence preview stay deferred until the Sprint 6 board implementation
+- the board ships as a dedicated `/board` route with a board nav item
+- trend placeholders and heavier workflow behavior remain outside the Sprint 6 cut line

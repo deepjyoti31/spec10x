@@ -126,6 +126,29 @@
     font-size: 12px;
 }
 
+.trustNote {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    background: rgba(79, 140, 255, 0.08);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.trustLink {
+    display: inline-flex;
+    margin-top: 8px;
+    color: var(--color-accent);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.trustLink:hover {
+    color: var(--color-accent-hover);
+}
+
 .errorBox {
     margin-top: 14px;
     padding: 12px 14px;

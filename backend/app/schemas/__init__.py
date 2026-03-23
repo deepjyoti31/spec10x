@@ -17,6 +17,7 @@ from app.models import (
     SourceType,
     SyncRunStatus,
     SyncRunType,
+    ThemePriorityState,
     ThemeStatus,
     MessageRole,
 )
@@ -114,10 +115,19 @@ class ThemeResponse(BaseModel):
     sentiment_negative: float
     is_new: bool
     status: ThemeStatus
+    priority_state: ThemePriorityState
     impact_score: Optional[float] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ThemeImpactBreakdownResponse(BaseModel):
+    total: float
+    frequency: float
+    negative: float
+    recency: float
+    source_diversity: float
 
 
 class ThemeChipResponse(BaseModel):
@@ -171,10 +181,18 @@ class ThemeDetailResponse(ThemeResponse):
     insights: list["InsightResponse"] = []
     source_breakdown: list[SourceBreakdownResponse] = []
     supporting_evidence: list[SupportingEvidenceGroupResponse] = []
+    impact_breakdown: Optional[ThemeImpactBreakdownResponse] = None
 
 
 class ThemeUpdate(BaseModel):
     name: Optional[str] = None
+    priority_state: Optional[ThemePriorityState] = None
+
+
+class BoardThemeCardResponse(ThemeResponse):
+    impact_breakdown: ThemeImpactBreakdownResponse
+    source_breakdown: list[SourceBreakdownResponse] = []
+    evidence_preview: list[FeedSignalResponse] = []
 
 
 class SubThemeResponse(BaseModel):
@@ -290,6 +308,7 @@ class SyncRunResponse(BaseModel):
     records_seen: int
     records_created: int
     records_updated: int
+    records_unchanged: int
     error_summary: Optional[str] = None
     retry_of_run_id: Optional[uuid.UUID] = None
 

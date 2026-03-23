@@ -19,6 +19,7 @@ from app.models import (
     InterviewStatus,
     Speaker,
     Theme,
+    ThemePriorityState,
     ThemeStatus,
 )
 from app.services.signals import sync_interview_signals_for_interview, upsert_external_signals
@@ -287,6 +288,9 @@ class TestFeedApi:
         assert breakdown["interview"] >= 1
         assert breakdown["support"] >= 1
         assert breakdown["survey"] >= 1
+        assert payload["impact_breakdown"]["total"] == payload["impact_score"]
+        assert payload["impact_breakdown"]["frequency"] >= 0
+        assert payload["impact_breakdown"]["source_diversity"] > 0
 
         groups = {group["source_type"]: group for group in payload["supporting_evidence"]}
         interview_item = groups["interview"]["items"][0]
@@ -366,3 +370,110 @@ class TestImpactScoreApi:
         low_row = next(row for row in rows if row["name"] == low_theme.name)
         assert high_row["impact_score"] == 63.0
         assert low_row["impact_score"] == 36.0
+
+    @pytest.mark.asyncio
+    async def test_priority_board_returns_ranked_cards_and_preview(
+        self,
+        client,
+        db_session,
+        test_user,
+    ):
+        pinned_theme = await _create_theme(
+            db_session,
+            test_user,
+            f"Pinned {uuid.uuid4().hex[:8]}",
+            mention_count=3,
+        )
+        ranked_theme = await _create_theme(
+            db_session,
+            test_user,
+            f"Ranked {uuid.uuid4().hex[:8]}",
+            mention_count=2,
+        )
+        monitored_theme = await _create_theme(
+            db_session,
+            test_user,
+            f"Monitoring {uuid.uuid4().hex[:8]}",
+            mention_count=1,
+        )
+        pinned_theme.priority_state = ThemePriorityState.pinned
+        monitored_theme.priority_state = ThemePriorityState.monitoring
+
+        now = datetime.now(timezone.utc)
+        await _create_interview_signal(
+            db_session,
+            test_user,
+            pinned_theme,
+            title="Pinned Interview",
+            quote=f"Evidence for {pinned_theme.name}",
+            created_at=now - timedelta(days=1),
+        )
+        await _create_external_signal(
+            db_session,
+            test_user,
+            provider="zendesk",
+            title="Pinned Ticket",
+            content_text=f"Support evidence for {pinned_theme.name}",
+            occurred_at=now - timedelta(hours=12),
+            sentiment="negative",
+            source_url="https://acme.zendesk.com/agent/tickets/800",
+            metadata_json={"tags": [pinned_theme.name]},
+        )
+        await _create_interview_signal(
+            db_session,
+            test_user,
+            ranked_theme,
+            title="Ranked Interview",
+            quote=f"Evidence for {ranked_theme.name}",
+            created_at=now - timedelta(days=2),
+        )
+        await _create_interview_signal(
+            db_session,
+            test_user,
+            monitored_theme,
+            title="Monitoring Interview",
+            quote=f"Evidence for {monitored_theme.name}",
+            created_at=now - timedelta(days=4),
+            sentiment="neutral",
+        )
+        await db_session.commit()
+
+        response = await client.get("/api/themes/board", headers=AUTH_HEADER)
+        assert response.status_code == 200
+        rows = response.json()
+        assert len(rows) >= 3
+
+        pinned_row = next(row for row in rows if row["id"] == str(pinned_theme.id))
+        ranked_row = next(row for row in rows if row["id"] == str(ranked_theme.id))
+        monitored_row = next(row for row in rows if row["id"] == str(monitored_theme.id))
+
+        assert pinned_row["priority_state"] == "pinned"
+        assert monitored_row["priority_state"] == "monitoring"
+        assert ranked_row["priority_state"] == "default"
+        assert pinned_row["impact_breakdown"]["total"] == pinned_row["impact_score"]
+        assert len(pinned_row["evidence_preview"]) == 2
+        assert any(item["source_type"] == "support" for item in pinned_row["evidence_preview"])
+
+    @pytest.mark.asyncio
+    async def test_patch_theme_updates_priority_state_without_rename(
+        self,
+        client,
+        db_session,
+        test_user,
+    ):
+        theme = await _create_theme(
+            db_session,
+            test_user,
+            f"Priority {uuid.uuid4().hex[:8]}",
+        )
+        await db_session.commit()
+
+        response = await client.patch(
+            f"/api/themes/{theme.id}",
+            json={"priority_state": "monitoring"},
+            headers=AUTH_HEADER,
+        )
+        assert response.status_code == 200
+        payload = response.json()
+        assert payload["name"] == theme.name
+        assert payload["priority_state"] == "monitoring"

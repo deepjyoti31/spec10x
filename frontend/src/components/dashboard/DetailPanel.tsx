@@ -82,6 +82,7 @@ export default function DetailPanel({
         const displayInsights = selectedThemeDetail?.insights || themeInsights;
         const breakdown = selectedThemeDetail?.source_breakdown || [];
         const evidenceGroups = selectedThemeDetail?.supporting_evidence || [];
+        const impactBreakdown = selectedThemeDetail?.impact_breakdown;
 
         return (
             <div className={styles.panel}>
@@ -123,6 +124,30 @@ export default function DetailPanel({
                                     <strong>{item.count}</strong>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                )}
+
+                {impactBreakdown && (
+                    <div className={styles.section}>
+                        <h3 className={styles.sectionTitle}>Why It Ranks Here</h3>
+                        <div className={styles.scoreGrid}>
+                            <div className={styles.scoreCard}>
+                                <span className={styles.scoreLabel}>Frequency</span>
+                                <strong>{impactBreakdown.frequency.toFixed(1)}</strong>
+                            </div>
+                            <div className={styles.scoreCard}>
+                                <span className={styles.scoreLabel}>Negative</span>
+                                <strong>{impactBreakdown.negative.toFixed(1)}</strong>
+                            </div>
+                            <div className={styles.scoreCard}>
+                                <span className={styles.scoreLabel}>Recency</span>
+                                <strong>{impactBreakdown.recency.toFixed(1)}</strong>
+                            </div>
+                            <div className={styles.scoreCard}>
+                                <span className={styles.scoreLabel}>Source Diversity</span>
+                                <strong>{impactBreakdown.source_diversity.toFixed(1)}</strong>
+                            </div>
                         </div>
                     </div>
                 )}

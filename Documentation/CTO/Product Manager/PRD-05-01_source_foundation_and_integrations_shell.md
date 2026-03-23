@@ -1,7 +1,7 @@
 # PRD-05-01: Source Foundation and Integrations Shell
 
 > Date: March 16, 2026
-> Status: Draft
+> Status: Accepted and implemented in Sprint 1 and Sprint 2
 > Release: `v0.5`
 > Owner: Founder acting as Product Manager
 > Epic: `EPIC-05-01`
@@ -24,6 +24,15 @@ Build the minimal shared connector foundation for `v0.5`:
 - an integrations shell in product settings
 
 This foundation is additive. It does not replace `interviews`, `insights`, `themes`, or `transcript_chunks` in `v0.5`.
+
+## Implementation Update (March 23, 2026)
+
+The source-foundation scope in this PRD is implemented in the current codebase.
+
+- shared source tables, workspace-safe ownership, and the integrations shell are live
+- the connector contract is in place for `connect`, `validate`, `backfill`, `sync_incremental`, `normalize`, and `disconnect`
+- `sync_runs` now track `records_seen`, `records_created`, `records_updated`, and `records_unchanged`
+- structured sync logs now support the Sprint 6 observability baseline without adding a new in-product admin UI
 
 ## Why Now
 

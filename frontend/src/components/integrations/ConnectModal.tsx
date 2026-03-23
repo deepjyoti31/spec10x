@@ -151,6 +151,20 @@ function CredentialModal({ source, onClose, onConnected }: ConnectModalProps) {
                             Zendesk Admin {'>'} Channels {'>'} API {'>'} Settings
                         </div>
                     </div>
+
+                    <div className={styles.trustNote}>
+                        <strong>Before you connect:</strong> Spec10x is a read-oriented analysis
+                        layer. Disconnect stops future syncs. Copied data in Spec10x can be
+                        deleted separately and does not remove records from Zendesk.
+                        <div className={styles.trustLinks}>
+                            <a href="/trust" className={styles.trustLink}>
+                                Trust overview
+                            </a>
+                            <a href="/privacy" className={styles.trustLink}>
+                                Privacy
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
                 <div className={styles.footer}>
@@ -333,6 +347,19 @@ function CSVUploadModal({ source, onClose, onConnected }: ConnectModalProps) {
                             <button className={styles.templateLink} onClick={handleDownloadTemplate}>
                                 Download CSV template
                             </button>
+                            <div className={styles.trustNote}>
+                                <strong>Import behavior:</strong> CSV rows become copied evidence
+                                inside Spec10x. Removing imported data from Spec10x does not
+                                delete the original survey records outside the product.
+                                <div className={styles.trustLinks}>
+                                    <a href="/trust" className={styles.trustLink}>
+                                        Trust overview
+                                    </a>
+                                    <a href="/terms" className={styles.trustLink}>
+                                        Terms
+                                    </a>
+                                </div>
+                            </div>
                         </>
                     ) : (
                         <>
@@ -422,6 +449,12 @@ function CSVUploadModal({ source, onClose, onConnected }: ConnectModalProps) {
                                     )}
                                 </div>
                             )}
+
+                            <div className={styles.trustNote}>
+                                <strong>Storage note:</strong> Imported survey rows are stored as
+                                normalized evidence so they can power feed, theme, and board
+                                views without re-reading the CSV every time.
+                            </div>
                         </>
                     )}
                 </div>
