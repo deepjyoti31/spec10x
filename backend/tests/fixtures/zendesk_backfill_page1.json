@@ -1,0 +1,47 @@
+{
+  "tickets": [
+    {
+      "id": 1001,
+      "subject": "Cannot access billing portal",
+      "description": "I've been trying to access the billing portal for the last two days but keep getting a 500 error.",
+      "created_at": "2026-03-10T09:15:00Z",
+      "updated_at": "2026-03-10T12:30:00Z",
+      "requester": {"name": "Alice Chen", "email": "alice@example.com"},
+      "priority": "high",
+      "status": "open",
+      "tags": ["billing", "error", "portal"],
+      "type": "problem",
+      "url": "https://test-workspace.zendesk.com/api/v2/tickets/1001.json"
+    },
+    {
+      "id": 1002,
+      "subject": "Feature request: dark mode",
+      "description": "Would love to have a dark mode option for the dashboard.",
+      "created_at": "2026-03-11T14:20:00Z",
+      "updated_at": "2026-03-11T14:20:00Z",
+      "requester": {"name": "Bob Martinez"},
+      "priority": "low",
+      "status": "new",
+      "tags": ["feature-request", "ui"],
+      "type": "question",
+      "url": "https://test-workspace.zendesk.com/api/v2/tickets/1002.json"
+    },
+    {
+      "id": 1003,
+      "subject": "Onboarding wizard stuck on step 3",
+      "description": "The onboarding wizard freezes at step 3 when I try to invite team members. Browser console shows a TypeError.",
+      "created_at": "2026-03-12T08:45:00Z",
+      "updated_at": "2026-03-13T10:00:00Z",
+      "requester": {"name": "Carol Davis", "email": "carol@example.com"},
+      "priority": "urgent",
+      "status": "pending",
+      "tags": ["onboarding", "bug", "critical"],
+      "type": "incident",
+      "url": "https://test-workspace.zendesk.com/api/v2/tickets/1003.json"
+    }
+  ],
+  "after_cursor": "eyJhZnRlciI6MTAwM30=",
+  "after_url": null,
+  "end_of_stream": true,
+  "count": 3
+}

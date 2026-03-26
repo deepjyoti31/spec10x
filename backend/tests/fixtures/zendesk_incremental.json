@@ -1,0 +1,21 @@
+{
+  "tickets": [
+    {
+      "id": 1004,
+      "subject": "Export fails for large datasets",
+      "description": "When I try to export more than 10k rows the download never completes and eventually times out.",
+      "created_at": "2026-03-14T16:30:00Z",
+      "updated_at": "2026-03-14T17:00:00Z",
+      "requester": {"name": "Dave Wilson"},
+      "priority": "normal",
+      "status": "open",
+      "tags": ["export", "performance"],
+      "type": "problem",
+      "url": "https://test-workspace.zendesk.com/api/v2/tickets/1004.json"
+    }
+  ],
+  "after_cursor": "eyJhZnRlciI6MTAwNH0=",
+  "after_url": null,
+  "end_of_stream": true,
+  "count": 1
+}
