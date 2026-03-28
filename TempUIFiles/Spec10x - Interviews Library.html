@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Interviews | Spec10x Product OS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-variant": "#33343b",
+                        "on-tertiary": "#4d2700",
+                        "surface-dim": "#111319",
+                        "inverse-surface": "#e2e2eb",
+                        "on-secondary-container": "#a4b8e9",
+                        "on-primary": "#002d6c",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#004398",
+                        "secondary": "#b2c6f8",
+                        "surface-bright": "#373940",
+                        "secondary-container": "#354873",
+                        "surface-container-lowest": "#0c0e14",
+                        "surface-container": "#1e1f26",
+                        "on-tertiary-fixed": "#2e1500",
+                        "surface-container-low": "#191b22",
+                        "surface": "#111319",
+                        "on-secondary": "#1a2f58",
+                        "inverse-primary": "#0059c6",
+                        "tertiary-fixed": "#ffdcc2",
+                        "outline": "#8c909f",
+                        "on-surface-variant": "#c2c6d6",
+                        "on-secondary-fixed": "#011a42",
+                        "error-container": "#93000a",
+                        "error": "#ffb4ab",
+                        "primary-fixed-dim": "#afc6ff",
+                        "on-primary-container": "#00275f",
+                        "secondary-fixed-dim": "#b2c6f8",
+                        "on-tertiary-container": "#432100",
+                        "surface-tint": "#afc6ff",
+                        "background": "#111319",
+                        "primary-fixed": "#d9e2ff",
+                        "on-secondary-fixed-variant": "#324670",
+                        "tertiary-fixed-dim": "#ffb77b",
+                        "on-primary-fixed": "#001a43",
+                        "surface-container-highest": "#33343b",
+                        "secondary-fixed": "#d9e2ff",
+                        "outline-variant": "#424753",
+                        "primary-container": "#528dff",
+                        "tertiary": "#ffb77b",
+                        "surface-container-high": "#282a30",
+                        "tertiary-container": "#d87802",
+                        "on-background": "#e2e2eb",
+                        "on-error": "#690005",
+                        "on-surface": "#e2e2eb",
+                        "inverse-on-surface": "#2e3037",
+                        "primary": "#afc6ff",
+                        "on-tertiary-fixed-variant": "#6d3a00"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #33343b; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #424753; }
+        .glass-panel {
+            background: rgba(30, 31, 38, 0.7);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface overflow-hidden flex h-screen">
+<!-- SIDEBAR: Collapsed 64px (Authority: SideNavBar JSON) -->
+<aside class="w-[64px] h-screen fixed left-0 top-0 overflow-y-auto overflow-x-hidden bg-[#0C0D12] flex flex-col items-center py-4 z-50 transition-all duration-300">
+<div class="mb-8 opacity-80 hover:opacity-100 cursor-pointer">
+<span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">dataset</span>
+</div>
+<nav class="flex flex-col gap-2 w-full items-center">
+<!-- Active: Interviews (Index 2 in JSON) -->
+<div class="text-slate-500 m-2 p-2 flex items-center justify-center hover:bg-[#1E1F26] hover:text-[#AFC6FF] transition-colors duration-200 cursor-pointer rounded-lg group relative">
+<span class="material-symbols-outlined">home</span>
+</div>
+<div class="text-slate-500 m-2 p-2 flex items-center justify-center hover:bg-[#1E1F26] hover:text-[#AFC6FF] transition-colors duration-200 cursor-pointer rounded-lg group relative">
+<span class="material-symbols-outlined">analytics</span>
+</div>
+<!-- ACTIVE ITEM -->
+<div class="bg-[#1E1F26] text-[#AFC6FF] rounded-lg m-2 p-2 flex items-center justify-center scale-95 transition-transform cursor-pointer group relative">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">interpreter_mode</span>
+<div class="absolute left-0 w-1 h-6 bg-primary-container rounded-r-full"></div>
+</div>
+<div class="text-slate-500 m-2 p-2 flex items-center justify-center hover:bg-[#1E1F26] hover:text-[#AFC6FF] transition-colors duration-200 cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">rss_feed</span>
+</div>
+<div class="text-slate-500 m-2 p-2 flex items-center justify-center hover:bg-[#1E1F26] hover:text-[#AFC6FF] transition-colors duration-200 cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">extension</span>
+</div>
+<div class="text-slate-500 m-2 p-2 flex items-center justify-center hover:bg-[#1E1F26] hover:text-[#AFC6FF] transition-colors duration-200 cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">dashboard</span>
+</div>
+<div class="text-slate-500 m-2 p-2 flex items-center justify-center hover:bg-[#1E1F26] hover:text-[#AFC6FF] transition-colors duration-200 cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">auto_awesome</span>
+</div>
+<div class="text-slate-500 m-2 p-2 flex items-center justify-center hover:bg-[#1E1F26] hover:text-[#AFC6FF] transition-colors duration-200 cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">trending_up</span>
+</div>
+<div class="text-slate-500 m-2 p-2 flex items-center justify-center hover:bg-[#1E1F26] hover:text-[#AFC6FF] transition-colors duration-200 cursor-pointer rounded-lg">
+<span class="material-symbols-outlined">description</span>
+</div>
+</nav>
+<div class="mt-auto mb-4 flex flex-col gap-4">
+<div class="text-slate-500 p-2 flex items-center justify-center hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined">help_outline</span>
+</div>
+<div class="text-slate-500 p-2 flex items-center justify-center hover:text-white cursor-pointer transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</div>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/30">
+<img class="w-full h-full object-cover" data-alt="close-up portrait of a professional woman with a minimalist aesthetic and soft cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZxL4sMYfhiJOpxfoQf1r6N5-YVE0ixRNc49WXUd2rQny9PT-Bkz2Nn0c-tEBDJW76KM3CvQvXkyuETtXqfNsjzHhJ6Vp6r6ODa-mqa45TVxMo1Va0CG92jkyYPIgKWsc-gGfy6m105Wus40jbkLUxsiIsBNfqnl6BQOW8uXBhvDa6DNckGae5_o8NenXvZqiiJ3a3KjvRUADkabyvZGZO2WMbCJKzu5hZNnuhTrfWYyUyfDfVWwMyF18RltQeXMD9Q_4PGYSy_eM"/>
+</div>
+</div>
+</aside>
+<!-- MAIN CONTENT AREA -->
+<main class="flex-1 ml-[64px] flex flex-col h-screen overflow-hidden bg-[#0F1117]">
+<!-- TOP NAV BAR (Authority: TopNavBar JSON) -->
+<header class="h-14 bg-[#0F1117]/80 backdrop-blur-xl flex justify-between items-center px-8 w-full border-b border-white/[0.06] shrink-0">
+<div class="flex items-center gap-4">
+<nav class="flex items-center gap-2 text-sm">
+<span class="text-slate-400">Spec10x</span>
+<span class="material-symbols-outlined text-xs text-slate-600">chevron_right</span>
+<span class="text-[#AFC6FF] font-medium">Interviews</span>
+</nav>
+</div>
+<div class="flex items-center gap-6">
+<div class="relative group">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-white cursor-pointer transition-colors">search</span>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined text-slate-400 hover:text-white cursor-pointer transition-colors">notifications</span>
+<div class="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full border-2 border-[#0F1117]"></div>
+</div>
+<span class="material-symbols-outlined text-slate-400 hover:text-white cursor-pointer transition-colors">help_outline</span>
+</div>
+</header>
+<!-- PAGE CONTENT (Scrollable Canvas) -->
+<div class="flex-1 overflow-y-auto p-8 relative">
+<!-- Header Section -->
+<div class="flex justify-between items-start mb-10">
+<div>
+<h1 class="text-3xl font-bold tracking-tight text-[#F0F0F3] mb-1">Interviews</h1>
+<p class="text-sm text-[#8B8D97] flex items-center gap-2">
+<span>47 interviews</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span>58.2 MB of 5 GB used</span>
+</p>
+</div>
+<button class="bg-[#4F8CFF] hover:bg-primary-container text-white px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all shadow-lg shadow-blue-500/10">
+<span class="material-symbols-outlined text-[20px]">upload</span>
+                    Upload
+                </button>
+</div>
+<!-- Filter Bar -->
+<div class="flex items-center gap-3 mb-8 h-10">
+<div class="relative flex-1 max-w-md h-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm">search</span>
+<input class="w-full h-full bg-[#161820] border border-[#1E2028] rounded-xl pl-10 pr-4 text-sm focus:outline-none focus:border-primary/40 transition-colors placeholder-slate-600" placeholder="Filter interviews..." type="text"/>
+</div>
+<div class="flex h-full gap-2">
+<div class="h-full px-3 bg-[#161820] border border-[#1E2028] rounded-xl flex items-center gap-2 text-xs font-medium text-slate-400 cursor-pointer hover:border-slate-700 transition-colors">
+                        Sort: <span class="text-slate-200">Recent first</span>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</div>
+<div class="h-full px-3 bg-[#161820] border border-[#1E2028] rounded-xl flex items-center gap-2 text-xs font-medium text-slate-400 cursor-pointer hover:border-slate-700 transition-colors">
+                        Status: <span class="text-slate-200">All statuses</span>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</div>
+<div class="h-full px-3 bg-[#161820] border border-[#1E2028] rounded-xl flex items-center gap-2 text-xs font-medium text-slate-400 cursor-pointer hover:border-slate-700 transition-colors">
+                        Source: <span class="text-slate-200">All sources</span>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Interview List -->
+<div class="space-y-3 pb-24">
+<!-- Row 1 -->
+<div class="bg-[#161820] border border-[#1E2028] rounded-xl p-5 hover:border-primary/30 hover:bg-[#1E1F26] transition-all group cursor-pointer flex items-center">
+<input class="w-4 h-4 rounded border-[#1E2028] bg-transparent text-primary focus:ring-offset-0 focus:ring-0 mr-6" type="checkbox"/>
+<div class="p-2.5 bg-surface-container-low rounded-lg mr-5 text-primary">
+<span class="material-symbols-outlined text-[24px]">description</span>
+</div>
+<div class="flex-1">
+<h3 class="text-[15px] font-semibold text-[#F0F0F3] mb-1">Sarah Chen — Onboarding Deep Dive</h3>
+<div class="flex items-center gap-3 text-[13px] text-slate-500">
+<span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-sm">domain</span> Stripe</span>
+<span class="w-1 h-1 rounded-full bg-slate-700"></span>
+<span>Jan 15</span>
+<span class="w-1 h-1 rounded-full bg-slate-700"></span>
+<span>42 min</span>
+</div>
+</div>
+<div class="flex items-center gap-8 mr-12">
+<div class="flex flex-col text-right">
+<span class="text-xs font-semibold text-slate-300">7 insights</span>
+<span class="text-[10px] text-slate-500 uppercase tracking-widest">Analysis</span>
+</div>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-md uppercase tracking-tighter">Onboarding</span>
+<span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-md uppercase tracking-tighter">Search</span>
+<span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-md uppercase tracking-tighter">Pricing</span>
+</div>
+</div>
+<div class="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+<span class="text-[11px] font-bold text-green-500 uppercase tracking-wider">Done</span>
+</div>
+</div>
+<!-- Row 2 -->
+<div class="bg-[#161820] border border-[#1E2028] rounded-xl p-5 hover:border-primary/30 hover:bg-[#1E1F26] transition-all group cursor-pointer flex items-center">
+<input class="w-4 h-4 rounded border-[#1E2028] bg-transparent text-primary focus:ring-offset-0 focus:ring-0 mr-6" type="checkbox"/>
+<div class="p-2.5 bg-surface-container-low rounded-lg mr-5 text-slate-400">
+<span class="material-symbols-outlined text-[24px]">mic</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-1">
+<h3 class="text-[15px] font-semibold text-[#F0F0F3]">Q4 Customer Feedback Report</h3>
+<span class="px-2 py-0.5 bg-surface-container-highest/50 text-slate-400 text-[10px] font-medium rounded">Synced from Fireflies</span>
+</div>
+<div class="flex items-center gap-3 text-[13px] text-slate-500">
+<span class="flex items-center gap-1.5">Anonymous Participant</span>
+<span class="w-1 h-1 rounded-full bg-slate-700"></span>
+<span>Jan 12</span>
+<span class="w-1 h-1 rounded-full bg-slate-700"></span>
+<span>128 min</span>
+</div>
+</div>
+<div class="flex items-center gap-8 mr-12">
+<div class="flex flex-col text-right">
+<span class="text-xs font-semibold text-slate-300">22 insights</span>
+<span class="text-[10px] text-slate-500 uppercase tracking-widest">Analysis</span>
+</div>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-md uppercase tracking-tighter">Mobile</span>
+<span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-md uppercase tracking-tighter">API</span>
+</div>
+</div>
+<div class="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+<span class="text-[11px] font-bold text-green-500 uppercase tracking-wider">Done</span>
+</div>
+</div>
+<!-- Row 3 -->
+<div class="bg-[#161820] border border-[#1E2028] rounded-xl p-5 hover:border-primary/30 hover:bg-[#1E1F26] transition-all group cursor-pointer flex items-center">
+<input class="w-4 h-4 rounded border-[#1E2028] bg-transparent text-primary focus:ring-offset-0 focus:ring-0 mr-6" type="checkbox"/>
+<div class="p-2.5 bg-surface-container-low rounded-lg mr-5 text-slate-400">
+<span class="material-symbols-outlined text-[24px]">videocam</span>
+</div>
+<div class="flex-1">
+<h3 class="text-[15px] font-semibold text-[#F0F0F3] mb-1">Product Review Call — Enterprise Tier</h3>
+<div class="flex items-center gap-3 text-[13px] text-slate-500">
+<span class="flex items-center gap-1.5">John D. @ Enterprise Inc</span>
+<span class="w-1 h-1 rounded-full bg-slate-700"></span>
+<span>Jan 10</span>
+<span class="w-1 h-1 rounded-full bg-slate-700"></span>
+<span>18 min</span>
+</div>
+</div>
+<div class="flex items-center gap-8 mr-12">
+<div class="flex flex-col text-right">
+<span class="text-xs font-semibold text-slate-300">4 insights</span>
+<span class="text-[10px] text-slate-500 uppercase tracking-widest">Analysis</span>
+</div>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-md uppercase tracking-tighter">Performance</span>
+<span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-md uppercase tracking-tighter">UX</span>
+</div>
+</div>
+<div class="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+<span class="text-[11px] font-bold text-green-500 uppercase tracking-wider">Done</span>
+</div>
+</div>
+<!-- Row 4 -->
+<div class="bg-[#161820] border border-[#1E2028] rounded-xl p-5 hover:border-primary/30 hover:bg-[#1E1F26] transition-all group cursor-pointer flex items-center">
+<input class="w-4 h-4 rounded border-[#1E2028] bg-transparent text-primary focus:ring-offset-0 focus:ring-0 mr-6" type="checkbox"/>
+<div class="p-2.5 bg-surface-container-low rounded-lg mr-5 text-slate-400">
+<span class="material-symbols-outlined text-[24px]">mic</span>
+</div>
+<div class="flex-1">
+<div class="flex items-center gap-3 mb-1">
+<h3 class="text-[15px] font-semibold text-[#F0F0F3]">User Testing Session — Mobile App</h3>
+<span class="px-2 py-0.5 bg-surface-container-highest/50 text-slate-400 text-[10px] font-medium rounded">Synced from Fireflies</span>
+</div>
+<div class="flex items-center gap-3 text-[13px] text-slate-500">
+<span>Jan 8</span>
+<span class="w-1 h-1 rounded-full bg-slate-700"></span>
+<span>55 min</span>
+</div>
+</div>
+<div class="flex items-center gap-8 mr-12">
+<div class="flex flex-col text-right">
+<span class="text-xs font-semibold text-slate-300">12 insights</span>
+<span class="text-[10px] text-slate-500 uppercase tracking-widest">Analysis</span>
+</div>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-md uppercase tracking-tighter">Mobile</span>
+<span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-md uppercase tracking-tighter">Navigation</span>
+</div>
+</div>
+<div class="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+<span class="text-[11px] font-bold text-green-500 uppercase tracking-wider">Done</span>
+</div>
+</div>
+<!-- Row 5 -->
+<div class="bg-[#161820] border border-[#1E2028] rounded-xl p-5 hover:border-primary/30 hover:bg-[#1E1F26] transition-all group cursor-pointer flex items-center">
+<input class="w-4 h-4 rounded border-[#1E2028] bg-transparent text-primary focus:ring-offset-0 focus:ring-0 mr-6" type="checkbox"/>
+<div class="p-2.5 bg-surface-container-low rounded-lg mr-5 text-slate-400">
+<span class="material-symbols-outlined text-[24px]">description</span>
+</div>
+<div class="flex-1">
+<h3 class="text-[15px] font-semibold text-[#F0F0F3] mb-1">Guilherme — API Integration Feedback</h3>
+<div class="flex items-center gap-3 text-[13px] text-slate-500">
+<span>Developer @ Acme</span>
+<span class="w-1 h-1 rounded-full bg-slate-700"></span>
+<span>Jan 5</span>
+<span class="w-1 h-1 rounded-full bg-slate-700"></span>
+<span>28 min</span>
+</div>
+</div>
+<div class="flex items-center gap-8 mr-12">
+<div class="flex flex-col text-right">
+<span class="text-xs font-semibold text-slate-300">9 insights</span>
+<span class="text-[10px] text-slate-500 uppercase tracking-widest">Analysis</span>
+</div>
+<div class="flex gap-2">
+<span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-md uppercase tracking-tighter">API</span>
+<span class="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[10px] font-bold rounded-md uppercase tracking-tighter">Documentation</span>
+</div>
+</div>
+<div class="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
+<div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+<span class="text-[11px] font-bold text-green-500 uppercase tracking-wider">Done</span>
+</div>
+</div>
+<!-- Row 6 (Processing) -->
+<div class="bg-[#161820] border border-[#1E2028] rounded-xl p-5 hover:border-primary/30 transition-all flex items-center opacity-70">
+<input class="w-4 h-4 rounded border-[#1E2028] bg-transparent opacity-30 mr-6" disabled="" type="checkbox"/>
+<div class="p-2.5 bg-surface-container-low rounded-lg mr-5 text-slate-600">
+<span class="material-symbols-outlined text-[24px]">description</span>
+</div>
+<div class="flex-1">
+<h3 class="text-[15px] font-semibold text-[#F0F0F3] mb-1">Support Team Debrief — Q4 Escalations</h3>
+<div class="flex items-center gap-3 text-[13px] text-slate-500">
+<span>Internal</span>
+<span class="w-1 h-1 rounded-full bg-slate-700"></span>
+<span>Jan 3</span>
+</div>
+</div>
+<div class="mr-12 w-48 bg-surface-container-low h-1.5 rounded-full overflow-hidden">
+<div class="h-full bg-amber-500 w-[65%] rounded-full animate-pulse"></div>
+</div>
+<div class="flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full">
+<span class="material-symbols-outlined text-[14px] text-amber-500">pending</span>
+<span class="text-[11px] font-bold text-amber-500 uppercase tracking-wider">Processing</span>
+</div>
+</div>
+<!-- Row 7 (Error) -->
+<div class="bg-[#161820] border border-[#1E2028] rounded-xl p-5 hover:border-error/30 transition-all flex items-center">
+<input class="w-4 h-4 rounded border-[#1E2028] bg-transparent text-primary focus:ring-offset-0 focus:ring-0 mr-6" type="checkbox"/>
+<div class="p-2.5 bg-surface-container-low rounded-lg mr-5 text-error">
+<span class="material-symbols-outlined text-[24px]">videocam</span>
+</div>
+<div class="flex-1">
+<h3 class="text-[15px] font-semibold text-[#F0F0F3] mb-1">Jake — Feature Request Interview</h3>
+<div class="flex items-center gap-3 text-[13px] text-slate-500">
+<span>PM @ CloudCo</span>
+<span class="w-1 h-1 rounded-full bg-slate-700"></span>
+<span>Dec 28</span>
+</div>
+</div>
+<div class="mr-12 text-xs text-error font-medium hover:underline cursor-pointer">Retry Analysis</div>
+<div class="flex items-center gap-2 px-3 py-1 bg-error/10 border border-error/20 rounded-full">
+<span class="material-symbols-outlined text-[14px] text-error">error</span>
+<span class="text-[11px] font-bold text-error uppercase tracking-wider">Error</span>
+</div>
+</div>
+</div>
+<!-- BULK ACTIONS BAR (Floating Bottom Center) -->
+<div class="fixed bottom-10 left-1/2 -translate-x-1/2 glass-panel border border-[#1E2028] rounded-2xl h-14 px-6 flex items-center justify-between gap-12 shadow-2xl min-w-[500px] z-[100]">
+<div class="flex items-center gap-2">
+<span class="w-5 h-5 flex items-center justify-center bg-surface-variant rounded text-[10px] font-bold text-slate-200">0</span>
+<span class="text-xs font-medium text-slate-300">selected</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="h-9 px-4 text-xs font-semibold text-slate-300 hover:text-white transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">auto_fix_high</span>
+                        Re-analyze
+                    </button>
+<button class="h-9 px-4 text-xs font-semibold text-slate-300 hover:text-white transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">folder_open</span>
+                        Add to Collection
+                        <span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+<div class="w-px h-4 bg-[#1E2028]"></div>
+<button class="h-9 px-4 text-xs font-semibold text-error hover:bg-error/5 rounded-lg transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">delete</span>
+                        Delete
+                    </button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

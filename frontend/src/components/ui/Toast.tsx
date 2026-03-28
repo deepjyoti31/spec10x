@@ -1,70 +1,76 @@
-/**
- * Spec10x — Toast Notification Component
- *
- * Provides success, error, and info toast notifications.
- * Used via the useToast hook.
- */
-
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, useRef } from 'react';
-import styles from './Toast.module.css';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 
-type ToastType = 'success' | 'error' | 'info';
+type ToastVariant = 'success' | 'error' | 'warning' | 'info';
 
-interface ToastItem {
-    id: number;
-    type: ToastType;
+interface Toast {
+    id: string;
     message: string;
+    variant: ToastVariant;
 }
 
-interface ToastContextType {
-    showToast: (message: string, type?: ToastType) => void;
+interface ToastContextValue {
+    showToast: (message: string, variant?: ToastVariant) => void;
 }
 
-const ToastContext = createContext<ToastContextType | null>(null);
+const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function useToast() {
     const ctx = useContext(ToastContext);
-    if (!ctx) throw new Error('useToast must be used within a ToastProvider');
+    if (!ctx) throw new Error('useToast must be used within ToastProvider');
     return ctx;
 }
 
+const VARIANT_STYLES: Record<ToastVariant, string> = {
+    success: 'border-[var(--color-success)] text-[var(--color-success)]',
+    error:   'border-[var(--color-danger)] text-[var(--color-danger)]',
+    warning: 'border-[var(--color-warning)] text-[var(--color-warning)]',
+    info:    'border-[var(--color-accent)] text-[var(--color-accent)]',
+};
+
+const ICONS: Record<ToastVariant, string> = {
+    success: 'check_circle',
+    error:   'error',
+    warning: 'warning',
+    info:    'info',
+};
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
-    const [toasts, setToasts] = useState<ToastItem[]>([]);
-    const idRef = useRef(0);
+    const [toasts, setToasts] = useState<Toast[]>([]);
 
-    const showToast = useCallback((message: string, type: ToastType = 'info') => {
-        const id = ++idRef.current;
-        setToasts((prev) => [...prev, { id, type, message }]);
-
-        // Auto-dismiss after 4 seconds
+    const showToast = useCallback((message: string, variant: ToastVariant = 'info') => {
+        const id = Math.random().toString(36).slice(2);
+        setToasts(prev => [...prev, { id, message, variant }]);
         setTimeout(() => {
-            setToasts((prev) => prev.filter((t) => t.id !== id));
+            setToasts(prev => prev.filter(t => t.id !== id));
         }, 4000);
     }, []);
 
-    const dismiss = useCallback((id: number) => {
-        setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, []);
+    const dismiss = (id: string) => setToasts(prev => prev.filter(t => t.id !== id));
 
     return (
         <ToastContext.Provider value={{ showToast }}>
             {children}
-            <div className={styles.toastContainer}>
-                {toasts.map((toast) => (
+            <div
+                className="fixed bottom-4 right-4 z-50 flex flex-col gap-2"
+                aria-live="polite"
+            >
+                {toasts.map(toast => (
                     <div
                         key={toast.id}
-                        className={`${styles.toast} ${styles[toast.type]}`}
-                        onClick={() => dismiss(toast.id)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-[var(--radius-md)] border bg-[var(--color-bg-card)] shadow-lg text-sm font-medium animate-[fadeIn_200ms_ease-out] min-w-[280px] max-w-[400px] ${VARIANT_STYLES[toast.variant]}`}
+                        style={{ borderColor: 'inherit' }}
                     >
-                        <span className={styles.icon}>
-                            {toast.type === 'success' && '✅'}
-                            {toast.type === 'error' && '❌'}
-                            {toast.type === 'info' && 'ℹ️'}
-                        </span>
-                        <span className={styles.message}>{toast.message}</span>
-                        <button className={styles.close} onClick={() => dismiss(toast.id)}>×</button>
+                        <span className="material-symbols-outlined text-base">{ICONS[toast.variant]}</span>
+                        <span className="flex-1 text-[var(--color-text-primary)]">{toast.message}</span>
+                        <button
+                            onClick={() => dismiss(toast.id)}
+                            className="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+                            aria-label="Dismiss"
+                        >
+                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
+                        </button>
                     </div>
                 ))}
             </div>

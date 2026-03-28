@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Spec10x | Ask AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed-dim": "#ffb77b",
+                        "on-tertiary-fixed": "#2e1500",
+                        "primary": "#afc6ff",
+                        "outline": "#8c909f",
+                        "on-secondary-container": "#a4b8e9",
+                        "on-background": "#e2e2eb",
+                        "surface-bright": "#373940",
+                        "error-container": "#93000a",
+                        "surface-dim": "#111319",
+                        "surface-variant": "#33343b",
+                        "on-secondary-fixed": "#011a42",
+                        "error": "#ffb4ab",
+                        "surface-container-high": "#282a30",
+                        "primary-fixed": "#d9e2ff",
+                        "on-tertiary-container": "#432100",
+                        "secondary": "#b2c6f8",
+                        "on-tertiary": "#4d2700",
+                        "on-secondary-fixed-variant": "#324670",
+                        "secondary-container": "#354873",
+                        "tertiary-fixed": "#ffdcc2",
+                        "surface": "#111319",
+                        "inverse-primary": "#0059c6",
+                        "on-primary-fixed": "#001a43",
+                        "on-error-container": "#ffdad6",
+                        "on-secondary": "#1a2f58",
+                        "inverse-on-surface": "#2e3037",
+                        "secondary-fixed": "#d9e2ff",
+                        "surface-container": "#1e1f26",
+                        "tertiary-container": "#d87802",
+                        "tertiary": "#ffb77b",
+                        "surface-container-lowest": "#0c0e14",
+                        "surface-container-low": "#191b22",
+                        "on-tertiary-fixed-variant": "#6d3a00",
+                        "background": "#111319",
+                        "primary-fixed-dim": "#afc6ff",
+                        "outline-variant": "#424753",
+                        "on-surface-variant": "#c2c6d6",
+                        "on-primary-fixed-variant": "#004398",
+                        "primary-container": "#528dff",
+                        "surface-tint": "#afc6ff",
+                        "on-primary": "#002d6c",
+                        "on-primary-container": "#00275f",
+                        "inverse-surface": "#e2e2eb",
+                        "on-error": "#690005",
+                        "on-surface": "#e2e2eb",
+                        "secondary-fixed-dim": "#b2c6f8",
+                        "surface-container-highest": "#33343b"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #33343b;
+            border-radius: 10px;
+        }
+        .glass-panel {
+            background: rgba(17, 19, 25, 0.8);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body h-screen flex overflow-hidden antialiased">
+<!-- SideNavBar (Predicted Component Shell) -->
+<aside class="w-[64px] h-screen fixed left-0 top-0 overflow-y-auto overflow-x-hidden bg-[#0C0E14] border-none flex flex-col items-center py-6 z-50">
+<div class="mb-8">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-on-primary font-bold">S</div>
+</div>
+<nav class="flex flex-col gap-4 w-full items-center">
+<!-- Navigation Items derived from JSON -->
+<div class="group relative flex items-center justify-center w-full h-10 text-[#373940] hover:text-[#AFC6FF] transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+</div>
+<div class="group relative flex items-center justify-center w-full h-10 text-[#373940] hover:text-[#AFC6FF] transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+</div>
+<div class="group relative flex items-center justify-center w-full h-10 text-[#373940] hover:text-[#AFC6FF] transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="record_voice_over">record_voice_over</span>
+</div>
+<!-- Active Tab: Ask AI -->
+<div class="group relative flex items-center justify-center w-full h-10 bg-[#1E1F26] text-[#AFC6FF] after:content-[''] after:absolute after:left-0 after:w-1 after:h-8 after:bg-[#AFC6FF] after:rounded-r-full">
+<span class="material-symbols-outlined" data-icon="auto_awesome" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div class="group relative flex items-center justify-center w-full h-10 text-[#373940] hover:text-[#AFC6FF] transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+</div>
+<div class="group relative flex items-center justify-center w-full h-10 text-[#373940] hover:text-[#AFC6FF] transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+</div>
+<div class="group relative flex items-center justify-center w-full h-10 text-[#373940] hover:text-[#AFC6FF] transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+</div>
+</nav>
+<div class="mt-auto flex flex-col gap-6 items-center">
+<span class="material-symbols-outlined text-[#373940] hover:text-[#AFC6FF] cursor-pointer" data-icon="settings">settings</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/20 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="professional female user avatar with neutral background and soft studio lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxmg9_k1FY3J3zffmWCHaJK1uVc1_zhTOF3CortGqRHTrugIEWFwT_k2y8TYeHgkmzZlYQEgqp91MDcrTg_D7x7T0_K7MzgPRoe4TIPiDFlxvmkuoY-HMuKK2zS2EdyD457QA6Hjw7KzajjnJzHcTbiZXw-glNb6lJaozhcnrkf8lMqrGTn0FAZTr90k3aqcoDKH638yRI3pHxsA1mO1B_nFivka5OX_bhiSoexwDzbBz6adHqJj0IR2On6elLdwiVv-_TvjEDPFQ"/>
+</div>
+</div>
+</aside>
+<!-- Main Content Wrapper -->
+<main class="ml-[64px] flex w-full h-full">
+<!-- Conversation History Panel -->
+<section class="w-[260px] h-full bg-[#0C0D12] flex flex-col border-r border-outline-variant/5">
+<div class="p-4">
+<button class="w-full py-2.5 px-4 border border-dashed border-outline-variant/30 rounded-xl text-on-surface-variant text-sm flex items-center justify-center gap-2 hover:bg-surface-container-low transition-all duration-200">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                    New Chat
+                </button>
+</div>
+<div class="flex-1 overflow-y-auto px-2 pb-6">
+<!-- Recent -->
+<div class="mt-4 px-3 mb-2">
+<h3 class="text-[10px] uppercase tracking-widest text-outline font-bold">Recent</h3>
+</div>
+<div class="space-y-1">
+<button class="w-full text-left px-3 py-2.5 rounded-lg bg-[#AFC6FF]/[0.08] text-[#F0F0F3] text-[13px] font-medium flex items-center gap-3">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="chat_bubble">chat_bubble</span>
+<span class="truncate">Onboarding pain points analysis</span>
+</button>
+<button class="w-full text-left px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low text-[13px] flex items-center gap-3 transition-colors">
+<span class="material-symbols-outlined text-[18px] opacity-40" data-icon="chat_bubble">chat_bubble</span>
+<span class="truncate">Compare mobile vs desktop feedback</span>
+</button>
+<button class="w-full text-left px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low text-[13px] flex items-center gap-3 transition-colors">
+<span class="material-symbols-outlined text-[18px] opacity-40" data-icon="chat_bubble">chat_bubble</span>
+<span class="truncate">Top 5 churn risks this quarter</span>
+</button>
+</div>
+<!-- Last Month -->
+<div class="mt-8 px-3 mb-2">
+<h3 class="text-[10px] uppercase tracking-widest text-outline font-bold">Last Month</h3>
+</div>
+<div class="space-y-1">
+<button class="w-full text-left px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low text-[13px] flex items-center gap-3 transition-colors">
+<span class="material-symbols-outlined text-[18px] opacity-40" data-icon="history">history</span>
+<span class="truncate">Q3 Feature roadmap audit</span>
+</button>
+<button class="w-full text-left px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low text-[13px] flex items-center gap-3 transition-colors">
+<span class="material-symbols-outlined text-[18px] opacity-40" data-icon="history">history</span>
+<span class="truncate">User sentiment regarding price</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Chat Area -->
+<section class="flex-1 bg-[#0F1117] flex flex-col relative overflow-hidden">
+<!-- Header -->
+<header class="h-16 border-b border-outline-variant/5 px-8 flex items-center justify-between glass-panel z-10">
+<div class="flex flex-col">
+<h1 class="text-[#F0F0F3] text-base font-semibold leading-tight">Onboarding pain points analysis</h1>
+<div class="flex items-center gap-2 mt-0.5">
+<span class="text-[11px] text-[#5A5C66] flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]" data-icon="database">database</span>
+                            Scope: Last 90 days • 1,240 Interviews
+                        </span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="share">share</span>
+</button>
+<button class="text-on-surface-variant hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span>
+</button>
+</div>
+</header>
+<!-- Messages Stream -->
+<div class="flex-1 overflow-y-auto py-8">
+<div class="max-w-[800px] mx-auto px-6 flex flex-col gap-10">
+<!-- User Message -->
+<div class="flex flex-col items-end gap-2">
+<div class="bg-[#161820] text-on-surface px-5 py-3.5 rounded-2xl rounded-tr-none text-sm border border-outline-variant/10 shadow-sm max-w-[85%]">
+                            What are the biggest onboarding pain points across all our interview data?
+                        </div>
+</div>
+<!-- AI Response 1 -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center gap-2 text-primary font-semibold text-[13px]">
+<span class="material-symbols-outlined text-[18px]" data-icon="auto_awesome" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+                            Spec10x AI
+                        </div>
+<div class="text-on-surface text-[15px] leading-relaxed space-y-4">
+<p>Based on the semantic analysis of 1,240 interviews from the last quarter, I've identified three primary friction points in our onboarding flow:</p>
+<!-- Structured Finding Cards -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+<div class="bg-surface-container p-4 rounded-xl border-l-4 border-[#F87171] flex flex-col gap-2">
+<span class="text-[13px] font-bold text-on-surface">Confusing Setup Wizard</span>
+<p class="text-[12px] text-on-surface-variant leading-normal">Users struggle with the technical configuration step in part 3.</p>
+</div>
+<div class="bg-surface-container p-4 rounded-xl border-l-4 border-[#FBBF24] flex flex-col gap-2">
+<span class="text-[13px] font-bold text-on-surface">No Progress Indication</span>
+<p class="text-[12px] text-on-surface-variant leading-normal">Users feel "lost" during long data synchronization phases.</p>
+</div>
+<div class="bg-surface-container p-4 rounded-xl border-l-4 border-[#FBBF24] flex flex-col gap-2">
+<span class="text-[13px] font-bold text-on-surface">Handoff Gap</span>
+<p class="text-[12px] text-on-surface-variant leading-normal">Discordance between sales promises and actual dashboard state.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- User Message 2 -->
+<div class="flex flex-col items-end gap-2">
+<div class="bg-[#161820] text-on-surface px-5 py-3.5 rounded-2xl rounded-tr-none text-sm border border-outline-variant/10 shadow-sm max-w-[85%]">
+                            Show me the strongest quotes from interviews about the setup wizard confusion
+                        </div>
+</div>
+<!-- AI Response 2 (Quotes) -->
+<div class="flex flex-col gap-4 pb-32">
+<div class="flex items-center gap-2 text-primary font-semibold text-[13px]">
+<span class="material-symbols-outlined text-[18px]" data-icon="auto_awesome" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+                            Spec10x AI
+                        </div>
+<div class="grid grid-cols-1 gap-3">
+<!-- Quote Card 1 -->
+<div class="bg-[#161820] p-5 rounded-xl border border-outline-variant/5 group hover:border-primary/20 transition-all">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-secondary-container text-on-secondary-container text-[10px] flex items-center justify-center font-bold">SC</div>
+<span class="text-[12px] font-medium text-on-surface">Sarah Chen, CTO @ Nexus</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">98% Match</span>
+</div>
+<p class="text-[14px] text-on-surface-variant italic leading-relaxed">"The setup wizard feels like it was designed for a developer, not a product manager. I hit the API key step and had no idea where to find that info."</p>
+</div>
+<!-- Quote Card 2 -->
+<div class="bg-[#161820] p-5 rounded-xl border border-outline-variant/5 group hover:border-primary/20 transition-all">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-tertiary-container text-on-tertiary-container text-[10px] flex items-center justify-center font-bold">JM</div>
+<span class="text-[12px] font-medium text-on-surface">Jake M., Ops Lead</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">92% Match</span>
+</div>
+<p class="text-[14px] text-on-surface-variant italic leading-relaxed">"I tried to skip the wizard because it was too complex, but then the whole app looked broken because no data was loaded."</p>
+</div>
+<!-- Quote Card 3 -->
+<div class="bg-[#161820] p-5 rounded-xl border border-outline-variant/5 group hover:border-primary/20 transition-all">
+<div class="flex justify-between items-start mb-3">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-surface-container-high flex items-center justify-center text-[14px]">
+<span class="material-symbols-outlined text-[14px]" data-icon="confirmation_number">confirmation_number</span>
+</div>
+<span class="text-[12px] font-medium text-on-surface">Support Ticket #4821</span>
+</div>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest text-outline text-[10px] font-bold">85% Match</span>
+</div>
+<p class="text-[14px] text-on-surface-variant italic leading-relaxed">"User reports getting a 404 error during the 'Finalizing Workspace' stage of the wizard. This is the 4th occurrence this week."</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Interaction Layer (Floating) -->
+<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0F1117] via-[#0F1117]/95 to-transparent pb-8 px-6">
+<div class="max-w-[800px] mx-auto flex flex-col gap-4">
+<!-- Suggestion Chips -->
+<div class="flex flex-wrap gap-2 justify-center">
+<button class="px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant/10 text-[12px] text-on-surface-variant hover:text-primary hover:border-primary/30 transition-all flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]" data-icon="description">description</span>
+                            📝 Generate spec for #1
+                        </button>
+<button class="px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant/10 text-[12px] text-on-surface-variant hover:text-primary hover:border-primary/30 transition-all flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]" data-icon="search">search</span>
+                            🔍 Show all evidence
+                        </button>
+<button class="px-3 py-1.5 rounded-full bg-surface-container border border-outline-variant/10 text-[12px] text-on-surface-variant hover:text-primary hover:border-primary/30 transition-all flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]" data-icon="trending_up">trending_up</span>
+                            📈 Show trend over time
+                        </button>
+</div>
+<!-- Input Area -->
+<div class="relative group">
+<div class="bg-[#161820] border border-[#1E2028] rounded-2xl flex items-center p-2 shadow-2xl group-focus-within:border-primary/40 transition-all">
+<div class="pl-3 pr-2 flex items-center justify-center">
+<span class="material-symbols-outlined text-outline group-focus-within:text-primary transition-colors" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<input class="bg-transparent border-none focus:ring-0 text-on-surface placeholder:text-outline/60 text-sm flex-1 py-3 px-1" placeholder="Ask anything about your data..." type="text"/>
+<div class="flex items-center gap-2 pr-1">
+<button class="w-9 h-9 flex items-center justify-center rounded-xl text-outline hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-[20px]" data-icon="attach_file">attach_file</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-xl bg-primary text-on-primary hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[20px]" data-icon="send">send</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>

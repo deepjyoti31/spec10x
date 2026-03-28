@@ -1,448 +1,396 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import Link from 'next/link';
-import { useAuth } from '@/hooks/useAuth';
-import {
-    api,
-    DataSourceResponse,
-    SourceConnectionResponse,
-    SurveyImportHistoryItem,
-} from '@/lib/api';
-import styles from './integrations.module.css';
-import ConnectModal from '@/components/integrations/ConnectModal';
-import ConnectionDetailModal from '@/components/integrations/ConnectionDetailModal';
+import React, { useState } from 'react';
 
-const PROVIDER_CONFIG: Record<string, { icon: string; label: string }> = {
-    zendesk: { icon: 'ZD', label: 'Zendesk' },
-    csv_import: { icon: 'CSV', label: 'Survey CSV Import' },
-    native_upload: { icon: 'INT', label: 'Interview Uploads' },
-    fireflies: { icon: 'FF', label: 'Fireflies' },
-    intercom: { icon: 'IC', label: 'Intercom' },
-    mixpanel: { icon: 'MP', label: 'Mixpanel' },
-};
+// ---------------------------------------------------------------------------
+// Data
+// ---------------------------------------------------------------------------
 
-const SOURCE_TYPE_LABELS: Record<string, string> = {
-    support: 'Support',
-    survey: 'Survey',
-    interview: 'Interview',
-    analytics: 'Analytics',
-};
+const CONNECTED = [
+    {
+        id: 'zendesk',
+        name: 'Zendesk',
+        description: 'Support tickets and customer conversations',
+        iconBg: '#03363D',
+        icon: 'support',
+        synced: '89 tickets synced',
+        lastSync: 'Last sync: 2 hours ago',
+    },
+    {
+        id: 'fireflies',
+        name: 'Fireflies.ai',
+        description: 'Meeting recordings and AI transcriptions',
+        iconBg: '#5340FF',
+        icon: 'mic',
+        synced: '23 meetings synced',
+        lastSync: 'Last sync: 12 hours ago',
+    },
+];
 
-const CONNECTION_METHOD_LABELS: Record<string, { icon: string; label: string }> = {
-    api_token: { icon: 'KEY', label: 'API Token' },
-    csv_upload: { icon: 'CSV', label: 'CSV Upload' },
-    native_upload: { icon: 'UP', label: 'File Upload' },
-    oauth: { icon: 'OA', label: 'OAuth' },
-};
+const AVAILABLE = [
+    {
+        id: 'intercom',
+        name: 'Intercom',
+        description: 'Real-time messaging for customer support and engagement.',
+        iconBg: 'rgba(79,140,255,0.2)',
+        iconColor: '#4F8CFF',
+        icon: 'forum',
+        category: 'Support',
+    },
+    {
+        id: 'typeform',
+        name: 'Typeform',
+        description: 'Engage customers with conversational forms and surveys.',
+        iconBg: 'rgba(51,51,51,0.4)',
+        iconColor: '#F0F0F3',
+        icon: 'list_alt',
+        category: 'Surveys',
+    },
+    {
+        id: 'slack',
+        name: 'Slack',
+        description: 'Streamline team collaboration and automated notifications.',
+        iconBg: 'rgba(224,30,90,0.2)',
+        iconColor: '#E01E5A',
+        icon: 'chat',
+        category: 'Communication',
+    },
+    {
+        id: 'jira',
+        name: 'Jira',
+        description: 'Connect engineering issues to customer feedback loops.',
+        iconBg: 'rgba(0,82,204,0.2)',
+        iconColor: '#0052CC',
+        icon: 'task',
+        category: 'Development',
+    },
+    {
+        id: 'hubspot',
+        name: 'HubSpot',
+        description: 'Sync customer profiles and sales activities seamlessly.',
+        iconBg: 'rgba(255,122,89,0.2)',
+        iconColor: '#FF7A59',
+        icon: 'person',
+        category: 'CRM',
+    },
+    {
+        id: 'gmeet',
+        name: 'Google Meet',
+        description: 'Record and transcribe video calls for deeper insights.',
+        iconBg: 'rgba(66,133,244,0.2)',
+        iconColor: '#4285F4',
+        icon: 'video_call',
+        category: 'Meetings',
+    },
+];
 
-function getStatusStyle(status: string): string {
-    const map: Record<string, string> = {
-        connected: styles.statusConnected,
-        configured: styles.statusConfigured,
-        syncing: styles.statusSyncing,
-        error: styles.statusError,
-        disconnected: styles.statusDisconnected,
-        validating: styles.statusValidating,
-        running: styles.statusSyncing,
-        succeeded: styles.statusConnected,
-        failed: styles.statusError,
-    };
-    return map[status] || '';
-}
+const COMING_SOON = [
+    { id: 'gong',     name: 'Gong',     icon: 'trending_up', version: 'Coming in v0.8' },
+    { id: 'segment',  name: 'Segment',  icon: 'hub',         version: 'Coming in v0.8' },
+    { id: 'mixpanel', name: 'Mixpanel', icon: 'pie_chart',   version: 'Coming in v1.0' },
+];
 
-function getCardTypeStyle(sourceType: string): string {
-    const map: Record<string, string> = {
-        support: styles.sourceCardSupport,
-        survey: styles.sourceCardSurvey,
-        interview: styles.sourceCardInterview,
-        analytics: styles.sourceCardAnalytics,
-    };
-    return map[sourceType] || '';
-}
+const FILTER_TABS = ['All', 'Support', 'Meetings', 'Surveys', 'Analytics'];
 
-function getIconStyle(sourceType: string): string {
-    const map: Record<string, string> = {
-        support: styles.providerIconSupport,
-        survey: styles.providerIconSurvey,
-        interview: styles.providerIconInterview,
-        analytics: styles.providerIconAnalytics,
-    };
-    return map[sourceType] || '';
-}
+// ---------------------------------------------------------------------------
+// Connected card
+// ---------------------------------------------------------------------------
 
-function formatLastSynced(dateStr?: string): string {
-    if (!dateStr) return 'Never synced';
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays}d ago`;
-}
-
-function formatDate(dateStr?: string) {
-    if (!dateStr) return 'Unknown';
-    return new Date(dateStr).toLocaleString();
-}
-
-function renderHistoryCard(item: SurveyImportHistoryItem) {
+function ConnectedCard({ integration }: { integration: typeof CONNECTED[0] }) {
     return (
-        <div key={item.id} className={styles.historyCard}>
-            <div className={styles.historyHeader}>
-                <div>
-                    <div className={styles.historyTitle}>{item.import_name}</div>
-                    <div className={styles.historyMeta}>{formatDate(item.started_at)}</div>
+        <div
+            className="rounded-xl p-6 flex flex-col"
+            style={{ backgroundColor: '#161820', border: '1px solid rgba(255,255,255,0.03)' }}
+        >
+            {/* Icon + badge */}
+            <div className="flex justify-between items-start mb-4">
+                <div
+                    className="w-12 h-12 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: integration.iconBg }}
+                >
+                    <span className="material-symbols-outlined text-white" style={{ fontSize: 24 }}>
+                        {integration.icon}
+                    </span>
                 </div>
-                <div className={`${styles.statusBadge} ${getStatusStyle(item.status)}`}>
-                    <span className={styles.statusDot} />
-                    {item.status}
+                <span
+                    className="text-[10px] font-bold px-2 py-1 rounded tracking-widest uppercase"
+                    style={{ color: '#34D399', backgroundColor: 'rgba(52,211,153,0.1)' }}
+                >
+                    Connected
+                </span>
+            </div>
+
+            {/* Name + description */}
+            <h3 className="text-lg font-bold text-white">{integration.name}</h3>
+            <p className="text-xs text-[#8B8D97] mt-1 mb-6">{integration.description}</p>
+
+            {/* Sync info + bar */}
+            <div className="space-y-4 mb-8">
+                <div className="flex justify-between text-[11px] text-[#5A5C66] font-medium">
+                    <span>{integration.synced}</span>
+                    <span>{integration.lastSync}</span>
+                </div>
+                <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: '#33343b' }}>
+                    <div className="h-full w-full rounded-full" style={{ backgroundColor: '#34D399' }} />
                 </div>
             </div>
-            <div className={styles.historyStats}>
-                <span>{item.records_seen} rows</span>
-                <span>{item.records_created} created</span>
-                <span>{item.records_updated} updated</span>
+
+            {/* Actions */}
+            <div className="mt-auto flex items-center justify-between">
+                <div className="flex gap-4">
+                    {['Sync Now', 'Configure'].map(action => (
+                        <button
+                            key={action}
+                            className="text-xs font-semibold text-white transition-colors"
+                            onMouseEnter={e => (e.currentTarget.style.color = '#4F8CFF')}
+                            onMouseLeave={e => (e.currentTarget.style.color = 'white')}
+                        >
+                            {action}
+                        </button>
+                    ))}
+                </div>
+                <button
+                    className="text-xs font-semibold transition-colors"
+                    style={{ color: 'rgba(248,113,113,0.8)' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#F87171')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(248,113,113,0.8)')}
+                >
+                    Disconnect
+                </button>
             </div>
-            {item.error_summary && (
-                <div className={styles.errorSummary}>{item.error_summary}</div>
-            )}
         </div>
     );
 }
 
-export default function IntegrationsPage() {
-    const { token } = useAuth();
-    const [dataSources, setDataSources] = useState<DataSourceResponse[]>([]);
-    const [connections, setConnections] = useState<SourceConnectionResponse[]>([]);
-    const [surveyImports, setSurveyImports] = useState<SurveyImportHistoryItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [actionLoading, setActionLoading] = useState<string | null>(null);
-    const [connectingSource, setConnectingSource] = useState<DataSourceResponse | null>(null);
-    const [detailConnectionId, setDetailConnectionId] = useState<string | null>(null);
+// ---------------------------------------------------------------------------
+// Available card
+// ---------------------------------------------------------------------------
 
-    const fetchData = useCallback(async () => {
-        if (!token) return;
-        try {
-            const [sources, conns, importHistory] = await Promise.all([
-                api.listDataSources(token),
-                api.listSourceConnections(token),
-                api.getSurveyImportHistory(token),
-            ]);
-            setDataSources(sources);
-            setConnections(conns);
-            setSurveyImports(importHistory.imports);
-        } catch (err) {
-            console.error('Failed to load integrations data', err);
-        } finally {
-            setLoading(false);
-        }
-    }, [token]);
-
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
-
-    const handleDisconnect = async (connectionId: string) => {
-        if (!token) return;
-        setActionLoading(connectionId);
-        try {
-            await api.disconnectSourceConnection(token, connectionId);
-            await fetchData();
-        } catch (err) {
-            console.error('Failed to disconnect', err);
-        } finally {
-            setActionLoading(null);
-        }
-    };
-
-    const activeConnections = connections.filter(
-        (connection) =>
-            connection.data_source.provider !== 'csv_import' &&
-            connection.status !== 'disconnected'
-    );
-
-    const connectedSourceIds = new Set(activeConnections.map((connection) => connection.data_source.id));
-
-    const availableSources = dataSources.filter(
-        (source) => source.provider === 'csv_import' || !connectedSourceIds.has(source.id)
-    );
-
-    if (loading) {
-        return (
-            <div className={styles.container}>
-                <div className={styles.loading}>
-                    <div className={styles.loadingSpinner} />
-                    Loading integrations...
+function AvailableCard({ integration }: { integration: typeof AVAILABLE[0] }) {
+    return (
+        <div
+            className="rounded-xl p-6 flex flex-col transition-all"
+            style={{ backgroundColor: '#161820', border: '1px solid rgba(255,255,255,0.02)' }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.02)')}
+        >
+            {/* Icon + category */}
+            <div className="flex justify-between items-start mb-4">
+                <div
+                    className="w-10 h-10 rounded flex items-center justify-center"
+                    style={{ backgroundColor: integration.iconBg }}
+                >
+                    <span className="material-symbols-outlined" style={{ fontSize: 20, color: integration.iconColor }}>
+                        {integration.icon}
+                    </span>
                 </div>
+                <span
+                    className="text-[10px] px-2 py-0.5 rounded font-medium text-[#8B8D97]"
+                    style={{ backgroundColor: '#33343b' }}
+                >
+                    {integration.category}
+                </span>
             </div>
-        );
-    }
+
+            {/* Name */}
+            <h4
+                className="text-base font-bold text-white transition-colors"
+                /* hover color handled by parent group — using inline onMouseEnter instead */
+            >
+                {integration.name}
+            </h4>
+
+            {/* Description */}
+            <p className="text-xs text-[#5A5C66] mt-2 mb-6 line-clamp-2">{integration.description}</p>
+
+            {/* Connect button */}
+            <button
+                className="mt-auto w-full py-2 rounded text-xs font-semibold transition-colors"
+                style={{ border: '1px solid rgba(66,71,83,0.3)', color: '#c2c6d6' }}
+                onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#33343b')}
+                onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+                Connect
+            </button>
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Coming soon card
+// ---------------------------------------------------------------------------
+
+function ComingSoonCard({ item }: { item: typeof COMING_SOON[0] }) {
+    return (
+        <div
+            className="rounded-xl p-6 flex flex-col relative overflow-hidden"
+            style={{
+                backgroundColor: 'rgba(22,24,32,0.4)',
+                border: '1px dashed rgba(255,255,255,0.05)',
+                opacity: 0.6,
+                filter: 'grayscale(1)',
+            }}
+        >
+            {/* Lock icon */}
+            <div className="absolute top-2 right-2 text-[#5A5C66]">
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>lock</span>
+            </div>
+
+            {/* Icon */}
+            <div
+                className="w-10 h-10 rounded flex items-center justify-center mb-4"
+                style={{ backgroundColor: '#1e1f26' }}
+            >
+                <span className="material-symbols-outlined text-[#8B8D97]" style={{ fontSize: 20 }}>
+                    {item.icon}
+                </span>
+            </div>
+
+            <h4 className="text-sm font-bold text-[#c8cad6]">{item.name}</h4>
+            <p className="text-[11px] text-[#5A5C66] mt-1 uppercase font-bold tracking-widest">
+                {item.version}
+            </p>
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
+export default function IntegrationsPage() {
+    const [activeFilter, setActiveFilter] = useState('All');
 
     return (
-        <div className={styles.container}>
-            <div className={styles.pageHeader}>
-                <h1 className={styles.pageTitle}>Integrations</h1>
-                <p className={styles.pageSubtitle}>
-                    Connect live providers, inspect sync health, and run repeatable survey imports
-                    without turning CSV uploads into a one-time connection slot.
-                </p>
-                <div className={styles.trustCallout}>
+        <div className="overflow-y-auto flex-1" style={{ backgroundColor: '#0F1117' }}>
+            <div className="p-10 max-w-7xl mx-auto w-full">
+
+                {/* ── Page header ── */}
+                <section className="flex justify-between items-start">
                     <div>
-                        <div className={styles.trustTitle}>Trust and permissions</div>
-                        <p className={styles.trustText}>
-                            Spec10x is positioned as a read-oriented analysis layer. Disconnect
-                            stops future syncs, and copied data deletion is separate from upstream
-                            provider records.
+                        <h1 className="text-[24px] font-bold text-[#F0F0F3] leading-tight">Integrations</h1>
+                        <p className="text-[13px] text-[#8B8D97] mt-1">
+                            Connect your customer data sources for automatic signal ingestion
                         </p>
                     </div>
-                    <div className={styles.trustLinks}>
-                        <Link href="/trust" className={styles.trustLink}>
-                            Read trust overview
-                        </Link>
-                        <Link href="/privacy" className={styles.trustLinkSecondary}>
-                            Privacy and terms
-                        </Link>
+                    <button
+                        className="flex items-center gap-2 text-[13px] font-semibold transition-opacity hover:opacity-80"
+                        style={{ color: '#4F8CFF' }}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add_circle</span>
+                        Request Integration
+                    </button>
+                </section>
+
+                {/* ── Section 1: Connected ── */}
+                <section className="mt-10">
+                    <div className="flex items-center gap-3 mb-5">
+                        <h2 className="text-sm font-semibold tracking-wide text-[#F0F0F3]">Connected</h2>
+                        <div
+                            className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
+                            style={{ backgroundColor: 'rgba(52,211,153,0.1)' }}
+                        >
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#34D399] animate-pulse" />
+                            <span className="text-[11px] font-bold text-[#34D399] uppercase tracking-wider">
+                                2 active
+                            </span>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            {activeConnections.length > 0 && (
-                <section className={styles.section}>
-                    <h2 className={styles.sectionTitle}>
-                        Active Connections
-                        <span className={styles.sectionCount}>{activeConnections.length}</span>
-                    </h2>
-                    <div className={styles.sourceGrid}>
-                        {activeConnections.map((connection) => {
-                            const provider = PROVIDER_CONFIG[connection.data_source.provider] || {
-                                icon: 'SRC',
-                                label: connection.data_source.display_name,
-                            };
-                            const method =
-                                CONNECTION_METHOD_LABELS[connection.data_source.connection_method];
-
-                            return (
-                                <div
-                                    key={connection.id}
-                                    className={`${styles.sourceCard} ${getCardTypeStyle(connection.data_source.source_type)}`}
-                                >
-                                    <div className={styles.cardHeader}>
-                                        <div className={styles.providerInfo}>
-                                            <div className={`${styles.providerIcon} ${getIconStyle(connection.data_source.source_type)}`}>
-                                                {provider.icon}
-                                            </div>
-                                            <div>
-                                                <div className={styles.providerName}>{provider.label}</div>
-                                                <div className={styles.providerType}>
-                                                    {SOURCE_TYPE_LABELS[connection.data_source.source_type] || connection.data_source.source_type}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className={`${styles.statusBadge} ${getStatusStyle(connection.status)}`}>
-                                            <span className={styles.statusDot} />
-                                            {connection.status}
-                                        </div>
-                                    </div>
-
-                                    <div className={styles.cardBody}>
-                                        {method && (
-                                            <div className={styles.connectionMethod}>
-                                                <span className={styles.connectionMethodIcon}>{method.icon}</span>
-                                                {method.label}
-                                            </div>
-                                        )}
-                                        <div className={styles.lastSynced}>
-                                            Last synced: {formatLastSynced(connection.last_synced_at)}
-                                        </div>
-                                        <div className={styles.trustSnippet}>
-                                            Disconnect stops future syncs. Copied data stays in
-                                            Spec10x until deleted separately.
-                                        </div>
-                                        {connection.last_error_summary && (
-                                            <div className={styles.errorSummary}>{connection.last_error_summary}</div>
-                                        )}
-                                    </div>
-
-                                    <div className={styles.cardActions}>
-                                        <button
-                                            className={styles.viewBtn}
-                                            onClick={() => setDetailConnectionId(connection.id)}
-                                        >
-                                            View Details
-                                        </button>
-                                        <button
-                                            className={styles.disconnectBtn}
-                                            onClick={() => handleDisconnect(connection.id)}
-                                            disabled={actionLoading === connection.id}
-                                        >
-                                            {actionLoading === connection.id ? 'Disconnecting...' : 'Disconnect'}
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {CONNECTED.map(c => <ConnectedCard key={c.id} integration={c} />)}
                     </div>
                 </section>
-            )}
 
-            <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>
-                    Survey CSV Imports
-                    <span className={styles.sectionCount}>{surveyImports.length}</span>
-                </h2>
-                {surveyImports.length > 0 ? (
-                    <div className={styles.historyList}>{surveyImports.slice(0, 8).map(renderHistoryCard)}</div>
-                ) : (
-                    <div className={styles.emptyState}>
-                        <div className={styles.emptyTitle}>No survey imports yet</div>
-                        <p className={styles.emptyText}>
-                            Upload a survey or NPS CSV from the available sources section to start building survey evidence history.
-                        </p>
+                {/* ── Section 2: Available ── */}
+                <section className="mt-16">
+                    <div className="flex items-center gap-3 mb-6">
+                        <h2 className="text-sm font-semibold tracking-wide text-[#F0F0F3]">
+                            Available Integrations
+                        </h2>
+                        <span className="text-[13px] text-[#8B8D97]">4 available</span>
                     </div>
-                )}
-            </section>
 
-            <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>
-                    Available Sources
-                    <span className={styles.sectionCount}>{availableSources.length}</span>
-                </h2>
-
-                <div className={styles.sourceGrid}>
-                    {availableSources.map((source) => {
-                        const provider = PROVIDER_CONFIG[source.provider] || {
-                            icon: 'SRC',
-                            label: source.display_name,
-                        };
-                        const method = CONNECTION_METHOD_LABELS[source.connection_method];
-                        const isNativeUpload = source.connection_method === 'native_upload';
-                        const isSurveyImport = source.provider === 'csv_import';
-
-                        return (
-                            <div
-                                key={source.id}
-                                className={`${styles.sourceCard} ${getCardTypeStyle(source.source_type)}`}
-                            >
-                                <div className={styles.cardHeader}>
-                                    <div className={styles.providerInfo}>
-                                        <div className={`${styles.providerIcon} ${getIconStyle(source.source_type)}`}>
-                                            {provider.icon}
-                                        </div>
-                                        <div>
-                                            <div className={styles.providerName}>{provider.label}</div>
-                                            <div className={styles.providerType}>
-                                                {SOURCE_TYPE_LABELS[source.source_type] || source.source_type}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {isNativeUpload && (
-                                        <span className={styles.comingSoon}>Built-in</span>
-                                    )}
-                                    {isSurveyImport && (
-                                        <span className={styles.comingSoon}>Repeatable</span>
-                                    )}
-                                </div>
-
-                                <div className={styles.cardBody}>
-                                    {method && (
-                                        <div className={styles.connectionMethod}>
-                                            <span className={styles.connectionMethodIcon}>{method.icon}</span>
-                                            {method.label}
-                                        </div>
-                                    )}
-                                    {isSurveyImport && (
-                                        <div className={styles.cardCaption}>
-                                            Validate and import survey evidence as often as needed. Each upload keeps its own history entry.
-                                        </div>
-                                    )}
-                                    {!isNativeUpload && (
-                                        <div className={styles.trustSnippet}>
-                                            Read-oriented access where possible. Connection secrets
-                                            are not returned in API responses, and disconnect stops
-                                            future syncs.
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className={styles.cardActions}>
-                                    {isNativeUpload ? (
-                                        <button
-                                            className={styles.viewBtn}
-                                            style={{ flex: 1 }}
-                                            onClick={() => (window.location.href = '/dashboard')}
-                                        >
-                                            Go to Dashboard
-                                        </button>
-                                    ) : (
-                                        <button
-                                            className={styles.connectBtn}
-                                            onClick={() => setConnectingSource(source)}
-                                        >
-                                            {isSurveyImport ? 'Import CSV' : 'Connect'}
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            </section>
-
-            <section className={styles.section}>
-                <h2 className={styles.sectionTitle}>Coming Soon</h2>
-                <div className={styles.sourceGrid}>
-                    {[
-                        { icon: 'FF', name: 'Fireflies', type: 'Interview', method: 'API Token' },
-                        { icon: 'IC', name: 'Intercom', type: 'Support', method: 'OAuth' },
-                        { icon: 'MP', name: 'Mixpanel', type: 'Analytics', method: 'API Token' },
-                    ].map((item) => (
-                        <div key={item.name} className={styles.sourceCard} style={{ opacity: 0.55 }}>
-                            <div className={styles.cardHeader}>
-                                <div className={styles.providerInfo}>
-                                    <div className={`${styles.providerIcon} ${styles.providerIconAnalytics}`}>
-                                        {item.icon}
-                                    </div>
-                                    <div>
-                                        <div className={styles.providerName}>{item.name}</div>
-                                        <div className={styles.providerType}>{item.type}</div>
-                                    </div>
-                                </div>
-                                <span className={styles.comingSoon}>Coming Soon</span>
-                            </div>
-                            <div className={styles.cardBody}>
-                                <div className={styles.connectionMethod}>
-                                    <span className={styles.connectionMethodIcon}>KEY</span>
-                                    {item.method}
-                                </div>
-                            </div>
+                    {/* Filter row */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                        {/* Category tabs */}
+                        <div
+                            className="flex items-center gap-1 p-1 rounded-lg"
+                            style={{
+                                backgroundColor: '#0c0e14',
+                                border: '1px solid rgba(255,255,255,0.02)',
+                            }}
+                        >
+                            {FILTER_TABS.map(tab => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveFilter(tab)}
+                                    className="px-4 py-1.5 text-xs font-medium rounded-md transition-colors"
+                                    style={
+                                        activeFilter === tab
+                                            ? { backgroundColor: '#afc6ff', color: '#002D6C', fontWeight: 600 }
+                                            : { color: '#8B8D97' }
+                                    }
+                                    onMouseEnter={e => {
+                                        if (activeFilter !== tab) (e.currentTarget.style.color = '#F0F0F3');
+                                    }}
+                                    onMouseLeave={e => {
+                                        if (activeFilter !== tab) (e.currentTarget.style.color = '#8B8D97');
+                                    }}
+                                >
+                                    {tab}
+                                </button>
+                            ))}
                         </div>
-                    ))}
-                </div>
-            </section>
 
-            {connectingSource && (
-                <ConnectModal
-                    source={connectingSource}
-                    onClose={() => setConnectingSource(null)}
-                    onConnected={() => {
-                        setConnectingSource(null);
-                        fetchData();
-                    }}
-                />
-            )}
+                        {/* Filter input */}
+                        <div className="relative w-full md:w-[300px]">
+                            <span
+                                className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#5A5C66]"
+                                style={{ fontSize: 18 }}
+                            >
+                                filter_list
+                            </span>
+                            <input
+                                type="text"
+                                placeholder="Filter by name..."
+                                className="w-full rounded-lg py-2 pl-10 pr-4 text-xs outline-none transition-all"
+                                style={{
+                                    backgroundColor: '#0c0e14',
+                                    border: '1px solid transparent',
+                                    color: '#F0F0F3',
+                                }}
+                                onFocus={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(79,140,255,0.4)')}
+                                onBlur={e => (e.currentTarget.style.boxShadow = 'none')}
+                            />
+                        </div>
+                    </div>
 
-            {detailConnectionId && (
-                <ConnectionDetailModal
-                    connectionId={detailConnectionId}
-                    onClose={() => setDetailConnectionId(null)}
-                    onUpdated={fetchData}
-                />
-            )}
+                    {/* Available grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {AVAILABLE.map(a => <AvailableCard key={a.id} integration={a} />)}
+                    </div>
+                </section>
+
+                {/* ── Section 3: Coming Soon ── */}
+                <section className="mt-16 mb-20">
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-sm font-semibold tracking-wide text-[#F0F0F3]">Coming Soon</h2>
+                        <button
+                            className="text-xs font-semibold flex items-center gap-1 hover:underline transition-colors"
+                            style={{ color: '#4F8CFF' }}
+                        >
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>how_to_vote</span>
+                            Vote for next
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {COMING_SOON.map(item => <ComingSoonCard key={item.id} item={item} />)}
+                    </div>
+                </section>
+
+            </div>
         </div>
     );
 }
