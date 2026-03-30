@@ -77,9 +77,9 @@ function SettingsNav({
                                         onClick={() => onChange(item.id)}
                                         className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-left"
                                         style={{
-                                            backgroundColor: isActive ? 'rgba(79,140,255,0.1)' : 'transparent',
+                                            backgroundColor: isActive ? 'rgba(175,198,255,0.1)' : 'transparent',
                                             color: isActive
-                                                ? '#4F8CFF'
+                                                ? '#afc6ff'
                                                 : isDanger
                                                 ? 'rgba(248,113,113,0.8)'
                                                 : '#8B8D97',
@@ -93,7 +93,7 @@ function SettingsNav({
                                                 if (!isDanger)
                                                     (e.currentTarget as HTMLElement).style.color = '#F0F0F3';
                                                 else
-                                                    (e.currentTarget as HTMLElement).style.color = '#F87171';
+                                                    (e.currentTarget as HTMLElement).style.color = '#ffb4ab';
                                             }
                                         }}
                                         onMouseLeave={e => {
@@ -164,7 +164,7 @@ function TextInput({
                     color: '#e2e2eb',
                     paddingRight: suffix ? '5rem' : undefined,
                 }}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(79,140,255,0.5)')}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(175,198,255,0.5)')}
                 onBlur={e => (e.currentTarget.style.borderColor = '#1E2028')}
             />
             {suffix && (
@@ -186,7 +186,7 @@ function SelectInput({ options }: { options: string[] }) {
                     border: '1px solid #1E2028',
                     color: '#e2e2eb',
                 }}
-                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(79,140,255,0.5)')}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(175,198,255,0.5)')}
                 onBlur={e => (e.currentTarget.style.borderColor = '#1E2028')}
             >
                 {options.map(o => <option key={o}>{o}</option>)}
@@ -238,8 +238,8 @@ function ProfilePanel() {
                             className="w-16 h-16 rounded-full flex items-center justify-center text-xl font-bold flex-shrink-0"
                             style={{
                                 backgroundColor: 'rgba(82,141,255,0.2)',
-                                color: '#4F8CFF',
-                                border: '1px solid rgba(79,140,255,0.2)',
+                                color: '#afc6ff',
+                                border: '1px solid rgba(175,198,255,0.2)',
                             }}
                         >
                             DJ
@@ -247,7 +247,7 @@ function ProfilePanel() {
                         <div>
                             <button
                                 className="text-xs font-semibold hover:underline"
-                                style={{ color: '#4F8CFF' }}
+                                style={{ color: '#afc6ff' }}
                             >
                                 Change avatar
                             </button>
@@ -291,7 +291,7 @@ function ProfilePanel() {
                 <CardFooter>
                     <button
                         className="text-xs font-bold px-4 py-2 rounded-lg transition-opacity hover:opacity-90"
-                        style={{ backgroundColor: '#4F8CFF', color: '#002d6c' }}
+                        style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
                     >
                         Save Changes
                     </button>
@@ -390,7 +390,7 @@ function ProfilePanel() {
                             <button
                                 className="text-[11px] font-bold transition-colors"
                                 style={{ color: 'rgba(248,113,113,0.7)' }}
-                                onMouseEnter={e => (e.currentTarget.style.color = '#F87171')}
+                                onMouseEnter={e => (e.currentTarget.style.color = '#ffb4ab')}
                                 onMouseLeave={e => (e.currentTarget.style.color = 'rgba(248,113,113,0.7)')}
                             >
                                 Revoke
@@ -402,7 +402,7 @@ function ProfilePanel() {
                     <div className="mt-6 pt-6 border-t" style={{ borderColor: '#1E2028' }}>
                         <button
                             className="text-xs font-semibold flex items-center gap-2 hover:underline"
-                            style={{ color: '#4F8CFF' }}
+                            style={{ color: '#afc6ff' }}
                         >
                             Sign out all other sessions
                             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>logout</span>

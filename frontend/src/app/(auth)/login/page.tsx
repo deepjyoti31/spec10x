@@ -43,7 +43,7 @@ export default function LoginPage() {
 
             {/* Logo */}
             <div className="flex items-center justify-center gap-3 mb-8">
-                <div className="w-9 h-9 rounded-xl bg-[#4F8CFF] flex items-center justify-center shadow-lg shadow-[#4F8CFF]/20">
+                <div className="w-9 h-9 rounded-xl bg-[var(--color-brand)] flex items-center justify-center shadow-lg shadow-[var(--color-brand)]/20">
                     <span
                         className="material-symbols-outlined text-white"
                         style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}
@@ -95,7 +95,7 @@ export default function LoginPage() {
                             onChange={e => setEmail(e.target.value)}
                             placeholder="you@company.com"
                             required
-                            className="w-full h-10 px-3 bg-[#1C1E28] border border-[#2A2C38] rounded-lg text-[14px] text-[#F0F0F3] placeholder:text-[#5A5C66] focus:outline-none focus:border-[#4F8CFF] focus:ring-1 focus:ring-[#4F8CFF]/30 transition-all"
+                            className="w-full h-10 px-3 bg-[#1C1E28] border border-[#2A2C38] rounded-lg text-[14px] text-[#F0F0F3] placeholder:text-[#5A5C66] focus:outline-none focus:border-[#afc6ff] focus:ring-1 focus:ring-[#afc6ff]/30 transition-all"
                         />
                     </div>
                     <div>
@@ -108,22 +108,22 @@ export default function LoginPage() {
                             onChange={e => setPassword(e.target.value)}
                             placeholder="••••••••"
                             required
-                            className="w-full h-10 px-3 bg-[#1C1E28] border border-[#2A2C38] rounded-lg text-[14px] text-[#F0F0F3] placeholder:text-[#5A5C66] focus:outline-none focus:border-[#4F8CFF] focus:ring-1 focus:ring-[#4F8CFF]/30 transition-all"
+                            className="w-full h-10 px-3 bg-[#1C1E28] border border-[#2A2C38] rounded-lg text-[14px] text-[#F0F0F3] placeholder:text-[#5A5C66] focus:outline-none focus:border-[#afc6ff] focus:ring-1 focus:ring-[#afc6ff]/30 transition-all"
                         />
                     </div>
 
                     {/* Error message */}
                     {error && (
-                        <div className="flex items-start gap-2 p-3 bg-[#F87171]/10 border border-[#F87171]/20 rounded-lg">
-                            <span className="material-symbols-outlined text-[#F87171] flex-shrink-0" style={{ fontSize: 16 }}>error</span>
-                            <p className="text-[13px] text-[#F87171] leading-snug">{error}</p>
+                        <div className="flex items-start gap-2 p-3 bg-[#ffb4ab]/10 border border-[#ffb4ab]/20 rounded-lg">
+                            <span className="material-symbols-outlined text-[#ffb4ab] flex-shrink-0" style={{ fontSize: 16 }}>error</span>
+                            <p className="text-[13px] text-[#ffb4ab] leading-snug">{error}</p>
                         </div>
                     )}
 
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full h-10 bg-[#4F8CFF] hover:bg-[#6B9FFF] text-white text-[14px] font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                        className="w-full h-10 bg-[var(--color-brand)] hover:brightness-110 text-white text-[14px] font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                     >
                         {loading ? 'Signing in…' : 'Sign in'}
                     </button>
@@ -133,7 +133,7 @@ export default function LoginPage() {
             {/* Sign up link */}
             <p className="text-center text-[13px] text-[#8B8D97] mt-5">
                 Don&apos;t have an account?{' '}
-                <a href="/signup" className="text-[#4F8CFF] hover:text-[#6B9FFF] font-medium transition-colors">
+                <a href="/signup" className="text-[#afc6ff] hover:text-[#6B9FFF] font-medium transition-colors">
                     Sign up
                 </a>
             </p>

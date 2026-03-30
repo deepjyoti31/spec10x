@@ -65,7 +65,7 @@ function StatCard({
                 <div className="absolute top-0 right-0 p-2">
                     <span
                         className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: 'rgba(79,140,255,0.1)', color: '#4F8CFF' }}
+                        style={{ backgroundColor: 'rgba(175,198,255,0.1)', color: '#afc6ff' }}
                     >
                         PRO
                     </span>
@@ -85,7 +85,7 @@ function StatCard({
                 >
                     <div
                         className="h-full rounded-full"
-                        style={{ backgroundColor: '#4F8CFF', width: `${progress}%` }}
+                        style={{ backgroundColor: '#afc6ff', width: `${progress}%` }}
                     />
                 </div>
             )}
@@ -126,7 +126,7 @@ function MemberRow({
                             {member.isYou && (
                                 <span
                                     className="text-[10px] font-bold px-1.5 py-0.5 rounded ml-1"
-                                    style={{ backgroundColor: 'rgba(79,140,255,0.1)', color: '#4F8CFF' }}
+                                    style={{ backgroundColor: 'rgba(175,198,255,0.1)', color: '#afc6ff' }}
                                 >
                                     YOU
                                 </span>
@@ -211,7 +211,7 @@ function ComingSoonCard({
 
             <span
                 className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full relative z-10"
-                style={{ backgroundColor: 'rgba(79,140,255,0.1)', color: '#4F8CFF' }}
+                style={{ backgroundColor: 'rgba(175,198,255,0.1)', color: '#afc6ff' }}
             >
                 Coming Soon
             </span>
@@ -238,7 +238,7 @@ export default function TeamPage() {
                     </div>
                     <button
                         className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all active:scale-95 flex-shrink-0"
-                        style={{ backgroundColor: '#4F8CFF', color: '#002d6c' }}
+                        style={{ backgroundColor: 'var(--color-brand)', color: 'white' }}
                         onMouseEnter={e =>
                             (e.currentTarget.style.boxShadow = '0 0 20px rgba(175,198,255,0.2)')
                         }
@@ -355,15 +355,15 @@ export default function TeamPage() {
                             <button
                                 className="text-xs font-bold px-4 py-1.5 rounded-md transition-all"
                                 style={{
-                                    color: '#4F8CFF',
-                                    border: '1px solid rgba(79,140,255,0.2)',
-                                    backgroundColor: 'rgba(79,140,255,0.05)',
+                                    color: '#afc6ff',
+                                    border: '1px solid rgba(175,198,255,0.2)',
+                                    backgroundColor: 'rgba(175,198,255,0.05)',
                                 }}
                                 onMouseEnter={e =>
-                                    (e.currentTarget.style.backgroundColor = 'rgba(79,140,255,0.1)')
+                                    (e.currentTarget.style.backgroundColor = 'rgba(175,198,255,0.1)')
                                 }
                                 onMouseLeave={e =>
-                                    (e.currentTarget.style.backgroundColor = 'rgba(79,140,255,0.05)')
+                                    (e.currentTarget.style.backgroundColor = 'rgba(175,198,255,0.05)')
                                 }
                             >
                                 Resend
@@ -378,7 +378,7 @@ export default function TeamPage() {
                         icon="lock_person"
                         title="Roles & Permissions"
                         description="Granular access control for enterprise workflows."
-                        gradientColor="rgba(79,140,255,0.05)"
+                        gradientColor="rgba(175,198,255,0.05)"
                     />
                     <ComingSoonCard
                         icon="history"
@@ -396,7 +396,7 @@ export default function TeamPage() {
                     className="inline-flex items-center gap-3 px-4 py-2 rounded-full"
                     style={{ backgroundColor: '#191b22', border: '1px solid rgba(66,71,83,0.05)' }}
                 >
-                    <div className="w-2 h-2 rounded-full bg-[#4F8CFF] animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-[#afc6ff] animate-pulse" />
                     <p
                         className="text-[11px] font-medium uppercase tracking-wider"
                         style={{ color: '#8c909f' }}

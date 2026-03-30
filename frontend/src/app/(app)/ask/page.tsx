@@ -83,7 +83,7 @@ function HistoryPanel() {
                                 className="material-symbols-outlined flex-shrink-0"
                                 style={{
                                     fontSize: 18,
-                                    color: activeChat === chat.id ? '#4F8CFF' : 'rgba(194,198,214,0.4)',
+                                    color: activeChat === chat.id ? '#afc6ff' : 'rgba(194,198,214,0.4)',
                                 }}
                             >
                                 {chat.icon}
@@ -151,7 +151,7 @@ function UserMessage({ text }: { text: string }) {
 
 function AILabel() {
     return (
-        <div className="flex items-center gap-2 font-semibold text-[13px]" style={{ color: '#4F8CFF' }}>
+        <div className="flex items-center gap-2 font-semibold text-[13px]" style={{ color: '#afc6ff' }}>
             <span
                 className="material-symbols-outlined"
                 style={{ fontSize: 18, fontVariationSettings: "'FILL' 1" }}
@@ -171,7 +171,7 @@ const FINDINGS = [
     {
         title: 'Confusing Setup Wizard',
         desc: 'Users struggle with the technical configuration step in part 3.',
-        accentColor: '#F87171',
+        accentColor: '#ffb4ab',
     },
     {
         title: 'No Progress Indication',
@@ -244,7 +244,7 @@ function QuoteCard({ q }: { q: typeof QUOTES[0] }) {
         <div
             className="p-5 rounded-xl transition-all"
             style={{ backgroundColor: '#161820', border: '1px solid rgba(66,71,83,0.05)' }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(79,140,255,0.2)')}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(175,198,255,0.2)')}
             onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(66,71,83,0.05)')}
         >
             <div className="flex justify-between items-start mb-3">
@@ -265,7 +265,7 @@ function QuoteCard({ q }: { q: typeof QUOTES[0] }) {
                     className="px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0"
                     style={
                         q.matchHighlight
-                            ? { backgroundColor: 'rgba(79,140,255,0.1)', color: '#4F8CFF' }
+                            ? { backgroundColor: 'rgba(175,198,255,0.1)', color: '#afc6ff' }
                             : { backgroundColor: '#33343b', color: '#8c909f' }
                     }
                 >
@@ -383,8 +383,8 @@ function ChatArea() {
                                     color: '#c2c6d6',
                                 }}
                                 onMouseEnter={e => {
-                                    (e.currentTarget as HTMLElement).style.color = '#4F8CFF';
-                                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(79,140,255,0.3)';
+                                    (e.currentTarget as HTMLElement).style.color = '#afc6ff';
+                                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(175,198,255,0.3)';
                                 }}
                                 onMouseLeave={e => {
                                     (e.currentTarget as HTMLElement).style.color = '#c2c6d6';
@@ -401,7 +401,7 @@ function ChatArea() {
                     <div
                         className="rounded-2xl flex items-center p-2 shadow-2xl transition-all group"
                         style={{ backgroundColor: '#161820', border: '1px solid #1E2028' }}
-                        onFocusCapture={e => (e.currentTarget.style.borderColor = 'rgba(79,140,255,0.4)')}
+                        onFocusCapture={e => (e.currentTarget.style.borderColor = 'rgba(175,198,255,0.4)')}
                         onBlurCapture={e => (e.currentTarget.style.borderColor = '#1E2028')}
                     >
                         <div className="pl-3 pr-2 flex items-center justify-center">
@@ -435,7 +435,7 @@ function ChatArea() {
                             </button>
                             <button
                                 className="w-9 h-9 flex items-center justify-center rounded-xl transition-transform hover:scale-105"
-                                style={{ backgroundColor: '#4F8CFF', color: '#002d6c' }}
+                                style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
                             >
                                 <span className="material-symbols-outlined" style={{ fontSize: 20 }}>send</span>
                             </button>

@@ -209,7 +209,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 >
                     {!collapsed && (
                         <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-8 h-8 flex-shrink-0 rounded-lg bg-[#4F8CFF] flex items-center justify-center shadow-lg shadow-[#4F8CFF]/20">
+                            <div className="w-8 h-8 flex-shrink-0 rounded-lg bg-[var(--color-brand)] flex items-center justify-center shadow-lg shadow-[var(--color-brand)]/20">
                                 <span
                                     className="material-symbols-outlined text-white"
                                     style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}
@@ -227,7 +227,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         /* Collapsed: show logo icon centered, clicking expands */
                         <button
                             onClick={onToggle}
-                            className="w-8 h-8 rounded-lg bg-[#4F8CFF] flex items-center justify-center shadow-lg shadow-[#4F8CFF]/20 hover:brightness-110 transition-all"
+                            className="w-8 h-8 rounded-lg bg-[var(--color-brand)] flex items-center justify-center shadow-lg shadow-[var(--color-brand)]/20 hover:brightness-110 transition-all"
                             aria-label="Expand sidebar"
                         >
                             <span
@@ -313,7 +313,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                             onClick={() => setShowUserMenu(v => !v)}
                             className={`w-full flex items-center gap-3 px-3 py-2 bg-white/[0.03] rounded-lg border border-white/[0.05] hover:bg-white/[0.06] transition-all ${collapsed ? 'justify-center' : ''}`}
                         >
-                            <div className="w-8 h-8 flex-shrink-0 rounded-full bg-[#4F8CFF] flex items-center justify-center text-white text-[12px] font-bold">
+                            <div className="w-8 h-8 flex-shrink-0 rounded-full bg-[var(--color-brand)] flex items-center justify-center text-white text-[12px] font-bold">
                                 {getInitials(user?.name)}
                             </div>
                             {!collapsed && (
@@ -352,7 +352,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                                 </button>
                                 <div className="h-[1px] bg-[#1E2028] mx-2 my-1" />
                                 <button
-                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] text-[#F87171] hover:bg-[#F87171]/[0.06] transition-colors text-left"
+                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] text-[#ffb4ab] hover:bg-[#ffb4ab]/[0.06] transition-colors text-left"
                                     onClick={() => { logout(); setShowUserMenu(false); }}
                                 >
                                     <span className="material-symbols-outlined" style={{ fontSize: 16 }}>logout</span>

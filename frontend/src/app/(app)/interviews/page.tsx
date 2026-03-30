@@ -28,7 +28,7 @@ const INTERVIEWS: Interview[] = [
     {
         id: 1,
         icon: 'description',
-        iconColor: '#4F8CFF',
+        iconColor: 'var(--color-accent)',
         title: 'Sarah Chen — Onboarding Deep Dive',
         participant: 'Stripe',
         date: 'Jan 15',
@@ -101,7 +101,7 @@ const INTERVIEWS: Interview[] = [
     {
         id: 7,
         icon: 'videocam',
-        iconColor: '#F87171',
+        iconColor: 'var(--color-danger)',
         title: 'Jake — Feature Request Interview',
         participant: 'PM @ CloudCo',
         date: 'Dec 28',
@@ -151,8 +151,8 @@ function StatusBadge({ status }: { status: InterviewStatus }) {
                 border: '1px solid rgba(248,113,113,0.2)',
             }}
         >
-            <span className="material-symbols-outlined text-[#F87171]" style={{ fontSize: 14 }}>error</span>
-            <span className="text-[11px] font-bold text-[#F87171] uppercase tracking-wider">Error</span>
+            <span className="material-symbols-outlined text-[var(--color-danger)]" style={{ fontSize: 14 }}>error</span>
+            <span className="text-[11px] font-bold text-[var(--color-danger)] uppercase tracking-wider">Error</span>
         </div>
     );
 }
@@ -184,7 +184,7 @@ function InterviewRow({
             onMouseEnter={e => {
                 if (!isProcessing) {
                     const el = e.currentTarget as HTMLElement;
-                    el.style.borderColor = isError ? 'rgba(248,113,113,0.3)' : 'rgba(79,140,255,0.3)';
+                    el.style.borderColor = isError ? 'rgba(255,180,171,0.3)' : 'rgba(175,198,255,0.3)';
                     el.style.backgroundColor = '#1E1F26';
                 }
             }}
@@ -202,7 +202,7 @@ function InterviewRow({
                 onChange={() => onCheck(interview.id)}
                 className="w-4 h-4 rounded mr-6 flex-shrink-0"
                 style={{
-                    accentColor: '#4F8CFF',
+                    accentColor: 'var(--color-accent)',
                     opacity: isProcessing ? 0.3 : 1,
                     cursor: isProcessing ? 'not-allowed' : 'pointer',
                 }}
@@ -262,7 +262,7 @@ function InterviewRow({
                             <span
                                 key={tag}
                                 className="px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-tighter"
-                                style={{ backgroundColor: 'rgba(79,140,255,0.1)', color: '#4F8CFF' }}
+                                style={{ backgroundColor: 'rgba(175,198,255,0.1)', color: 'var(--color-accent)' }}
                             >
                                 {tag}
                             </span>
@@ -282,7 +282,7 @@ function InterviewRow({
 
             {interview.status === 'error' && (
                 <div className="mr-12">
-                    <span className="text-xs font-medium text-[#F87171] hover:underline cursor-pointer">
+                    <span className="text-xs font-medium text-[var(--color-danger)] hover:underline cursor-pointer">
                         Retry Analysis
                     </span>
                 </div>
@@ -331,7 +331,7 @@ function BulkActionsBar({ count }: { count: number }) {
                 <div className="w-px h-4 bg-[#1E2028]" />
                 <button
                     className="h-9 px-4 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2"
-                    style={{ color: '#F87171' }}
+                    style={{ color: 'var(--color-danger)' }}
                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(248,113,113,0.05)')}
                     onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                 >
@@ -374,11 +374,11 @@ export default function InterviewsPage() {
                 <button
                     className="px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all text-white"
                     style={{
-                        backgroundColor: '#4F8CFF',
+                        backgroundColor: 'var(--color-brand)',
                         boxShadow: '0 4px 12px rgba(79,140,255,0.25)',
                     }}
                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#528dff')}
-                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#4F8CFF')}
+                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-brand)')}
                 >
                     <span className="material-symbols-outlined" style={{ fontSize: 20 }}>upload</span>
                     Upload
@@ -404,7 +404,7 @@ export default function InterviewsPage() {
                             border: '1px solid #1E2028',
                             color: '#F0F0F3',
                         }}
-                        onFocus={e => (e.currentTarget.style.borderColor = 'rgba(79,140,255,0.4)')}
+                        onFocus={e => (e.currentTarget.style.borderColor = 'rgba(175,198,255,0.4)')}
                         onBlur={e => (e.currentTarget.style.borderColor = '#1E2028')}
                     />
                 </div>

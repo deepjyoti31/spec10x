@@ -118,7 +118,7 @@ export default function TopBar({ onSearchClick }: TopBarProps) {
                         readOnly
                         placeholder="Search…"
                         onClick={onSearchClick}
-                        className="bg-[#161820] border border-[#1E2028] rounded-full h-8 pl-9 pr-12 text-[13px] text-[#F0F0F3] placeholder:text-[#5A5C66] w-64 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#4F8CFF]/40 transition-all"
+                        className="bg-[#161820] border border-[#1E2028] rounded-full h-8 pl-9 pr-12 text-[13px] text-[#F0F0F3] placeholder:text-[#5A5C66] w-64 cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#afc6ff]/40 transition-all"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-[#5A5C66] pointer-events-none">
                         ⌘K
@@ -134,7 +134,7 @@ export default function TopBar({ onSearchClick }: TopBarProps) {
                     >
                         <span className="material-symbols-outlined" style={{ fontSize: 22 }}>notifications</span>
                         {unreadCount > 0 && (
-                            <span className="absolute top-1 right-1 w-2 h-2 bg-[#4F8CFF] rounded-full border-2 border-[#0F1117]" />
+                            <span className="absolute top-1 right-1 w-2 h-2 bg-[#afc6ff] rounded-full border-2 border-[#0F1117]" />
                         )}
                     </button>
 
@@ -143,7 +143,7 @@ export default function TopBar({ onSearchClick }: TopBarProps) {
                             <div className="flex items-center justify-between px-4 py-3 border-b border-[#1E2028]">
                                 <span className="text-[14px] font-semibold text-[#F0F0F3]">Notifications</span>
                                 {unreadCount > 0 && (
-                                    <span className="text-[11px] font-bold bg-[#4F8CFF]/10 text-[#4F8CFF] px-2 py-0.5 rounded-full">
+                                    <span className="text-[11px] font-bold bg-[#afc6ff]/10 text-[#afc6ff] px-2 py-0.5 rounded-full">
                                         {unreadCount} new
                                     </span>
                                 )}
@@ -158,11 +158,11 @@ export default function TopBar({ onSearchClick }: TopBarProps) {
                                         <div
                                             key={notif.id}
                                             onClick={() => handleNotifClick(notif)}
-                                            className={`px-4 py-3 cursor-pointer border-b border-[#1E2028] last:border-0 hover:bg-white/[0.02] transition-colors ${!notif.is_read ? 'bg-[#4F8CFF]/[0.04]' : ''}`}
+                                            className={`px-4 py-3 cursor-pointer border-b border-[#1E2028] last:border-0 hover:bg-white/[0.02] transition-colors ${!notif.is_read ? 'bg-[#afc6ff]/[0.04]' : ''}`}
                                         >
                                             <div className="flex items-start gap-2">
                                                 {!notif.is_read && (
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-[#4F8CFF] mt-1.5 flex-shrink-0" />
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-[#afc6ff] mt-1.5 flex-shrink-0" />
                                                 )}
                                                 <div className={!notif.is_read ? '' : 'pl-3.5'}>
                                                     <div className="text-[13px] font-medium text-[#F0F0F3] leading-snug">

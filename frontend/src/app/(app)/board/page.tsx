@@ -37,7 +37,7 @@ function ScoreRing({
                 <circle
                     cx={cx} cy={cy} r={radius}
                     fill="transparent"
-                    stroke="#4F8CFF"
+                    stroke="#afc6ff"
                     strokeWidth={strokeWidth}
                     strokeDasharray={circumference}
                     strokeDashoffset={offset}
@@ -100,7 +100,7 @@ function PinButton() {
         <button
             className="transition-colors"
             style={{ color: 'rgba(194,198,214,0.4)' }}
-            onMouseEnter={e => (e.currentTarget.style.color = '#4F8CFF')}
+            onMouseEnter={e => (e.currentTarget.style.color = '#afc6ff')}
             onMouseLeave={e => (e.currentTarget.style.color = 'rgba(194,198,214,0.4)')}
         >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>push_pin</span>
@@ -116,7 +116,7 @@ function GenerateSpecBtn() {
     return (
         <button
             className="flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all hover:brightness-110 active:scale-[0.98]"
-            style={{ backgroundColor: '#4F8CFF', color: '#002d6c' }}
+            style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
         >
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>auto_awesome</span>
             Generate Spec
@@ -141,7 +141,7 @@ function PinnedCardFull() {
         <div
             className="rounded-xl p-4 group cursor-default transition-all"
             style={{ backgroundColor: '#161820', border: '1px solid #1E2028' }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(79,140,255,0.3)')}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(175,198,255,0.3)')}
             onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E2028')}
         >
             {/* Top row: ring + badges */}
@@ -150,7 +150,7 @@ function PinnedCardFull() {
                 <div className="flex gap-2">
                     <span
                         className="text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1"
-                        style={{ backgroundColor: 'rgba(79,140,255,0.12)', color: '#4F8CFF' }}
+                        style={{ backgroundColor: 'rgba(175,198,255,0.12)', color: '#afc6ff' }}
                     >
                         <span
                             className="material-symbols-outlined"
@@ -194,7 +194,7 @@ function PinnedCardFull() {
                         </span>
                         <span
                             className="text-xs font-semibold"
-                            style={{ color: m.danger ? '#F87171' : '#F0F0F3' }}
+                            style={{ color: m.danger ? '#ffb4ab' : '#F0F0F3' }}
                         >
                             {m.value}
                         </span>
@@ -214,7 +214,7 @@ function PinnedCardFull() {
                     {/* Initials avatar */}
                     <div
                         className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0"
-                        style={{ backgroundColor: '#4F8CFF' }}
+                        style={{ backgroundColor: '#afc6ff' }}
                     >
                         SC
                     </div>
@@ -249,7 +249,7 @@ function PinnedCardSimple() {
         <div
             className="rounded-xl p-4 group cursor-default transition-all"
             style={{ backgroundColor: '#161820', border: '1px solid #1E2028' }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(79,140,255,0.3)')}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(175,198,255,0.3)')}
             onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E2028')}
         >
             <div className="flex justify-between items-start mb-4">
@@ -405,7 +405,7 @@ export default function BoardPage() {
                         icon="push_pin"
                         label="Pinned"
                         badge="2 THEMES"
-                        iconColor="#4F8CFF"
+                        iconColor="#afc6ff"
                         labelColor="#F0F0F3"
                         iconFilled
                     />

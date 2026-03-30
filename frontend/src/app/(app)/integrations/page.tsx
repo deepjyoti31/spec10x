@@ -32,8 +32,8 @@ const AVAILABLE = [
         id: 'intercom',
         name: 'Intercom',
         description: 'Real-time messaging for customer support and engagement.',
-        iconBg: 'rgba(79,140,255,0.2)',
-        iconColor: '#4F8CFF',
+        iconBg: 'rgba(175,198,255,0.2)',
+        iconColor: '#afc6ff',
         icon: 'forum',
         category: 'Support',
     },
@@ -142,7 +142,7 @@ function ConnectedCard({ integration }: { integration: typeof CONNECTED[0] }) {
                         <button
                             key={action}
                             className="text-xs font-semibold text-white transition-colors"
-                            onMouseEnter={e => (e.currentTarget.style.color = '#4F8CFF')}
+                            onMouseEnter={e => (e.currentTarget.style.color = '#afc6ff')}
                             onMouseLeave={e => (e.currentTarget.style.color = 'white')}
                         >
                             {action}
@@ -152,7 +152,7 @@ function ConnectedCard({ integration }: { integration: typeof CONNECTED[0] }) {
                 <button
                     className="text-xs font-semibold transition-colors"
                     style={{ color: 'rgba(248,113,113,0.8)' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#F87171')}
+                    onMouseEnter={e => (e.currentTarget.style.color = '#ffb4ab')}
                     onMouseLeave={e => (e.currentTarget.style.color = 'rgba(248,113,113,0.8)')}
                 >
                     Disconnect
@@ -275,7 +275,7 @@ export default function IntegrationsPage() {
                     </div>
                     <button
                         className="flex items-center gap-2 text-[13px] font-semibold transition-opacity hover:opacity-80"
-                        style={{ color: '#4F8CFF' }}
+                        style={{ color: '#afc6ff' }}
                     >
                         <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add_circle</span>
                         Request Integration
@@ -360,7 +360,7 @@ export default function IntegrationsPage() {
                                     border: '1px solid transparent',
                                     color: '#F0F0F3',
                                 }}
-                                onFocus={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(79,140,255,0.4)')}
+                                onFocus={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(175,198,255,0.4)')}
                                 onBlur={e => (e.currentTarget.style.boxShadow = 'none')}
                             />
                         </div>
@@ -378,7 +378,7 @@ export default function IntegrationsPage() {
                         <h2 className="text-sm font-semibold tracking-wide text-[#F0F0F3]">Coming Soon</h2>
                         <button
                             className="text-xs font-semibold flex items-center gap-1 hover:underline transition-colors"
-                            style={{ color: '#4F8CFF' }}
+                            style={{ color: '#afc6ff' }}
                         >
                             <span className="material-symbols-outlined" style={{ fontSize: 14 }}>how_to_vote</span>
                             Vote for next

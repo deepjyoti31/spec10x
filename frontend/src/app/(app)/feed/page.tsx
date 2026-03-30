@@ -83,13 +83,13 @@ const SIGNALS: Signal[] = [
 // ---------------------------------------------------------------------------
 
 const SOURCE_STYLES: Record<SourceType, { bg: string; color: string }> = {
-    Interview: { bg: 'rgba(79,140,255,0.12)', color: '#4F8CFF' },
+    Interview: { bg: 'rgba(175,198,255,0.12)', color: '#afc6ff' },
     Support:   { bg: 'rgba(251,191,36,0.1)',  color: '#FBBF24' },
     Survey:    { bg: 'rgba(52,211,153,0.1)',   color: '#34D399' },
 };
 
 const SENTIMENT_STYLES: Record<SentimentType, { bg: string; color: string; icon: string }> = {
-    Negative: { bg: 'rgba(248,113,113,0.1)', color: '#F87171', icon: 'sentiment_very_dissatisfied' },
+    Negative: { bg: 'rgba(248,113,113,0.1)', color: '#ffb4ab', icon: 'sentiment_very_dissatisfied' },
     Neutral:  { bg: 'rgba(139,141,151,0.1)', color: '#8B8D97', icon: 'sentiment_neutral' },
     Positive: { bg: 'rgba(52,211,153,0.1)',  color: '#34D399', icon: 'sentiment_very_satisfied' },
 };
@@ -116,7 +116,7 @@ function SignalRow({
             className="p-5 cursor-pointer transition-colors border-b"
             style={{
                 borderLeftWidth: 4,
-                borderLeftColor: selected ? '#4F8CFF' : 'transparent',
+                borderLeftColor: selected ? '#afc6ff' : 'transparent',
                 borderBottomColor: 'rgba(66,71,83,0.08)',
                 backgroundColor: selected ? '#1E2230' : 'transparent',
             }}
@@ -220,7 +220,7 @@ function EvidenceDetail() {
                 <div className="flex items-center gap-3 mb-6">
                     <span
                         className="px-2 py-1 rounded text-[10px] font-bold uppercase"
-                        style={{ backgroundColor: 'rgba(79,140,255,0.12)', color: '#4F8CFF' }}
+                        style={{ backgroundColor: 'rgba(175,198,255,0.12)', color: '#afc6ff' }}
                     >
                         Interview
                     </span>
@@ -251,7 +251,7 @@ function EvidenceDetail() {
                         className="px-2 py-1 rounded text-[10px] font-semibold"
                         style={{
                             backgroundColor: 'rgba(248,113,113,0.1)',
-                            color: '#F87171',
+                            color: '#ffb4ab',
                             border: '1px solid rgba(248,113,113,0.2)',
                         }}
                     >
@@ -297,8 +297,8 @@ function EvidenceDetail() {
                         <div
                             className="w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
                             style={{
-                                backgroundColor: '#4F8CFF',
-                                boxShadow: '0 0 0 2px rgba(79,140,255,0.2)',
+                                backgroundColor: '#afc6ff',
+                                boxShadow: '0 0 0 2px rgba(175,198,255,0.2)',
                             }}
                         >
                             SC
@@ -348,7 +348,7 @@ function EvidenceDetail() {
                         </h5>
                         <div className="flex flex-wrap gap-2">
                             {[
-                                { label: 'Setup Wizard',    dot: '#4F8CFF' },
+                                { label: 'Setup Wizard',    dot: '#afc6ff' },
                                 { label: 'API Provisioning', dot: '#b2c6f8' },
                                 { label: 'Time to Value',   dot: '#ffb77b' },
                             ].map(theme => (
@@ -429,7 +429,7 @@ export default function FeedPage() {
                                 border: '1px solid #1E2028',
                                 color: '#c2c6d6',
                             }}
-                            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(79,140,255,0.5)')}
+                            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(175,198,255,0.5)')}
                             onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E2028')}
                         >
                             {f.icon && (
@@ -450,7 +450,7 @@ export default function FeedPage() {
 
                     <button
                         className="flex items-center gap-2 px-4 py-2 rounded text-xs font-bold transition-all"
-                        style={{ backgroundColor: '#4F8CFF', color: '#002d6c' }}
+                        style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
                         onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.1)')}
                         onMouseLeave={e => (e.currentTarget.style.filter = 'none')}
                     >

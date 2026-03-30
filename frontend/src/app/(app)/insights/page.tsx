@@ -16,9 +16,9 @@ const THEME_CARDS = [
         mentions: 142,
         sources: ['Slack', 'Intercom'],
         sentiment: [
-            { color: '#F87171', pct: 65 },
+            { color: '#ffb4ab', pct: 65 },
             { color: '#4a4e5c', pct: 20 },
-            { color: '#4F8CFF', pct: 15 },
+            { color: '#afc6ff', pct: 15 },
         ],
         quotes: [
             'The step 3 documentation is completely outdated compared to the current UI...',
@@ -34,9 +34,9 @@ const THEME_CARDS = [
         mentions: 89,
         sources: ['Sentry'],
         sentiment: [
-            { color: '#F87171', pct: 30 },
+            { color: '#ffb4ab', pct: 30 },
             { color: '#4a4e5c', pct: 50 },
-            { color: '#4F8CFF', pct: 20 },
+            { color: '#afc6ff', pct: 20 },
         ],
         quotes: ['Endpoints in us-east-1 are timing out consistently under heavy load...'],
     },
@@ -49,9 +49,9 @@ const THEME_CARDS = [
         mentions: 56,
         sources: ['Zendesk'],
         sentiment: [
-            { color: '#F87171', pct: 15 },
+            { color: '#ffb4ab', pct: 15 },
             { color: '#4a4e5c', pct: 70 },
-            { color: '#4F8CFF', pct: 15 },
+            { color: '#afc6ff', pct: 15 },
         ],
         quotes: ['Hard to understand the usage-based charges for enterprise tiers...'],
     },
@@ -64,7 +64,7 @@ const THEME_CARDS = [
         mentions: 42,
         sources: ['Twitter'],
         sentiment: [
-            { color: '#4F8CFF', pct: 80 },
+            { color: '#afc6ff', pct: 80 },
             { color: '#4a4e5c', pct: 20 },
         ],
         quotes: ['Love the new theme but accessibility contrast is a bit low in settings.'],
@@ -78,7 +78,7 @@ const THEME_CARDS = [
         mentions: 38,
         sources: ['App Store'],
         sentiment: [
-            { color: '#F87171', pct: 40 },
+            { color: '#ffb4ab', pct: 40 },
             { color: '#4a4e5c', pct: 60 },
         ],
         quotes: ['Hamburger menu feels clunky on iOS devices with larger screens.'],
@@ -119,15 +119,15 @@ function ThemeCard({
             className="rounded-xl p-5 cursor-pointer transition-all hover:-translate-y-0.5"
             style={{
                 backgroundColor: selected ? '#282a30' : '#191b22',
-                border: selected ? '1px solid rgba(79,140,255,0.4)' : '1px solid transparent',
-                boxShadow: selected ? '0 20px 25px rgba(79,140,255,0.05)' : 'none',
+                border: selected ? '1px solid rgba(175,198,255,0.4)' : '1px solid transparent',
+                boxShadow: selected ? '0 20px 25px rgba(175,198,255,0.05)' : 'none',
             }}
         >
             {/* Header */}
             <div className="flex justify-between items-start mb-3">
                 <h3
                     className="font-semibold leading-tight"
-                    style={{ color: selected ? '#4F8CFF' : '#e2e2eb' }}
+                    style={{ color: selected ? '#afc6ff' : '#e2e2eb' }}
                 >
                     {card.title}
                 </h3>
@@ -135,7 +135,7 @@ function ThemeCard({
                     {card.isNew && (
                         <span
                             className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                            style={{ backgroundColor: 'rgba(79,140,255,0.2)', color: '#4F8CFF' }}
+                            style={{ backgroundColor: 'rgba(175,198,255,0.2)', color: '#afc6ff' }}
                         >
                             NEW
                         </span>
@@ -212,7 +212,7 @@ function ThemeDetail() {
                 </h2>
                 <span
                     className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                    style={{ backgroundColor: 'rgba(79,140,255,0.2)', color: '#4F8CFF' }}
+                    style={{ backgroundColor: 'rgba(175,198,255,0.2)', color: '#afc6ff' }}
                 >
                     NEW
                 </span>
@@ -220,7 +220,7 @@ function ThemeDetail() {
 
             {/* Score row */}
             <div className="flex items-center gap-2 mb-6">
-                <div className="text-2xl font-bold" style={{ color: '#4F8CFF' }}>8.7</div>
+                <div className="text-2xl font-bold" style={{ color: '#afc6ff' }}>8.7</div>
                 <div className="text-[10px] text-[#5A5C66] uppercase font-semibold">Impact Score</div>
                 <div className="ml-auto text-[10px] text-[#5A5C66] font-medium">Aug 12 – Aug 28</div>
             </div>
@@ -240,7 +240,7 @@ function ThemeDetail() {
                         <div className="text-[10px] text-[#5A5C66] uppercase font-bold mb-1">{stat.label}</div>
                         <div
                             className="text-sm font-semibold"
-                            style={{ color: stat.danger ? '#F87171' : '#F0F0F3' }}
+                            style={{ color: stat.danger ? '#ffb4ab' : '#F0F0F3' }}
                         >
                             {stat.value}
                         </div>
@@ -272,7 +272,7 @@ function ThemeDetail() {
                             quote: 'The onboarding funnel drops significantly at the database connection step. Users are confused by the ARN requirements.',
                             initials: 'JD',
                             author: 'John D. via Slack',
-                            color: '#4F8CFF',
+                            color: '#afc6ff',
                         },
                         {
                             quote: 'Still no support for Azure AD in the initial setup? This is a dealbreaker for enterprise clients.',
@@ -319,7 +319,7 @@ function ThemeDetail() {
             <div className="space-y-2 pb-8">
                 <button
                     className="w-full py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all hover:brightness-110"
-                    style={{ backgroundColor: '#4F8CFF', color: '#002d6c' }}
+                    style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
                 >
                     <span className="material-symbols-outlined" style={{ fontSize: 16 }}>view_kanban</span>
                     View in Board
@@ -328,8 +328,8 @@ function ThemeDetail() {
                     className="w-full py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition-all"
                     style={{
                         backgroundColor: '#1e1f26',
-                        color: '#4F8CFF',
-                        border: '1px solid rgba(79,140,255,0.2)',
+                        color: '#afc6ff',
+                        border: '1px solid rgba(175,198,255,0.2)',
                     }}
                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#282a30')}
                     onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#1e1f26')}
@@ -363,7 +363,7 @@ export default function InsightsPage() {
                     <h2 className="text-xs font-semibold uppercase tracking-widest text-[#5A5C66]">
                         Filters
                     </h2>
-                    <button className="text-[10px] text-[#4F8CFF] hover:underline">Clear all</button>
+                    <button className="text-[10px] text-[#afc6ff] hover:underline">Clear all</button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-5 py-2 space-y-8">
@@ -378,7 +378,7 @@ export default function InsightsPage() {
                                         defaultChecked
                                         type="checkbox"
                                         className="w-3.5 h-3.5 rounded-sm"
-                                        style={{ accentColor: '#4F8CFF' }}
+                                        style={{ accentColor: '#afc6ff' }}
                                     />
                                     <span className="text-xs text-[#8B8D97] group-hover:text-[#F0F0F3] transition-colors">
                                         {src}
@@ -412,7 +412,7 @@ export default function InsightsPage() {
                                         name="sentiment"
                                         defaultChecked={i === 0}
                                         className="w-3.5 h-3.5"
-                                        style={{ accentColor: '#4F8CFF' }}
+                                        style={{ accentColor: '#afc6ff' }}
                                     />
                                     <span className="text-xs text-[#8B8D97] group-hover:text-[#F0F0F3]">
                                         {opt}
@@ -435,7 +435,7 @@ export default function InsightsPage() {
                                     border: '1px solid transparent',
                                     color: '#8B8D97',
                                 }}
-                                onFocus={e => (e.currentTarget.style.border = '1px solid rgba(79,140,255,0.3)')}
+                                onFocus={e => (e.currentTarget.style.border = '1px solid rgba(175,198,255,0.3)')}
                                 onBlur={e => (e.currentTarget.style.border = '1px solid transparent')}
                             />
                             <input
@@ -447,7 +447,7 @@ export default function InsightsPage() {
                                     border: '1px solid transparent',
                                     color: '#8B8D97',
                                 }}
-                                onFocus={e => (e.currentTarget.style.border = '1px solid rgba(79,140,255,0.3)')}
+                                onFocus={e => (e.currentTarget.style.border = '1px solid rgba(175,198,255,0.3)')}
                                 onBlur={e => (e.currentTarget.style.border = '1px solid transparent')}
                             />
                         </div>
@@ -501,9 +501,9 @@ export default function InsightsPage() {
                                     style={
                                         activeSort === opt
                                             ? {
-                                                backgroundColor: '#4F8CFF',
+                                                backgroundColor: '#afc6ff',
                                                 color: '#002d6c',
-                                                boxShadow: '0 4px 6px rgba(79,140,255,0.1)',
+                                                boxShadow: '0 4px 6px rgba(175,198,255,0.1)',
                                               }
                                             : { color: '#5A5C66' }
                                     }
@@ -518,7 +518,7 @@ export default function InsightsPage() {
                     <div className="mb-8 relative group">
                         <span
                             className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 transition-colors"
-                            style={{ fontSize: 20, color: 'rgba(79,140,255,0.7)' }}
+                            style={{ fontSize: 20, color: 'rgba(175,198,255,0.7)' }}
                         >
                             auto_awesome
                         </span>
@@ -532,8 +532,8 @@ export default function InsightsPage() {
                                 color: '#F0F0F3',
                             }}
                             onFocus={e => {
-                                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(79,140,255,0.2)';
-                                e.currentTarget.style.borderColor = 'rgba(79,140,255,0.3)';
+                                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(175,198,255,0.2)';
+                                e.currentTarget.style.borderColor = 'rgba(175,198,255,0.3)';
                             }}
                             onBlur={e => {
                                 e.currentTarget.style.boxShadow = 'none';
@@ -564,7 +564,7 @@ export default function InsightsPage() {
 
                     {/* Pagination */}
                     <div className="mt-8 flex items-center justify-center gap-8">
-                        <button className="text-xs font-medium text-[#4F8CFF] hover:underline">
+                        <button className="text-xs font-medium text-[#afc6ff] hover:underline">
                             + Show 6 more themes
                         </button>
                         <button className="text-xs font-medium text-[#5A5C66] hover:text-[#F0F0F3] transition-colors">
