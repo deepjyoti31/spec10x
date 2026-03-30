@@ -195,6 +195,62 @@ class BoardThemeCardResponse(ThemeResponse):
     evidence_preview: list[FeedSignalResponse] = []
 
 
+class ThemeExplorerSummaryResponse(BaseModel):
+    interviews_count: int
+    signals_count: int
+    active_themes_count: int
+
+
+class ThemeExplorerSourceChipResponse(BaseModel):
+    source_type: str
+    label: str
+    count: int
+
+
+class ThemeExplorerQuotePreviewResponse(BaseModel):
+    id: str
+    excerpt: str
+    author_or_speaker: Optional[str] = None
+    source_label: str
+    occurred_at: datetime
+
+
+class ThemeExplorerSentimentResponse(BaseModel):
+    positive: float
+    neutral: float
+    negative: float
+
+
+class ThemeExplorerCardResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    is_new: bool
+    impact_score: float
+    mention_count: int
+    sentiment: ThemeExplorerSentimentResponse
+    source_chips: list[ThemeExplorerSourceChipResponse] = []
+    quote_previews: list[ThemeExplorerQuotePreviewResponse] = []
+
+
+class ThemeExplorerFiltersResponse(BaseModel):
+    sort: str
+    sources: list[str] = []
+    sentiment: Optional[str] = None
+    date_from: Optional[date] = None
+    date_to: Optional[date] = None
+    selected_theme_id: Optional[uuid.UUID] = None
+    available_source_types: list[str] = []
+
+
+class ThemeExplorerResponse(BaseModel):
+    summary: ThemeExplorerSummaryResponse
+    filters: ThemeExplorerFiltersResponse
+    default_selected_theme_id: Optional[uuid.UUID] = None
+    active_themes: list[ThemeExplorerCardResponse] = []
+    previous_themes: list[ThemeExplorerCardResponse] = []
+    empty_reason: Optional[str] = None
+
+
 class SubThemeResponse(BaseModel):
     id: uuid.UUID
     name: str
@@ -331,3 +387,51 @@ class SourceConnectionResponse(BaseModel):
 
 class SourceConnectionDetailResponse(SourceConnectionResponse):
     sync_runs: list[SyncRunResponse] = []
+
+
+# --- Home Dashboard ---
+
+class HomeDashboardStatsResponse(BaseModel):
+    interviews_total: int
+    interviews_this_week: int
+    active_themes_total: int
+    new_themes_this_week: int
+    signals_total: int
+    active_source_type_count: int
+    average_impact_score: float
+    average_impact_delta: Optional[float] = None
+
+
+class HomeDashboardPriorityResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    impact_score: float
+    trend: str
+    primary_count_label: str
+    source_summary_label: str
+    priority_band: str
+
+
+class HomeDashboardActivityResponse(BaseModel):
+    kind: str
+    title: str
+    subtitle: str
+    occurred_at: datetime
+    href: str
+    tone: str
+
+
+class HomeDashboardTrendResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    velocity_delta: Optional[int] = None
+    sparkline_points: list[int]
+    href: str
+
+
+class HomeDashboardResponse(BaseModel):
+    has_data: bool
+    stats: HomeDashboardStatsResponse
+    active_priorities: list[HomeDashboardPriorityResponse]
+    recent_activity: list[HomeDashboardActivityResponse]
+    emerging_trends: list[HomeDashboardTrendResponse]

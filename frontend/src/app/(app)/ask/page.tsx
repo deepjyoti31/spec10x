@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 // ---------------------------------------------------------------------------
 // Static demo data
@@ -283,8 +284,12 @@ function QuoteCard({ q }: { q: typeof QUOTES[0] }) {
 // Chat area
 // ---------------------------------------------------------------------------
 
-function ChatArea() {
-    const [inputValue, setInputValue] = useState('');
+function ChatArea({ initialQuery }: { initialQuery: string }) {
+    const [inputValue, setInputValue] = useState(initialQuery);
+
+    useEffect(() => {
+        setInputValue(initialQuery);
+    }, [initialQuery]);
 
     return (
         <section
@@ -453,10 +458,13 @@ function ChatArea() {
 // ---------------------------------------------------------------------------
 
 export default function AskPage() {
+    const searchParams = useSearchParams();
+    const initialQuery = searchParams.get('q') ?? '';
+
     return (
         <div className="flex h-full overflow-hidden">
             <HistoryPanel />
-            <ChatArea />
+            <ChatArea initialQuery={initialQuery} />
         </div>
     );
 }

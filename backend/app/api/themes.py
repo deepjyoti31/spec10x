@@ -2,7 +2,9 @@
 Spec10x Backend - Themes API routes.
 """
 
+from collections import defaultdict
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
@@ -11,10 +13,17 @@ from sqlalchemy.orm import selectinload
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
-from app.models import Theme, ThemeStatus, User
+from app.models import Interview, Signal, SourceType, Theme, ThemeStatus, User
 from app.schemas import (
     BoardThemeCardResponse,
+    ThemeExplorerCardResponse,
     ThemeDetailResponse,
+    ThemeExplorerFiltersResponse,
+    ThemeExplorerQuotePreviewResponse,
+    ThemeExplorerResponse,
+    ThemeExplorerSentimentResponse,
+    ThemeExplorerSourceChipResponse,
+    ThemeExplorerSummaryResponse,
     ThemeResponse,
     ThemeUpdate,
 )
@@ -31,6 +40,12 @@ from app.services.signals import (
 
 router = APIRouter(prefix="/api/themes", tags=["Themes"])
 
+SOURCE_TYPE_ENUM_ORDER = (
+    SourceType.interview,
+    SourceType.support,
+    SourceType.survey,
+    SourceType.analytics,
+)
 SOURCE_TYPE_ORDER = ("interview", "support", "survey", "analytics")
 
 
@@ -114,6 +129,112 @@ def _serialize_supporting_evidence(
             }
         )
     return grouped_signals
+
+
+def _filter_explorer_signals(
+    *,
+    workspace_signals: list[Signal],
+    selected_sources: set[SourceType],
+    date_from: date | None,
+    date_to: date | None,
+) -> list[Signal]:
+    filtered_signals: list[Signal] = []
+    for signal in workspace_signals:
+        if selected_sources and signal.source_type not in selected_sources:
+            continue
+        signal_date = signal.occurred_at.date()
+        if date_from is not None and signal_date < date_from:
+            continue
+        if date_to is not None and signal_date > date_to:
+            continue
+        filtered_signals.append(signal)
+    return filtered_signals
+
+
+def _build_theme_signal_map(
+    *,
+    themes: list[Theme],
+    signals: list[Signal],
+) -> dict[uuid.UUID, list[Signal]]:
+    theme_ids = {theme.id for theme in themes}
+    theme_signals: dict[uuid.UUID, list[Signal]] = defaultdict(list)
+    for signal in signals:
+        theme_id = _parse_theme_match_id(signal.metadata_json)
+        if theme_id is None or theme_id not in theme_ids:
+            continue
+        theme_signals[theme_id].append(signal)
+    return theme_signals
+
+
+def _get_dominant_sentiment(theme: Theme) -> str:
+    sentiment_pairs = (
+        ("negative", theme.sentiment_negative),
+        ("neutral", theme.sentiment_neutral),
+        ("positive", theme.sentiment_positive),
+    )
+    return max(sentiment_pairs, key=lambda item: item[1])[0]
+
+
+def _theme_matches_explorer_filters(
+    *,
+    theme: Theme,
+    theme_signals: list[Signal],
+    sentiment_filter: str | None,
+    has_signal_filters: bool,
+) -> bool:
+    if sentiment_filter and _get_dominant_sentiment(theme) != sentiment_filter:
+        return False
+    if has_signal_filters and not theme_signals:
+        return False
+    return True
+
+
+def _serialize_quote_previews(
+    *,
+    theme_signals: list[Signal],
+) -> list[ThemeExplorerQuotePreviewResponse]:
+    previews: list[ThemeExplorerQuotePreviewResponse] = []
+    for signal in sorted(
+        theme_signals,
+        key=lambda item: (item.occurred_at, item.created_at),
+        reverse=True,
+    )[:2]:
+        serialized_signal = serialize_feed_signal(signal, theme_lookup={})
+        previews.append(
+            ThemeExplorerQuotePreviewResponse(
+                id=serialized_signal["id"],
+                excerpt=serialized_signal["excerpt"],
+                author_or_speaker=serialized_signal["author_or_speaker"],
+                source_label=serialized_signal["source_label"],
+                occurred_at=serialized_signal["occurred_at"],
+            )
+        )
+    return previews
+
+
+def _serialize_theme_explorer_card(
+    *,
+    theme: Theme,
+    theme_signals: list[Signal],
+    score: float,
+) -> ThemeExplorerCardResponse:
+    return ThemeExplorerCardResponse(
+        id=theme.id,
+        name=theme.name,
+        is_new=theme.is_new,
+        impact_score=score,
+        mention_count=len(theme_signals) if theme_signals else theme.mention_count,
+        sentiment=ThemeExplorerSentimentResponse(
+            positive=theme.sentiment_positive,
+            neutral=theme.sentiment_neutral,
+            negative=theme.sentiment_negative,
+        ),
+        source_chips=[
+            ThemeExplorerSourceChipResponse(**source_chip)
+            for source_chip in build_source_breakdown(theme_signals)
+        ],
+        quote_previews=_serialize_quote_previews(theme_signals=theme_signals),
+    )
 
 
 @router.get("", response_model=list[ThemeResponse])
@@ -211,6 +332,156 @@ async def get_theme_board(
         payload.append(card_payload)
 
     return payload
+
+
+@router.get("/explorer", response_model=ThemeExplorerResponse)
+async def get_theme_explorer(
+    sort: str = Query("urgency", pattern="^(urgency|frequency|sentiment|recency)$"),
+    source: list[SourceType] = Query(default=[]),
+    sentiment: str | None = Query(default=None, pattern="^(negative|positive|neutral)$"),
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+    selected_theme_id: uuid.UUID | None = Query(default=None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return a filter-aware theme explorer payload for the redesigned Insights page."""
+    workspace = await ensure_signal_consistency(
+        db,
+        user_id=current_user.id,
+    )
+
+    themes_result = await db.execute(select(Theme).where(Theme.user_id == current_user.id))
+    all_themes = list(themes_result.scalars().all())
+
+    interviews_result = await db.execute(
+        select(Interview).where(Interview.user_id == current_user.id)
+    )
+    interviews = list(interviews_result.scalars().all())
+
+    workspace_signals = await get_workspace_signals(
+        db,
+        workspace_id=workspace.id,
+    )
+    available_source_types = [
+        source_type.value
+        for source_type in SOURCE_TYPE_ENUM_ORDER
+        if any(signal.source_type == source_type for signal in workspace_signals)
+    ]
+
+    selected_sources = set(source)
+    filtered_signals = _filter_explorer_signals(
+        workspace_signals=workspace_signals,
+        selected_sources=selected_sources,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    theme_signal_map = _build_theme_signal_map(
+        themes=all_themes,
+        signals=filtered_signals,
+    )
+    score_map = build_theme_score_map(
+        themes=all_themes,
+        signals=filtered_signals,
+    )
+    has_signal_filters = bool(selected_sources or date_from is not None or date_to is not None)
+
+    active_themes = _sort_themes(
+        themes=[
+            theme
+            for theme in all_themes
+            if theme.status == ThemeStatus.active
+            and _theme_matches_explorer_filters(
+                theme=theme,
+                theme_signals=theme_signal_map.get(theme.id, []),
+                sentiment_filter=sentiment,
+                has_signal_filters=has_signal_filters,
+            )
+        ],
+        sort=sort,
+        score_map=score_map,
+    )
+    previous_themes = _sort_themes(
+        themes=[
+            theme
+            for theme in all_themes
+            if theme.status == ThemeStatus.previous
+            and _theme_matches_explorer_filters(
+                theme=theme,
+                theme_signals=theme_signal_map.get(theme.id, []),
+                sentiment_filter=sentiment,
+                has_signal_filters=has_signal_filters,
+            )
+        ],
+        sort=sort,
+        score_map=score_map,
+    )
+
+    serialized_active_themes = [
+        _serialize_theme_explorer_card(
+            theme=theme,
+            theme_signals=theme_signal_map.get(theme.id, []),
+            score=score_map[theme.id].total,
+        )
+        for theme in active_themes
+    ]
+    serialized_previous_themes = [
+        _serialize_theme_explorer_card(
+            theme=theme,
+            theme_signals=theme_signal_map.get(theme.id, []),
+            score=score_map[theme.id].total,
+        )
+        for theme in previous_themes
+    ]
+
+    default_theme_id = None
+    available_theme_ids = {theme.id for theme in [*active_themes, *previous_themes]}
+    if selected_theme_id and selected_theme_id in available_theme_ids:
+        default_theme_id = selected_theme_id
+    elif active_themes:
+        default_theme_id = active_themes[0].id
+    elif previous_themes:
+        default_theme_id = previous_themes[0].id
+
+    visible_theme_ids = {theme.id for theme in [*active_themes, *previous_themes]}
+    visible_signals = [
+        signal
+        for signal in filtered_signals
+        if _parse_theme_match_id(signal.metadata_json) in visible_theme_ids
+    ]
+    interview_ids = {
+        str((signal.metadata_json or {}).get("interview_id"))
+        for signal in visible_signals
+        if (signal.metadata_json or {}).get("interview_id")
+    }
+
+    has_any_data = bool(all_themes or workspace_signals or interviews)
+    empty_reason = None
+    if not has_any_data:
+        empty_reason = "no_data"
+    elif not serialized_active_themes and not serialized_previous_themes:
+        empty_reason = "no_matches"
+
+    return ThemeExplorerResponse(
+        summary=ThemeExplorerSummaryResponse(
+            interviews_count=len(interview_ids),
+            signals_count=len(visible_signals),
+            active_themes_count=len(serialized_active_themes),
+        ),
+        filters=ThemeExplorerFiltersResponse(
+            sort=sort,
+            sources=[item.value for item in source],
+            sentiment=sentiment,
+            date_from=date_from,
+            date_to=date_to,
+            selected_theme_id=selected_theme_id,
+            available_source_types=available_source_types,
+        ),
+        default_selected_theme_id=default_theme_id,
+        active_themes=serialized_active_themes,
+        previous_themes=serialized_previous_themes,
+        empty_reason=empty_reason,
+    )
 
 
 @router.get("/{theme_id}", response_model=ThemeDetailResponse)

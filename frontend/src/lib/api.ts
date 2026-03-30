@@ -178,6 +178,27 @@ class ApiClient {
     );
   }
 
+  async getThemeExplorer(token: string, filters: ThemeExplorerQuery = {}) {
+    const params = new URLSearchParams();
+
+    if (filters.sort) params.set('sort', filters.sort);
+    for (const source of filters.sources ?? []) {
+      params.append('source', source);
+    }
+    if (filters.sentiment) params.set('sentiment', filters.sentiment);
+    if (filters.date_from) params.set('date_from', filters.date_from);
+    if (filters.date_to) params.set('date_to', filters.date_to);
+    if (filters.selected_theme_id) {
+      params.set('selected_theme_id', filters.selected_theme_id);
+    }
+
+    const qs = params.toString();
+    return this.request<ThemeExplorerResponse>(
+      `/api/themes/explorer${qs ? `?${qs}` : ''}`,
+      { token }
+    );
+  }
+
   async getTheme(token: string, id: string) {
     return this.request<ThemeDetailResponse>(`/api/themes/${id}`, { token });
   }
@@ -310,6 +331,12 @@ class ApiClient {
       method: 'PATCH',
       token,
     });
+  }
+
+  // === Home Dashboard ===
+
+  async getHomeDashboard(token: string) {
+    return this.request<HomeDashboardResponse>('/api/dashboard/home', { token });
   }
 
   // === Demo ===
@@ -603,6 +630,72 @@ export interface BoardThemeCardResponse extends ThemeResponse {
   evidence_preview: FeedSignalResponse[];
 }
 
+export type ThemeExplorerSort = 'urgency' | 'frequency' | 'sentiment' | 'recency';
+export type ThemeExplorerSentiment = 'negative' | 'positive' | 'neutral';
+
+export interface ThemeExplorerSummary {
+  interviews_count: number;
+  signals_count: number;
+  active_themes_count: number;
+}
+
+export interface ThemeExplorerSourceChip {
+  source_type: SourceType;
+  label: string;
+  count: number;
+}
+
+export interface ThemeExplorerQuotePreview {
+  id: string;
+  excerpt: string;
+  author_or_speaker?: string;
+  source_label: string;
+  occurred_at: string;
+}
+
+export interface ThemeExplorerCard {
+  id: string;
+  name: string;
+  is_new: boolean;
+  impact_score: number;
+  mention_count: number;
+  sentiment: {
+    positive: number;
+    neutral: number;
+    negative: number;
+  };
+  source_chips: ThemeExplorerSourceChip[];
+  quote_previews: ThemeExplorerQuotePreview[];
+}
+
+export interface ThemeExplorerFilters {
+  sort: ThemeExplorerSort;
+  sources: SourceType[];
+  sentiment?: ThemeExplorerSentiment | null;
+  date_from?: string | null;
+  date_to?: string | null;
+  selected_theme_id?: string | null;
+  available_source_types: SourceType[];
+}
+
+export interface ThemeExplorerResponse {
+  summary: ThemeExplorerSummary;
+  filters: ThemeExplorerFilters;
+  default_selected_theme_id?: string | null;
+  active_themes: ThemeExplorerCard[];
+  previous_themes: ThemeExplorerCard[];
+  empty_reason?: 'no_data' | 'no_matches' | string | null;
+}
+
+export interface ThemeExplorerQuery {
+  sort?: ThemeExplorerSort;
+  sources?: SourceType[];
+  sentiment?: ThemeExplorerSentiment | null;
+  date_from?: string | null;
+  date_to?: string | null;
+  selected_theme_id?: string | null;
+}
+
 export interface ThemeUpdateRequest {
   name?: string;
   priority_state?: ThemePriorityState;
@@ -720,6 +813,54 @@ export interface NotificationResponse {
   message: string;
   is_read: boolean;
   created_at: string;
+}
+
+// --- Home Dashboard ---
+
+export interface HomeDashboardStatsResponse {
+  interviews_total: number;
+  interviews_this_week: number;
+  active_themes_total: number;
+  new_themes_this_week: number;
+  signals_total: number;
+  active_source_type_count: number;
+  average_impact_score: number;
+  average_impact_delta?: number | null;
+}
+
+export interface HomeDashboardPriorityResponse {
+  id: string;
+  name: string;
+  impact_score: number;
+  trend: 'up' | 'down' | 'flat' | string;
+  primary_count_label: string;
+  source_summary_label: string;
+  priority_band: 'high' | 'med' | 'low' | string;
+}
+
+export interface HomeDashboardActivityResponse {
+  kind: 'interview' | 'theme' | 'sync' | string;
+  title: string;
+  subtitle: string;
+  occurred_at: string;
+  href: string;
+  tone: 'success' | 'accent' | 'warning' | 'danger' | string;
+}
+
+export interface HomeDashboardTrendResponse {
+  id: string;
+  name: string;
+  velocity_delta?: number | null;
+  sparkline_points: number[];
+  href: string;
+}
+
+export interface HomeDashboardResponse {
+  has_data: boolean;
+  stats: HomeDashboardStatsResponse;
+  active_priorities: HomeDashboardPriorityResponse[];
+  recent_activity: HomeDashboardActivityResponse[];
+  emerging_trends: HomeDashboardTrendResponse[];
 }
 
 // --- Sources & Integrations ---

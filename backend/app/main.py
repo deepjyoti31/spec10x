@@ -14,6 +14,7 @@ from app.api import (
     users,
     interviews,
     themes,
+    dashboard,
     insights,
     ask,
     export,
@@ -70,6 +71,7 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(interviews.router)
 app.include_router(themes.router)
+app.include_router(dashboard.router)
 app.include_router(insights.router)
 app.include_router(ask.router)
 app.include_router(export.router)
