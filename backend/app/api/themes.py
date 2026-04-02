@@ -321,7 +321,7 @@ async def get_theme_board(
                 reverse=True,
             )[:2]
         ]
-        card_payload = BoardThemeCardResponse.model_validate(
+        card_payload = ThemeResponse.model_validate(
             theme,
             from_attributes=True,
         ).model_dump()

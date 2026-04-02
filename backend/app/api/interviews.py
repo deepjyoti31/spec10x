@@ -3,11 +3,10 @@ Spec10x Backend — Interviews API Routes
 """
 
 import uuid
-import hashlib
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select, func, delete
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from arq import create_pool
@@ -32,9 +31,13 @@ from app.schemas import (
     InterviewCreate,
     InterviewResponse,
     InterviewDetailResponse,
+    InterviewLibraryResponse,
+    InterviewBulkRequest,
+    InterviewBulkResultResponse,
     SpeakerUpdate,
     SpeakerResponse,
 )
+from app.services.interview_library import build_interview_library
 from app.services.signals import (
     cleanup_interview_native_signals,
     refresh_external_signal_theme_matches,
@@ -64,6 +67,77 @@ async def _get_arq_pool():
             RedisSettings.from_dsn(settings.redis_url),
         )
     return _arq_pool
+
+
+async def _load_owned_interview(
+    db: AsyncSession,
+    *,
+    interview_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> Interview | None:
+    result = await db.execute(
+        select(Interview).where(
+            Interview.id == interview_id,
+            Interview.user_id == user_id,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def _refresh_after_interview_mutation(
+    db: AsyncSession,
+    *,
+    user_id: uuid.UUID,
+) -> None:
+    await synthesize_themes(db, user_id)
+    await refresh_external_signal_theme_matches(
+        db,
+        user_id=user_id,
+    )
+
+
+async def _finalize_interview_deletion(
+    db: AsyncSession,
+    *,
+    interview: Interview,
+) -> None:
+    await cleanup_interview_native_signals(
+        db,
+        interview_id=interview.id,
+    )
+    await db.delete(interview)
+    await db.flush()
+
+
+async def _prepare_interview_reanalysis(
+    db: AsyncSession,
+    *,
+    interview: Interview,
+) -> None:
+    if interview.status not in (InterviewStatus.done, InterviewStatus.error):
+        raise HTTPException(
+            status_code=400,
+            detail="Interview is still processing",
+        )
+
+    await cleanup_interview_native_signals(
+        db,
+        interview_id=interview.id,
+    )
+    await db.execute(
+        delete(TranscriptChunk).where(TranscriptChunk.interview_id == interview.id)
+    )
+    await db.execute(
+        delete(Insight).where(Insight.interview_id == interview.id)
+    )
+    await db.execute(
+        delete(Speaker).where(Speaker.interview_id == interview.id)
+    )
+
+    interview.status = InterviewStatus.queued
+    interview.transcript = None
+    interview.error_message = None
+    await db.flush()
 
 
 @router.post("/upload-url", response_model=UploadUrlResponse)
@@ -159,6 +233,131 @@ async def list_interviews(
     return result.scalars().all()
 
 
+@router.get("/library", response_model=InterviewLibraryResponse)
+async def get_interview_library(
+    q: Optional[str] = Query(None),
+    sort: str = Query("recent", pattern="^(recent|oldest|name|insights|themes)$"),
+    status_filter: Optional[str] = Query(
+        None,
+        alias="status",
+        pattern="^(done|processing|error|low_insight)$",
+    ),
+    source: Optional[str] = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    return await build_interview_library(
+        db,
+        user=current_user,
+        q=q,
+        sort=sort,
+        status_filter=status_filter,
+        source_filter=source,
+    )
+
+
+@router.post("/bulk-reanalyze", response_model=InterviewBulkResultResponse)
+async def bulk_reanalyze_interviews(
+    request: InterviewBulkRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    succeeded_ids: list[uuid.UUID] = []
+    failures: list[dict[str, object]] = []
+
+    if not request.interview_ids:
+        return {
+            "requested_count": 0,
+            "success_count": 0,
+            "failed_count": 0,
+            "succeeded_ids": [],
+            "failures": [],
+        }
+
+    for interview_id in request.interview_ids:
+        interview = await _load_owned_interview(
+            db,
+            interview_id=interview_id,
+            user_id=current_user.id,
+        )
+        if interview is None:
+            failures.append(
+                {"interview_id": interview_id, "error": "Interview not found"}
+            )
+            continue
+
+        try:
+            await _prepare_interview_reanalysis(db, interview=interview)
+            succeeded_ids.append(interview.id)
+        except HTTPException as exc:
+            failures.append(
+                {"interview_id": interview_id, "error": str(exc.detail)}
+            )
+
+    if succeeded_ids:
+        await _refresh_after_interview_mutation(db, user_id=current_user.id)
+        pool = await _get_arq_pool()
+        for interview_id in succeeded_ids:
+            await pool.enqueue_job(
+                "process_interview_job",
+                str(interview_id),
+                _queue_name="spec10x:jobs",
+            )
+
+    return {
+        "requested_count": len(request.interview_ids),
+        "success_count": len(succeeded_ids),
+        "failed_count": len(failures),
+        "succeeded_ids": succeeded_ids,
+        "failures": failures,
+    }
+
+
+@router.post("/bulk-delete", response_model=InterviewBulkResultResponse)
+async def bulk_delete_interviews(
+    request: InterviewBulkRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    succeeded_ids: list[uuid.UUID] = []
+    failures: list[dict[str, object]] = []
+
+    if not request.interview_ids:
+        return {
+            "requested_count": 0,
+            "success_count": 0,
+            "failed_count": 0,
+            "succeeded_ids": [],
+            "failures": [],
+        }
+
+    for interview_id in request.interview_ids:
+        interview = await _load_owned_interview(
+            db,
+            interview_id=interview_id,
+            user_id=current_user.id,
+        )
+        if interview is None:
+            failures.append(
+                {"interview_id": interview_id, "error": "Interview not found"}
+            )
+            continue
+
+        await _finalize_interview_deletion(db, interview=interview)
+        succeeded_ids.append(interview_id)
+
+    if succeeded_ids:
+        await _refresh_after_interview_mutation(db, user_id=current_user.id)
+
+    return {
+        "requested_count": len(request.interview_ids),
+        "success_count": len(succeeded_ids),
+        "failed_count": len(failures),
+        "succeeded_ids": succeeded_ids,
+        "failures": failures,
+    }
+
+
 @router.get("/{interview_id}", response_model=InterviewDetailResponse)
 async def get_interview(
     interview_id: uuid.UUID,
@@ -193,28 +392,17 @@ async def delete_interview(
     db: AsyncSession = Depends(get_db),
 ):
     """Delete an interview and cascade-delete its insights and chunks."""
-    stmt = select(Interview).where(
-        Interview.id == interview_id,
-        Interview.user_id == current_user.id,
+    interview = await _load_owned_interview(
+        db,
+        interview_id=interview_id,
+        user_id=current_user.id,
     )
-    result = await db.execute(stmt)
-    interview = result.scalar_one_or_none()
 
     if not interview:
         raise HTTPException(status_code=404, detail="Interview not found")
 
-    await cleanup_interview_native_signals(
-        db,
-        interview_id=interview.id,
-    )
-    await db.delete(interview)
-    await db.flush()
-
-    await synthesize_themes(db, current_user.id)
-    await refresh_external_signal_theme_matches(
-        db,
-        user_id=current_user.id,
-    )
+    await _finalize_interview_deletion(db, interview=interview)
+    await _refresh_after_interview_mutation(db, user_id=current_user.id)
 
     # TODO: Delete file from storage
     await db.flush()
@@ -227,47 +415,17 @@ async def reanalyze_interview(
     db: AsyncSession = Depends(get_db),
 ):
     """Re-run AI analysis on an existing interview."""
-    stmt = select(Interview).where(
-        Interview.id == interview_id,
-        Interview.user_id == current_user.id,
+    interview = await _load_owned_interview(
+        db,
+        interview_id=interview_id,
+        user_id=current_user.id,
     )
-    result = await db.execute(stmt)
-    interview = result.scalar_one_or_none()
 
     if not interview:
         raise HTTPException(status_code=404, detail="Interview not found")
 
-    if interview.status not in (InterviewStatus.done, InterviewStatus.error):
-        raise HTTPException(
-            status_code=400,
-            detail="Interview is still processing",
-        )
-
-    await cleanup_interview_native_signals(
-        db,
-        interview_id=interview.id,
-    )
-    await db.execute(
-        delete(TranscriptChunk).where(TranscriptChunk.interview_id == interview.id)
-    )
-    await db.execute(
-        delete(Insight).where(Insight.interview_id == interview.id)
-    )
-    await db.execute(
-        delete(Speaker).where(Speaker.interview_id == interview.id)
-    )
-
-    await synthesize_themes(db, current_user.id)
-    await refresh_external_signal_theme_matches(
-        db,
-        user_id=current_user.id,
-    )
-
-    # Reset status and re-enqueue
-    interview.status = InterviewStatus.queued
-    interview.transcript = None
-    interview.error_message = None
-    await db.flush()
+    await _prepare_interview_reanalysis(db, interview=interview)
+    await _refresh_after_interview_mutation(db, user_id=current_user.id)
     await db.refresh(interview)
 
     pool = await _get_arq_pool()

@@ -144,6 +144,21 @@ class ApiClient {
     );
   }
 
+  async getInterviewLibrary(token: string, filters: InterviewLibraryQuery = {}) {
+    const params = new URLSearchParams();
+
+    if (filters.q) params.set('q', filters.q);
+    if (filters.sort) params.set('sort', filters.sort);
+    if (filters.status) params.set('status', filters.status);
+    if (filters.source) params.set('source', filters.source);
+
+    const qs = params.toString();
+    return this.request<InterviewLibraryResponse>(
+      `/api/interviews/library${qs ? `?${qs}` : ''}`,
+      { token }
+    );
+  }
+
   async getInterview(token: string, id: string) {
     return this.request<InterviewDetailResponse>(
       `/api/interviews/${id}`,
@@ -165,6 +180,29 @@ class ApiClient {
   async deleteInterview(token: string, id: string) {
     return this.request<void>(`/api/interviews/${id}`, {
       method: 'DELETE',
+      token,
+    });
+  }
+
+  async reanalyzeInterview(token: string, id: string) {
+    return this.request<InterviewResponse>(`/api/interviews/${id}/reanalyze`, {
+      method: 'POST',
+      token,
+    });
+  }
+
+  async bulkReanalyzeInterviews(token: string, interviewIds: string[]) {
+    return this.request<InterviewBulkResultResponse>('/api/interviews/bulk-reanalyze', {
+      method: 'POST',
+      body: JSON.stringify({ interview_ids: interviewIds }),
+      token,
+    });
+  }
+
+  async bulkDeleteInterviews(token: string, interviewIds: string[]) {
+    return this.request<InterviewBulkResultResponse>('/api/interviews/bulk-delete', {
+      method: 'POST',
+      body: JSON.stringify({ interview_ids: interviewIds }),
       token,
     });
   }
@@ -308,6 +346,18 @@ class ApiClient {
 
   async exportInterview(token: string, id: string) {
     return this.requestText(`/api/export/interview/${id}`, { token });
+  }
+
+  async exportFeed(token: string, filters: FeedFilters = {}) {
+    const params = new URLSearchParams();
+
+    if (filters.source) params.set('source', filters.source);
+    if (filters.sentiment) params.set('sentiment', filters.sentiment);
+    if (filters.date_from) params.set('date_from', filters.date_from);
+    if (filters.date_to) params.set('date_to', filters.date_to);
+
+    const qs = params.toString();
+    return this.requestText(`/api/export/feed${qs ? `?${qs}` : ''}`, { token });
   }
 
   // === Billing ===
@@ -519,6 +569,74 @@ export interface InterviewResponse {
   error_message?: string;
   created_at: string;
   updated_at: string;
+}
+
+export type InterviewLibrarySort = 'recent' | 'oldest' | 'name' | 'insights' | 'themes';
+export type InterviewLibraryDisplayStatus = 'done' | 'processing' | 'error' | 'low_insight';
+
+export interface InterviewThemeChipResponse {
+  id: string;
+  name: string;
+}
+
+export interface InterviewLibrarySourceResponse {
+  provider: string;
+  label: string;
+  count: number;
+}
+
+export interface InterviewLibrarySummaryResponse {
+  total_count: number;
+  filtered_count: number;
+  storage_bytes_used: number;
+  storage_bytes_limit: number;
+  plan: 'free' | 'pro' | 'business';
+  has_data: boolean;
+  available_sources: InterviewLibrarySourceResponse[];
+}
+
+export interface InterviewLibraryItemResponse {
+  id: string;
+  filename: string;
+  file_type: string;
+  created_at: string;
+  updated_at: string;
+  duration_seconds?: number | null;
+  file_size_bytes: number;
+  raw_status: string;
+  display_status: InterviewLibraryDisplayStatus;
+  error_message?: string | null;
+  participant_summary?: string | null;
+  source_provider: string;
+  source_label: string;
+  insights_count: number;
+  themes_count: number;
+  theme_chips: InterviewThemeChipResponse[];
+}
+
+export interface InterviewLibraryResponse {
+  summary: InterviewLibrarySummaryResponse;
+  items: InterviewLibraryItemResponse[];
+}
+
+export interface InterviewLibraryQuery {
+  q?: string;
+  sort?: InterviewLibrarySort;
+  status?: InterviewLibraryDisplayStatus | null;
+  source?: string | null;
+}
+
+export interface InterviewBulkFailureResponse {
+  interview_id: string;
+  error: string;
+}
+
+export interface InterviewBulkResultResponse {
+  requested_count: number;
+  success_count: number;
+  failed_count: number;
+  succeeded_ids: string[];
+  failures: InterviewBulkFailureResponse[];
 }
 
 export interface InterviewDetailResponse extends InterviewResponse {

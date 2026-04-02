@@ -13,31 +13,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
-from app.models import User, Usage, PlanType, Interview
+from app.models import User, Usage, Interview
 from app.schemas import UsageResponse
+from app.services.billing_limits import get_plan_limits
 
 router = APIRouter(prefix="/api/billing", tags=["Billing"])
-
-# Plan limits (must match product specification pricing table)
-# NOTE: Free tier "interviews" is a LIFETIME cap (10 total forever), not monthly.
-PLAN_LIMITS = {
-    PlanType.free: {
-        "interviews_per_month": 10,       # 10 total forever (enforced as lifetime cap)
-        "qa_queries_per_month": 20,       # 20/month
-        "storage_bytes": 100 * 1024 * 1024,  # 100 MB
-    },
-    PlanType.pro: {
-        "interviews_per_month": 100,      # 100/month
-        "qa_queries_per_month": 500,      # 500/month
-        "storage_bytes": 5 * 1024 * 1024 * 1024,  # 5 GB
-    },
-    PlanType.business: {
-        "interviews_per_month": 999999,   # Unlimited
-        "qa_queries_per_month": 999999,   # Unlimited
-        "storage_bytes": 999 * 1024 * 1024 * 1024,  # Unlimited (999 GB practical cap)
-    },
-}
-
 
 @router.get("/usage", response_model=UsageResponse)
 async def get_usage(
@@ -70,7 +50,7 @@ async def get_limits(
     interviews_count = stats.interview_count or 0
     storage_bytes_used = stats.total_bytes or 0
     
-    limits = PLAN_LIMITS.get(current_user.plan, PLAN_LIMITS[PlanType.free])
+    limits = get_plan_limits(current_user.plan)
 
     return {
         "plan": current_user.plan.value,
@@ -135,7 +115,7 @@ async def check_limit(
     if not user:
         return False
 
-    limits = PLAN_LIMITS.get(user.plan, PLAN_LIMITS[PlanType.free])
+    limits = get_plan_limits(user.plan)
     usage = await _get_or_create_usage(db, user_id)
 
     if action == "interview":

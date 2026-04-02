@@ -1,13 +1,14 @@
 """
 Spec10x Backend — Export API Routes
 
-Export insights and interview data as Markdown.
+Export insights, interview data, and feed signals as Markdown.
 """
 
+from typing import Any
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,7 +16,8 @@ from sqlalchemy.orm import selectinload
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
-from app.models import User, Interview, Theme, Insight, ThemeStatus
+from app.models import User, Interview, Theme, Insight, ThemeStatus, SourceType
+from app.services.signals import ensure_signal_consistency, get_workspace_signals, serialize_feed_signal
 
 router = APIRouter(prefix="/api/export", tags=["Export"])
 
@@ -180,6 +182,99 @@ async def export_interview(
     return "\n".join(lines)
 
 
+@router.get("/feed", response_class=PlainTextResponse)
+async def export_feed(
+    source: SourceType | None = Query(None),
+    sentiment: str | None = Query(None),
+    date_from: date | None = Query(None),
+    date_to: date | None = Query(None),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Export the current filtered feed as Markdown."""
+    workspace = await ensure_signal_consistency(db, user_id=current_user.id)
+
+    themes_result = await db.execute(select(Theme).where(Theme.user_id == current_user.id))
+    theme_lookup = {theme.id: theme for theme in themes_result.scalars().all()}
+
+    signals = await get_workspace_signals(
+        db,
+        workspace_id=workspace.id,
+        source_filter=source,
+        sentiment=sentiment,
+        date_from=date_from,
+        date_to=date_to,
+    )
+
+    serialized_signals = [
+        serialize_feed_signal(
+            signal,
+            theme_lookup=theme_lookup,
+            include_full_content=True,
+        )
+        for signal in signals
+    ]
+
+    lines = [
+        "# Spec10x - Feed Export",
+        "",
+        f"*Generated: {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}*",
+        f"*User: {current_user.email}*",
+        f"*Filters: {_format_feed_filters(source, sentiment, date_from, date_to)}*",
+        "",
+        "---",
+        "",
+    ]
+
+    if not serialized_signals:
+        lines.append("*No feed signals matched the current filters.*")
+        return "\n".join(lines)
+
+    lines.append(f"## Signals ({len(serialized_signals)})")
+    lines.append("")
+
+    for index, signal in enumerate(serialized_signals, start=1):
+        title = signal.get("title") or signal.get("signal_kind_label") or "Untitled signal"
+        occurred_at = signal.get("occurred_at")
+
+        lines.append(f"### {index}. {title}")
+        lines.append("")
+        lines.append(f"- **ID:** {signal['id']}")
+        lines.append(f"- **Source:** {signal['source_label']}")
+        lines.append(f"- **Provider:** {signal['provider_label']}")
+        lines.append(f"- **Signal Type:** {signal['signal_kind_label']}")
+        if occurred_at:
+            lines.append(f"- **Occurred:** {_format_export_datetime(occurred_at)}")
+        if signal.get("sentiment"):
+            lines.append(f"- **Sentiment:** {signal['sentiment']}")
+        if signal.get("author_or_speaker"):
+            lines.append(f"- **Author/Speaker:** {signal['author_or_speaker']}")
+        theme_chip = signal.get("theme_chip") or {}
+        if isinstance(theme_chip, dict) and theme_chip.get("name"):
+            lines.append(f"- **Theme:** {theme_chip['name']}")
+        link = signal.get("link") or {}
+        if isinstance(link, dict) and link.get("href"):
+            lines.append(f"- **Link:** {link['href']}")
+        lines.append("")
+
+        content_text = signal.get("content_text") or signal.get("excerpt")
+        if isinstance(content_text, str) and content_text.strip():
+            lines.append(content_text.strip())
+            lines.append("")
+
+        metadata_lines = _format_feed_metadata(signal.get("metadata_json"))
+        if metadata_lines:
+            lines.append("#### Metadata")
+            lines.append("")
+            lines.extend(metadata_lines)
+            lines.append("")
+
+        lines.append("---")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
 def _category_icon(category: str) -> str:
     return {
         "pain_point": "🔴",
@@ -194,3 +289,64 @@ def _sentiment_bar(positive: float, neutral: float, negative: float) -> str:
     neg_pct = int(negative * 100)
     neu_pct = 100 - pos_pct - neg_pct
     return f"🟢 {pos_pct}% / ⚪ {neu_pct}% / 🔴 {neg_pct}%"
+
+def _format_feed_filters(
+    source: SourceType | None,
+    sentiment: str | None,
+    date_from: date | None,
+    date_to: date | None,
+) -> str:
+    filters: list[str] = []
+
+    if source is not None:
+        filters.append(f"Source: {source.value.replace('_', ' ').title()}")
+    if sentiment:
+        filters.append(f"Sentiment: {sentiment.title()}")
+    if date_from is not None:
+        filters.append(f"Date from: {date_from.isoformat()}")
+    if date_to is not None:
+        filters.append(f"Date to: {date_to.isoformat()}")
+
+    return " | ".join(filters) if filters else "All signals"
+
+
+def _format_export_datetime(value: Any) -> str:
+    if isinstance(value, datetime):
+        return value.strftime("%Y-%m-%d %H:%M UTC")
+
+    return str(value)
+
+
+def _format_feed_metadata(metadata_json: Any) -> list[str]:
+    if not isinstance(metadata_json, dict):
+        return []
+
+    lines: list[str] = []
+    skip_keys = {"theme_match", "interview_id"}
+
+    for key, value in metadata_json.items():
+        if key in skip_keys or value in (None, "", [], {}):
+            continue
+
+        label = key.replace("_", " ").title()
+        if key == "tags" and isinstance(value, list):
+            tags = [str(item).strip() for item in value if str(item).strip()]
+            if tags:
+                lines.append(f"- **{label}:** {', '.join(tags)}")
+            continue
+
+        if isinstance(value, dict):
+            continue
+
+        if isinstance(value, bool):
+            lines.append(f"- **{label}:** {'Yes' if value else 'No'}")
+            continue
+
+        if isinstance(value, (int, float)):
+            lines.append(f"- **{label}:** {value}")
+            continue
+
+        if isinstance(value, str) and value.strip():
+            lines.append(f"- **{label}:** {value.strip()}")
+
+    return lines

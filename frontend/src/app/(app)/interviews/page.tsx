@@ -1,448 +1,994 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-// ---------------------------------------------------------------------------
-// Types & static demo data
-// ---------------------------------------------------------------------------
+import {
+  formatInterviewDate,
+  formatInterviewDuration,
+  getInterviewFileIconColor,
+  getInterviewUiStatus,
+  InterviewFileIcon,
+  InterviewFileIconTile,
+  InterviewInlineStateCard,
+  InterviewPill,
+  interviewPrimaryButtonClassName,
+  InterviewStatusBadge,
+} from '@/components/interviews/InterviewUi';
+import { useToast } from '@/components/ui/Toast';
+import { INTERVIEW_UPLOAD_ACCEPT, useInterviews } from '@/hooks/useInterviews';
+import { useWebSocket } from '@/hooks/useWebSocket';
+import type {
+  InterviewLibraryDisplayStatus,
+  InterviewLibraryItemResponse,
+  InterviewLibrarySort,
+} from '@/lib/api';
 
 type InterviewStatus = 'done' | 'processing' | 'error';
-type FileIcon = 'description' | 'mic' | 'videocam';
+type FileIcon = InterviewFileIcon;
+type FilterMenu = 'sort' | 'status' | 'source' | null;
 
 interface Interview {
-    id: number;
-    icon: FileIcon;
-    iconColor: string;
-    title: string;
-    syncedFrom?: string;
-    participant: string;
-    date: string;
-    duration?: string;
-    insights?: number;
-    tags: string[];
-    status: InterviewStatus;
-    processingPct?: number;
+  id: string;
+  icon: FileIcon;
+  fileType: string;
+  iconColor: string;
+  title: string;
+  syncedFrom?: string;
+  participant: string;
+  date: string;
+  duration?: string;
+  insights: number;
+  tags: string[];
+  status: InterviewStatus;
+  processingPct?: number;
 }
 
-const INTERVIEWS: Interview[] = [
-    {
-        id: 1,
-        icon: 'description',
-        iconColor: 'var(--color-accent)',
-        title: 'Sarah Chen — Onboarding Deep Dive',
-        participant: 'Stripe',
-        date: 'Jan 15',
-        duration: '42 min',
-        insights: 7,
-        tags: ['Onboarding', 'Search', 'Pricing'],
-        status: 'done',
-    },
-    {
-        id: 2,
-        icon: 'mic',
-        iconColor: '#8B8D97',
-        title: 'Q4 Customer Feedback Report',
-        syncedFrom: 'Fireflies',
-        participant: 'Anonymous Participant',
-        date: 'Jan 12',
-        duration: '128 min',
-        insights: 22,
-        tags: ['Mobile', 'API'],
-        status: 'done',
-    },
-    {
-        id: 3,
-        icon: 'videocam',
-        iconColor: '#8B8D97',
-        title: 'Product Review Call — Enterprise Tier',
-        participant: 'John D. @ Enterprise Inc',
-        date: 'Jan 10',
-        duration: '18 min',
-        insights: 4,
-        tags: ['Performance', 'UX'],
-        status: 'done',
-    },
-    {
-        id: 4,
-        icon: 'mic',
-        iconColor: '#8B8D97',
-        title: 'User Testing Session — Mobile App',
-        syncedFrom: 'Fireflies',
-        participant: '',
-        date: 'Jan 8',
-        duration: '55 min',
-        insights: 12,
-        tags: ['Mobile', 'Navigation'],
-        status: 'done',
-    },
-    {
-        id: 5,
-        icon: 'description',
-        iconColor: '#8B8D97',
-        title: 'Guilherme — API Integration Feedback',
-        participant: 'Developer @ Acme',
-        date: 'Jan 5',
-        duration: '28 min',
-        insights: 9,
-        tags: ['API', 'Documentation'],
-        status: 'done',
-    },
-    {
-        id: 6,
-        icon: 'description',
-        iconColor: '#5A5C66',
-        title: 'Support Team Debrief — Q4 Escalations',
-        participant: 'Internal',
-        date: 'Jan 3',
-        tags: [],
-        status: 'processing',
-        processingPct: 65,
-    },
-    {
-        id: 7,
-        icon: 'videocam',
-        iconColor: 'var(--color-danger)',
-        title: 'Jake — Feature Request Interview',
-        participant: 'PM @ CloudCo',
-        date: 'Dec 28',
-        tags: [],
-        status: 'error',
-    },
+const SORT_OPTIONS: Array<{ value: InterviewLibrarySort; label: string }> = [
+  { value: 'recent', label: 'Recent first' },
+  { value: 'oldest', label: 'Oldest first' },
+  { value: 'name', label: 'By name' },
+  { value: 'insights', label: 'By insights' },
+  { value: 'themes', label: 'By themes' },
 ];
 
-// ---------------------------------------------------------------------------
-// Status badge
-// ---------------------------------------------------------------------------
+const STATUS_OPTIONS: Array<{ value: InterviewLibraryDisplayStatus; label: string }> = [
+  { value: 'done', label: 'Done' },
+  { value: 'processing', label: 'Processing' },
+  { value: 'error', label: 'Error' },
+  { value: 'low_insight', label: 'Low insight' },
+];
+
+const PROCESSING_STATUS_PROGRESS: Record<string, number> = {
+  queued: 18,
+  transcribing: 52,
+  analyzing: 78,
+};
+
+const VALID_SORTS = new Set<InterviewLibrarySort>(['recent', 'oldest', 'name', 'insights', 'themes']);
+const VALID_STATUSES = new Set<InterviewLibraryDisplayStatus>([
+  'done',
+  'processing',
+  'error',
+  'low_insight',
+]);
+
+function isSort(value: string | null): value is InterviewLibrarySort {
+  return Boolean(value && VALID_SORTS.has(value as InterviewLibrarySort));
+}
+
+function isStatus(value: string | null): value is InterviewLibraryDisplayStatus {
+  return Boolean(value && VALID_STATUSES.has(value as InterviewLibraryDisplayStatus));
+}
+
+function buildHref(pathname: string, params: URLSearchParams): string {
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes >= 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  }
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  if (bytes >= 1024) {
+    return `${Math.round(bytes / 1024)} KB`;
+  }
+  return `${bytes} B`;
+}
+
+function formatInterviewCount(count: number): string {
+  return `${count} interview${count === 1 ? '' : 's'}`;
+}
+
+function getProcessingPct(
+  item: InterviewLibraryItemResponse,
+  progressById: Record<string, number>
+): number | undefined {
+  if (item.display_status !== 'processing') return undefined;
+
+  const liveProgress = progressById[item.id];
+  if (typeof liveProgress === 'number') {
+    return Math.max(8, Math.min(100, Math.round(liveProgress)));
+  }
+
+  return PROCESSING_STATUS_PROGRESS[item.raw_status] ?? 45;
+}
+
+function mapInterviewItem(
+  item: InterviewLibraryItemResponse,
+  progressById: Record<string, number>
+): Interview {
+  const status = getInterviewUiStatus(item.display_status);
+
+  return {
+    id: item.id,
+    icon: item.file_type === 'mp3' || item.file_type === 'wav' ? 'mic' : item.file_type === 'mp4' ? 'videocam' : 'description',
+    fileType: item.file_type,
+    iconColor: getInterviewFileIconColor(item.file_type, status),
+    title: item.filename,
+    syncedFrom: item.source_provider !== 'native_upload' ? item.source_label : undefined,
+    participant: item.participant_summary ?? '',
+    date: formatInterviewDate(item.created_at),
+    duration: formatInterviewDuration(item.duration_seconds) ?? undefined,
+    insights: item.display_status === 'error' ? 0 : item.insights_count,
+    tags: item.display_status === 'done' ? item.theme_chips.slice(0, 3).map((chip) => chip.name) : [],
+    status,
+    processingPct: getProcessingPct(item, progressById),
+  };
+}
+
+function getSortLabel(sort: InterviewLibrarySort): string {
+  return SORT_OPTIONS.find((option) => option.value === sort)?.label ?? 'Recent first';
+}
+
+function getStatusLabel(status: InterviewLibraryDisplayStatus | null): string {
+  if (!status) return 'All statuses';
+  return STATUS_OPTIONS.find((option) => option.value === status)?.label ?? 'All statuses';
+}
 
 function StatusBadge({ status }: { status: InterviewStatus }) {
-    if (status === 'done') {
-        return (
-            <div
-                className="flex items-center gap-2 px-3 py-1 rounded-full"
-                style={{
-                    backgroundColor: 'rgba(52,211,153,0.1)',
-                    border: '1px solid rgba(52,211,153,0.2)',
-                }}
-            >
-                <div className="w-1.5 h-1.5 rounded-full bg-[#34D399]" />
-                <span className="text-[11px] font-bold text-[#34D399] uppercase tracking-wider">Done</span>
-            </div>
-        );
-    }
-    if (status === 'processing') {
-        return (
-            <div
-                className="flex items-center gap-2 px-3 py-1 rounded-full"
-                style={{
-                    backgroundColor: 'rgba(251,191,36,0.1)',
-                    border: '1px solid rgba(251,191,36,0.2)',
-                }}
-            >
-                <span className="material-symbols-outlined text-[#FBBF24]" style={{ fontSize: 14 }}>pending</span>
-                <span className="text-[11px] font-bold text-[#FBBF24] uppercase tracking-wider">Processing</span>
-            </div>
-        );
-    }
-    return (
-        <div
-            className="flex items-center gap-2 px-3 py-1 rounded-full"
-            style={{
-                backgroundColor: 'rgba(248,113,113,0.1)',
-                border: '1px solid rgba(248,113,113,0.2)',
-            }}
-        >
-            <span className="material-symbols-outlined text-[var(--color-danger)]" style={{ fontSize: 14 }}>error</span>
-            <span className="text-[11px] font-bold text-[var(--color-danger)] uppercase tracking-wider">Error</span>
-        </div>
-    );
+  return <InterviewStatusBadge status={status} />;
 }
 
-// ---------------------------------------------------------------------------
-// Interview row
-// ---------------------------------------------------------------------------
+function FilterDropdown({
+  label,
+  value,
+  open,
+  onToggle,
+  children,
+}: {
+  label: string;
+  value: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className="relative flex-shrink-0" data-filter-menu-root="true">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={onToggle}
+        className="h-full rounded-xl px-3 text-xs font-medium text-[#8B8D97] transition-colors"
+        style={{ backgroundColor: '#161820', border: '1px solid #1E2028' }}
+        onMouseEnter={(event) => {
+          event.currentTarget.style.borderColor = '#2A2C38';
+        }}
+        onMouseLeave={(event) => {
+          event.currentTarget.style.borderColor = open ? 'rgba(175,198,255,0.4)' : '#1E2028';
+        }}
+      >
+        <span className="flex items-center gap-2">
+          <span>{label}:</span>
+          <span className="text-[#c8cad6]">{value}</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+            expand_more
+          </span>
+        </span>
+      </button>
+      {open ? (
+        <div
+          className="absolute right-0 top-full z-30 mt-2 min-w-[220px] overflow-hidden rounded-xl"
+          style={{
+            backgroundColor: '#161820',
+            border: '1px solid #1E2028',
+            boxShadow: '0 18px 45px rgba(0,0,0,0.35)',
+          }}
+        >
+          <div className="py-1">{children}</div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function FilterOption({
+  selected,
+  onClick,
+  label,
+  meta,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  label: string;
+  meta?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm text-[#c8cad6] transition-colors hover:bg-[#1E2028]"
+    >
+      <span>{label}</span>
+      <span className="flex items-center gap-2">
+        {meta ? <span className="text-xs text-[#5A5C66]">{meta}</span> : null}
+        {selected ? (
+          <span className="material-symbols-outlined text-[var(--color-accent)]" style={{ fontSize: 16 }}>
+            check
+          </span>
+        ) : null}
+      </span>
+    </button>
+  );
+}
+
+function InlineStateCard({
+  title,
+  body,
+  actionLabel,
+  onAction,
+  tone = 'default',
+}: {
+  title: string;
+  body: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  tone?: 'default' | 'error';
+}) {
+  return (
+    <InterviewInlineStateCard
+      title={title}
+      body={body}
+      actionLabel={actionLabel}
+      onAction={onAction}
+      tone={tone}
+    />
+  );
+}
 
 function InterviewRow({
-    interview,
-    checked,
-    onCheck,
+  interview,
+  checked,
+  onCheck,
+  onOpen,
+  onRetry,
+  retrying,
 }: {
-    interview: Interview;
-    checked: boolean;
-    onCheck: (id: number) => void;
+  interview: Interview;
+  checked: boolean;
+  onCheck: (id: string) => void;
+  onOpen: (id: string) => void;
+  onRetry: (id: string) => void;
+  retrying: boolean;
 }) {
-    const isProcessing = interview.status === 'processing';
-    const isError = interview.status === 'error';
+  const isProcessing = interview.status === 'processing';
+  const isError = interview.status === 'error';
 
-    return (
-        <div
-            className="rounded-xl p-5 flex items-center transition-all cursor-pointer"
-            style={{
-                backgroundColor: '#161820',
-                border: `1px solid ${isError ? 'rgba(248,113,113,0.1)' : '#1E2028'}`,
-                opacity: isProcessing ? 0.7 : 1,
-            }}
-            onMouseEnter={e => {
-                if (!isProcessing) {
-                    const el = e.currentTarget as HTMLElement;
-                    el.style.borderColor = isError ? 'rgba(255,180,171,0.3)' : 'rgba(175,198,255,0.3)';
-                    el.style.backgroundColor = '#1E1F26';
-                }
-            }}
-            onMouseLeave={e => {
-                const el = e.currentTarget as HTMLElement;
-                el.style.borderColor = isError ? 'rgba(248,113,113,0.1)' : '#1E2028';
-                el.style.backgroundColor = '#161820';
-            }}
-        >
-            {/* Checkbox */}
-            <input
-                type="checkbox"
-                disabled={isProcessing}
-                checked={checked}
-                onChange={() => onCheck(interview.id)}
-                className="w-4 h-4 rounded mr-6 flex-shrink-0"
-                style={{
-                    accentColor: 'var(--color-accent)',
-                    opacity: isProcessing ? 0.3 : 1,
-                    cursor: isProcessing ? 'not-allowed' : 'pointer',
-                }}
-            />
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      className="flex cursor-pointer items-center rounded-xl p-5 transition-all"
+      style={{
+        backgroundColor: '#161820',
+        border: `1px solid ${isError ? 'rgba(248,113,113,0.1)' : '#1E2028'}`,
+        opacity: isProcessing ? 0.7 : 1,
+      }}
+      onClick={() => onOpen(interview.id)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onOpen(interview.id);
+        }
+      }}
+      onMouseEnter={(event) => {
+        if (!isProcessing) {
+          const element = event.currentTarget as HTMLElement;
+          element.style.borderColor = isError ? 'rgba(255,180,171,0.3)' : 'rgba(175,198,255,0.3)';
+          element.style.backgroundColor = '#1E1F26';
+        }
+      }}
+      onMouseLeave={(event) => {
+        const element = event.currentTarget as HTMLElement;
+        element.style.borderColor = isError ? 'rgba(248,113,113,0.1)' : '#1E2028';
+        element.style.backgroundColor = '#161820';
+      }}
+    >
+      <input
+        type="checkbox"
+        disabled={isProcessing}
+        checked={checked}
+        onChange={() => onCheck(interview.id)}
+        onClick={(event) => event.stopPropagation()}
+        className="mr-6 h-4 w-4 flex-shrink-0 rounded"
+        style={{
+          accentColor: 'var(--color-accent)',
+          opacity: isProcessing ? 0.3 : 1,
+          cursor: isProcessing ? 'not-allowed' : 'pointer',
+        }}
+      />
 
-            {/* File type icon */}
-            <div
-                className="p-2.5 rounded-lg mr-5 flex-shrink-0"
-                style={{ backgroundColor: '#191b22', color: interview.iconColor }}
+      <InterviewFileIconTile
+        fileType={interview.fileType}
+        status={interview.status}
+        iconColor={interview.iconColor}
+        className="mr-5"
+      />
+
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex items-center gap-3">
+          <h3 className="truncate text-[15px] font-semibold text-[#F0F0F3]">{interview.title}</h3>
+          {interview.syncedFrom ? (
+            <span
+              className="rounded px-2 py-0.5 text-[10px] font-medium text-[#8B8D97]"
+              style={{ backgroundColor: 'rgba(51,52,59,0.5)' }}
             >
-                <span className="material-symbols-outlined" style={{ fontSize: 24 }}>
-                    {interview.icon}
-                </span>
-            </div>
-
-            {/* Title + meta */}
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-[15px] font-semibold text-[#F0F0F3] truncate">
-                        {interview.title}
-                    </h3>
-                    {interview.syncedFrom && (
-                        <span
-                            className="text-[10px] font-medium text-[#8B8D97] px-2 py-0.5 rounded flex-shrink-0"
-                            style={{ backgroundColor: 'rgba(51,52,59,0.5)' }}
-                        >
-                            Synced from {interview.syncedFrom}
-                        </span>
-                    )}
-                </div>
-                <div className="flex items-center gap-3 text-[13px] text-[#5A5C66]">
-                    {interview.participant && (
-                        <>
-                            <span className="flex items-center gap-1.5">{interview.participant}</span>
-                            <span className="w-1 h-1 rounded-full bg-[#2A2C38]" />
-                        </>
-                    )}
-                    <span>{interview.date}</span>
-                    {interview.duration && (
-                        <>
-                            <span className="w-1 h-1 rounded-full bg-[#2A2C38]" />
-                            <span>{interview.duration}</span>
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {/* Right side: insights + tags (done) OR progress bar (processing) OR retry (error) */}
-            {interview.status === 'done' && (
-                <div className="flex items-center gap-8 mr-12">
-                    <div className="flex flex-col text-right">
-                        <span className="text-xs font-semibold text-[#c8cad6]">{interview.insights} insights</span>
-                        <span className="text-[10px] text-[#5A5C66] uppercase tracking-widest">Analysis</span>
-                    </div>
-                    <div className="flex gap-2 flex-wrap">
-                        {interview.tags.map(tag => (
-                            <span
-                                key={tag}
-                                className="px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-tighter"
-                                style={{ backgroundColor: 'rgba(175,198,255,0.1)', color: 'var(--color-accent)' }}
-                            >
-                                {tag}
-                            </span>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {interview.status === 'processing' && (
-                <div className="mr-12 w-48 rounded-full overflow-hidden flex-shrink-0" style={{ backgroundColor: '#191b22', height: 6 }}>
-                    <div
-                        className="h-full rounded-full animate-pulse"
-                        style={{ backgroundColor: '#FBBF24', width: `${interview.processingPct}%` }}
-                    />
-                </div>
-            )}
-
-            {interview.status === 'error' && (
-                <div className="mr-12">
-                    <span className="text-xs font-medium text-[var(--color-danger)] hover:underline cursor-pointer">
-                        Retry Analysis
-                    </span>
-                </div>
-            )}
-
-            {/* Status badge */}
-            <StatusBadge status={interview.status} />
+              Synced from {interview.syncedFrom}
+            </span>
+          ) : null}
         </div>
-    );
-}
+        <div className="flex items-center gap-3 text-[13px] text-[#5A5C66]">
+          {interview.participant ? (
+            <>
+              <span className="flex items-center gap-1.5">{interview.participant}</span>
+              <span className="h-1 w-1 rounded-full bg-[#2A2C38]" />
+            </>
+          ) : null}
+          <span>{interview.date}</span>
+          {interview.duration ? (
+            <>
+              <span className="h-1 w-1 rounded-full bg-[#2A2C38]" />
+              <span>{interview.duration}</span>
+            </>
+          ) : null}
+        </div>
+      </div>
 
-// ---------------------------------------------------------------------------
-// Bulk actions bar
-// ---------------------------------------------------------------------------
+      {interview.status === 'done' ? (
+        <div className="mr-12 flex items-center gap-8">
+          <div className="flex flex-col text-right">
+            <span className="text-xs font-semibold text-[#c8cad6]">{interview.insights} insights</span>
+            <span className="text-[10px] uppercase tracking-widest text-[#5A5C66]">Analysis</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {interview.tags.map((tag) => (
+              <InterviewPill key={tag} label={tag} />
+            ))}
+          </div>
+        </div>
+      ) : null}
 
-function BulkActionsBar({ count }: { count: number }) {
-    return (
+      {interview.status === 'processing' ? (
         <div
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 rounded-2xl h-14 px-6 flex items-center justify-between gap-12 shadow-2xl z-[100]"
-            style={{
-                background: 'rgba(30,31,38,0.7)',
-                backdropFilter: 'blur(12px)',
-                border: '1px solid #1E2028',
-                minWidth: 500,
-            }}
+          className="mr-12 w-48 flex-shrink-0 overflow-hidden rounded-full"
+          style={{ backgroundColor: '#191b22', height: 6 }}
         >
-            <div className="flex items-center gap-2">
-                <span
-                    className="w-5 h-5 flex items-center justify-center rounded text-[10px] font-bold text-[#c8cad6]"
-                    style={{ backgroundColor: '#33343b' }}
-                >
-                    {count}
-                </span>
-                <span className="text-xs font-medium text-[#c8cad6]">selected</span>
-            </div>
-            <div className="flex items-center gap-3">
-                <button className="h-9 px-4 text-xs font-semibold text-[#c8cad6] hover:text-white transition-colors flex items-center gap-2">
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>auto_fix_high</span>
-                    Re-analyze
-                </button>
-                <button className="h-9 px-4 text-xs font-semibold text-[#c8cad6] hover:text-white transition-colors flex items-center gap-2">
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>folder_open</span>
-                    Add to Collection
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>expand_more</span>
-                </button>
-                <div className="w-px h-4 bg-[#1E2028]" />
-                <button
-                    className="h-9 px-4 text-xs font-semibold rounded-lg transition-colors flex items-center gap-2"
-                    style={{ color: 'var(--color-danger)' }}
-                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(248,113,113,0.05)')}
-                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
-                >
-                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
-                    Delete
-                </button>
-            </div>
+          <div
+            className="h-full rounded-full animate-pulse"
+            style={{ backgroundColor: '#FBBF24', width: `${interview.processingPct ?? 45}%` }}
+          />
         </div>
-    );
+      ) : null}
+
+      {interview.status === 'error' ? (
+        <div className="mr-12">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              onRetry(interview.id);
+            }}
+            disabled={retrying}
+            className="text-xs font-medium text-[var(--color-danger)] hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {retrying ? 'Retrying...' : 'Retry Analysis'}
+          </button>
+        </div>
+      ) : null}
+
+      <StatusBadge status={interview.status} />
+    </div>
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
+function BulkActionsBar({
+  count,
+  busy,
+  onReanalyze,
+  onDelete,
+}: {
+  count: number;
+  busy: boolean;
+  onReanalyze: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div
+      className="fixed bottom-10 left-1/2 z-[100] flex h-14 -translate-x-1/2 items-center justify-between gap-12 rounded-2xl px-6 shadow-2xl"
+      style={{
+        background: 'rgba(30,31,38,0.7)',
+        backdropFilter: 'blur(12px)',
+        border: '1px solid #1E2028',
+        minWidth: 500,
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <span
+          className="flex h-5 w-5 items-center justify-center rounded text-[10px] font-bold text-[#c8cad6]"
+          style={{ backgroundColor: '#33343b' }}
+        >
+          {count}
+        </span>
+        <span className="text-xs font-medium text-[#c8cad6]">selected</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          disabled={busy || count === 0}
+          onClick={onReanalyze}
+          className="flex h-9 items-center gap-2 px-4 text-xs font-semibold text-[#c8cad6] transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+            auto_fix_high
+          </span>
+          Re-analyze
+        </button>
+        <button
+          type="button"
+          disabled
+          className="flex h-9 items-center gap-2 px-4 text-xs font-semibold text-[#c8cad6] opacity-50"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+            folder_open
+          </span>
+          Add to Collection
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+            expand_more
+          </span>
+        </button>
+        <div className="h-4 w-px bg-[#1E2028]" />
+        <button
+          type="button"
+          disabled={busy || count === 0}
+          onClick={onDelete}
+          className="flex h-9 items-center gap-2 rounded-lg px-4 text-xs font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+          style={{ color: 'var(--color-danger)' }}
+          onMouseEnter={(event) => {
+            if (!event.currentTarget.disabled) {
+              event.currentTarget.style.backgroundColor = 'rgba(248,113,113,0.05)';
+            }
+          }}
+          onMouseLeave={(event) => {
+            event.currentTarget.style.backgroundColor = 'transparent';
+          }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
+            delete
+          </span>
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function InterviewsPage() {
-    const [selected, setSelected] = useState<Set<number>>(new Set());
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const searchParamsKey = searchParams.toString();
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
+  const websocketRefreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    function toggleSelect(id: number) {
-        setSelected(prev => {
-            const next = new Set(prev);
-            next.has(id) ? next.delete(id) : next.add(id);
-            return next;
-        });
+  const { showToast } = useToast();
+  const { lastMessage } = useWebSocket(true);
+
+  const q = searchParams.get('q') ?? '';
+  const sort = isSort(searchParams.get('sort'))
+    ? (searchParams.get('sort') as InterviewLibrarySort)
+    : 'recent';
+  const status = isStatus(searchParams.get('status'))
+    ? (searchParams.get('status') as InterviewLibraryDisplayStatus)
+    : null;
+  const source = searchParams.get('source') ?? null;
+
+  const [searchValue, setSearchValue] = useState(q);
+  const [openMenu, setOpenMenu] = useState<FilterMenu>(null);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
+  const [processingProgress, setProcessingProgress] = useState<Record<string, number>>({});
+
+  const {
+    library,
+    loading,
+    error,
+    selectedIds,
+    mutationKind,
+    uploading,
+    toggleSelection,
+    clearSelection,
+    refetch,
+    uploadFiles,
+    reanalyzeInterview,
+    bulkReanalyze,
+    bulkDelete,
+  } = useInterviews({ q, sort, status, source });
+
+  useEffect(() => {
+    setSearchValue(q);
+  }, [q]);
+
+  useEffect(() => {
+    if (!openMenu) return;
+
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest('[data-filter-menu-root="true"]')) return;
+      setOpenMenu(null);
     }
 
-    return (
-        <div className="flex-1 overflow-y-auto p-8 relative" style={{ backgroundColor: '#0F1117' }}>
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setOpenMenu(null);
+      }
+    }
 
-            {/* ── Header ── */}
-            <div className="flex justify-between items-start mb-10">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-[#F0F0F3] mb-1">Interviews</h1>
-                    <p className="text-sm text-[#8B8D97] flex items-center gap-2">
-                        <span>47 interviews</span>
-                        <span className="w-1 h-1 rounded-full bg-[#424753]" />
-                        <span>58.2 MB of 5 GB used</span>
-                    </p>
-                </div>
-                <button
-                    className="px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all text-white"
-                    style={{
-                        backgroundColor: 'var(--color-brand)',
-                        boxShadow: '0 4px 12px rgba(79,140,255,0.25)',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#528dff')}
-                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'var(--color-brand)')}
-                >
-                    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>upload</span>
-                    Upload
-                </button>
-            </div>
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
 
-            {/* ── Filter bar ── */}
-            <div className="flex items-center gap-3 mb-8 h-10">
-                {/* Search */}
-                <div className="relative flex-1 max-w-md h-full">
-                    <span
-                        className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#5A5C66]"
-                        style={{ fontSize: 16 }}
-                    >
-                        search
-                    </span>
-                    <input
-                        type="text"
-                        placeholder="Filter interviews..."
-                        className="w-full h-full rounded-xl pl-10 pr-4 text-sm outline-none transition-colors"
-                        style={{
-                            backgroundColor: '#161820',
-                            border: '1px solid #1E2028',
-                            color: '#F0F0F3',
-                        }}
-                        onFocus={e => (e.currentTarget.style.borderColor = 'rgba(175,198,255,0.4)')}
-                        onBlur={e => (e.currentTarget.style.borderColor = '#1E2028')}
-                    />
-                </div>
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [openMenu]);
 
-                {/* Dropdowns */}
-                {[
-                    { label: 'Sort', value: 'Recent first' },
-                    { label: 'Status', value: 'All statuses' },
-                    { label: 'Source', value: 'All sources' },
-                ].map(d => (
-                    <button
-                        key={d.label}
-                        className="h-full px-3 rounded-xl flex items-center gap-2 text-xs font-medium text-[#8B8D97] transition-colors flex-shrink-0"
-                        style={{ backgroundColor: '#161820', border: '1px solid #1E2028' }}
-                        onMouseEnter={e => (e.currentTarget.style.borderColor = '#2A2C38')}
-                        onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E2028')}
-                    >
-                        {d.label}:{' '}
-                        <span className="text-[#c8cad6]">{d.value}</span>
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>expand_more</span>
-                    </button>
-                ))}
-            </div>
+  const updateSearchParams = useCallback(
+    (mutate: (params: URLSearchParams) => void, mode: 'push' | 'replace' = 'push') => {
+      const nextParams = new URLSearchParams(searchParamsKey);
+      mutate(nextParams);
+      const href = buildHref(pathname, nextParams);
+      setOpenMenu(null);
+      if (mode === 'replace') {
+        router.replace(href, { scroll: false });
+        return;
+      }
+      router.push(href, { scroll: false });
+    },
+    [pathname, router, searchParamsKey]
+  );
 
-            {/* ── Interview list ── */}
-            <div className="space-y-3 pb-24">
-                {INTERVIEWS.map(iv => (
-                    <InterviewRow
-                        key={iv.id}
-                        interview={iv}
-                        checked={selected.has(iv.id)}
-                        onCheck={toggleSelect}
-                    />
-                ))}
-            </div>
+  useEffect(() => {
+    if (searchValue === q) return;
 
-            {/* ── Bulk actions bar ── */}
-            <BulkActionsBar count={selected.size} />
-        </div>
+    const timer = setTimeout(() => {
+      updateSearchParams((params) => {
+        const nextValue = searchValue.trim();
+        if (nextValue) {
+          params.set('q', nextValue);
+        } else {
+          params.delete('q');
+        }
+      }, 'replace');
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [q, searchValue, updateSearchParams]);
+
+  useEffect(() => {
+    return () => {
+      if (websocketRefreshTimer.current) {
+        clearTimeout(websocketRefreshTimer.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!lastMessage?.interview_id || !lastMessage.status) return;
+
+    setProcessingProgress((prev) => {
+      const next = { ...prev };
+
+      if (lastMessage.status === 'done' || lastMessage.status === 'error') {
+        delete next[lastMessage.interview_id];
+        return next;
+      }
+
+      next[lastMessage.interview_id] =
+        typeof lastMessage.progress === 'number'
+          ? lastMessage.progress
+          : PROCESSING_STATUS_PROGRESS[lastMessage.status] ?? 45;
+
+      return next;
+    });
+
+    if (websocketRefreshTimer.current) {
+      clearTimeout(websocketRefreshTimer.current);
+    }
+
+    websocketRefreshTimer.current = setTimeout(() => {
+      void refetch();
+    }, 400);
+  }, [lastMessage, refetch]);
+
+  const interviews = useMemo(
+    () => library?.items.map((item) => mapInterviewItem(item, processingProgress)) ?? [],
+    [library, processingProgress]
+  );
+
+  const hasFilters = Boolean(q || sort !== 'recent' || status || source);
+  const isBusy = mutationKind === 'upload' || mutationKind === 'reanalyze' || mutationKind === 'delete';
+  const sourceOptions = library?.summary.available_sources ?? [];
+  const selectedSourceLabel = source
+    ? sourceOptions.find((option) => option.provider === source)?.label ?? source
+    : 'All sources';
+  const interviewCountLabel = library
+    ? hasFilters && library.summary.filtered_count !== library.summary.total_count
+      ? `${library.summary.filtered_count} of ${library.summary.total_count} interviews`
+      : formatInterviewCount(library.summary.total_count)
+    : 'Loading interviews...';
+  const storageUsageLabel = library
+    ? `${formatBytes(library.summary.storage_bytes_used)} of ${formatBytes(
+        library.summary.storage_bytes_limit
+      )} used`
+    : 'Loading storage...';
+
+  async function handleUploadSelection(event: ChangeEvent<HTMLInputElement>) {
+    const files = event.target.files ? Array.from(event.target.files) : [];
+    event.target.value = '';
+
+    if (files.length === 0) return;
+
+    try {
+      const result = await uploadFiles(files);
+
+      if (result.createdIds.length > 0) {
+        showToast(
+          `Queued ${result.createdIds.length} interview${result.createdIds.length === 1 ? '' : 's'} for processing`,
+          'success'
+        );
+      }
+
+      if (result.failedFiles.length > 0) {
+        const firstFailure = result.failedFiles[0];
+        showToast(
+          `${result.failedFiles.length} file${result.failedFiles.length === 1 ? '' : 's'} failed. ${firstFailure.name}: ${firstFailure.error}`,
+          result.createdIds.length > 0 ? 'warning' : 'error'
+        );
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Upload failed', 'error');
+    }
+  }
+
+  async function handleRetry(id: string) {
+    const interview = library?.items.find((item) => item.id === id);
+    setRetryingId(id);
+
+    try {
+      await reanalyzeInterview(id);
+      showToast(
+        `Re-analysis queued for ${interview?.filename ?? 'the selected interview'}`,
+        'success'
+      );
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to retry analysis', 'error');
+    } finally {
+      setRetryingId(null);
+    }
+  }
+
+  async function handleBulkReanalyze() {
+    if (selectedIds.size === 0) return;
+
+    try {
+      const result = await bulkReanalyze();
+      if (result.success_count > 0) {
+        showToast(
+          `Queued ${result.success_count} interview${result.success_count === 1 ? '' : 's'} for re-analysis`,
+          'success'
+        );
+      }
+      if (result.failed_count > 0) {
+        showToast(
+          `${result.failed_count} interview${result.failed_count === 1 ? '' : 's'} skipped. ${result.failures[0]?.error ?? 'Try again.'}`,
+          'warning'
+        );
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to re-analyze interviews', 'error');
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.size === 0) return;
+
+    const confirmed = window.confirm(
+      `Delete ${selectedIds.size} interview${selectedIds.size === 1 ? '' : 's'}? This removes their transcript, insights, and theme contributions.`
     );
+    if (!confirmed) return;
+
+    try {
+      const result = await bulkDelete();
+      if (result.success_count > 0) {
+        showToast(
+          `Deleted ${result.success_count} interview${result.success_count === 1 ? '' : 's'}`,
+          'success'
+        );
+      }
+      if (result.failed_count > 0) {
+        showToast(
+          `${result.failed_count} interview${result.failed_count === 1 ? '' : 's'} could not be deleted. ${result.failures[0]?.error ?? 'Try again.'}`,
+          'warning'
+        );
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to delete interviews', 'error');
+    }
+  }
+
+  function renderListContent() {
+    if (!library && loading) {
+      return (
+        <InlineStateCard
+          title="Loading interviews"
+          body="Pulling your latest interview library and storage usage."
+        />
+      );
+    }
+
+    if (!library && error) {
+      return (
+        <InlineStateCard
+          tone="error"
+          title="We could not load the interview library"
+          body={error}
+          actionLabel="Retry"
+          onAction={() => {
+            void refetch();
+          }}
+        />
+      );
+    }
+
+    if (!library) {
+      return null;
+    }
+
+    if (!library.summary.has_data) {
+      return (
+        <InlineStateCard
+          title="No interviews yet"
+          body="Use the Upload button to add your first transcript, recording, or video."
+        />
+      );
+    }
+
+    if (interviews.length === 0) {
+      return (
+        <InlineStateCard
+          title="No interviews match this view"
+          body="Try adjusting the current search or filters to bring interviews back into view."
+          actionLabel="Clear filters"
+          onAction={() => {
+            clearSelection();
+            router.push('/interviews');
+          }}
+        />
+      );
+    }
+
+    return interviews.map((interview) => (
+      <InterviewRow
+        key={interview.id}
+        interview={interview}
+        checked={selectedIds.has(interview.id)}
+        onCheck={toggleSelection}
+        onOpen={(id) => router.push(`/interview/${id}`)}
+        onRetry={(id) => {
+          void handleRetry(id);
+        }}
+        retrying={retryingId === interview.id}
+      />
+    ));
+  }
+
+  return (
+    <>
+      <div className="relative flex-1 overflow-y-auto p-8" style={{ backgroundColor: '#0F1117' }}>
+        <input
+          ref={uploadInputRef}
+          type="file"
+          multiple
+          accept={INTERVIEW_UPLOAD_ACCEPT}
+          className="hidden"
+          onChange={handleUploadSelection}
+        />
+
+        <div className="mb-10 flex items-start justify-between">
+          <div>
+            <h1 className="mb-1 text-3xl font-bold tracking-tight text-[#F0F0F3]">Interviews</h1>
+            <p className="flex items-center gap-2 text-sm text-[#8B8D97]">
+              <span>{interviewCountLabel}</span>
+              <span className="h-1 w-1 rounded-full bg-[#424753]" />
+              <span>{storageUsageLabel}</span>
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={uploading}
+            onClick={() => uploadInputRef.current?.click()}
+            className={`${interviewPrimaryButtonClassName} flex items-center gap-2`}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
+              upload
+            </span>
+            {uploading ? 'Uploading...' : 'Upload'}
+          </button>
+        </div>
+
+        <div className="mb-8 flex h-10 items-center gap-3">
+          <div className="relative h-full max-w-md flex-1">
+            <span
+              className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#5A5C66]"
+              style={{ fontSize: 16 }}
+            >
+              search
+            </span>
+            <input
+              type="text"
+              value={searchValue}
+              placeholder="Filter interviews..."
+              className="h-full w-full rounded-xl pl-10 pr-4 text-sm outline-none transition-colors"
+              style={{
+                backgroundColor: '#161820',
+                border: '1px solid #1E2028',
+                color: '#F0F0F3',
+              }}
+              onChange={(event) => setSearchValue(event.target.value)}
+              onFocus={(event) => {
+                event.currentTarget.style.borderColor = 'rgba(175,198,255,0.4)';
+              }}
+              onBlur={(event) => {
+                event.currentTarget.style.borderColor = '#1E2028';
+              }}
+            />
+          </div>
+
+          <FilterDropdown
+            label="Sort"
+            value={getSortLabel(sort)}
+            open={openMenu === 'sort'}
+            onToggle={() => setOpenMenu((current) => (current === 'sort' ? null : 'sort'))}
+          >
+            {SORT_OPTIONS.map((option) => (
+              <FilterOption
+                key={option.value}
+                selected={sort === option.value}
+                label={option.label}
+                onClick={() =>
+                  updateSearchParams((params) => {
+                    if (option.value === 'recent') {
+                      params.delete('sort');
+                    } else {
+                      params.set('sort', option.value);
+                    }
+                  })
+                }
+              />
+            ))}
+          </FilterDropdown>
+
+          <FilterDropdown
+            label="Status"
+            value={getStatusLabel(status)}
+            open={openMenu === 'status'}
+            onToggle={() => setOpenMenu((current) => (current === 'status' ? null : 'status'))}
+          >
+            <FilterOption
+              selected={!status}
+              label="All statuses"
+              onClick={() =>
+                updateSearchParams((params) => {
+                  params.delete('status');
+                })
+              }
+            />
+            {STATUS_OPTIONS.map((option) => (
+              <FilterOption
+                key={option.value}
+                selected={status === option.value}
+                label={option.label}
+                onClick={() =>
+                  updateSearchParams((params) => {
+                    params.set('status', option.value);
+                  })
+                }
+              />
+            ))}
+          </FilterDropdown>
+
+          <FilterDropdown
+            label="Source"
+            value={selectedSourceLabel}
+            open={openMenu === 'source'}
+            onToggle={() => setOpenMenu((current) => (current === 'source' ? null : 'source'))}
+          >
+            <FilterOption
+              selected={!source}
+              label="All sources"
+              onClick={() =>
+                updateSearchParams((params) => {
+                  params.delete('source');
+                })
+              }
+            />
+            {sourceOptions.length > 0 ? (
+              sourceOptions.map((option) => (
+                <FilterOption
+                  key={option.provider}
+                  selected={source === option.provider}
+                  label={option.label}
+                  meta={`${option.count}`}
+                  onClick={() =>
+                    updateSearchParams((params) => {
+                      params.set('source', option.provider);
+                    })
+                  }
+                />
+              ))
+            ) : (
+              <div className="px-4 py-2.5 text-sm text-[#5A5C66]">No sources available</div>
+            )}
+          </FilterDropdown>
+        </div>
+
+        <div className="space-y-3 pb-24">
+          {error && library ? (
+            <InlineStateCard
+              tone="error"
+              title="Refresh failed"
+              body={`${error} Showing the most recent library data instead.`}
+              actionLabel="Retry"
+              onAction={() => {
+                void refetch();
+              }}
+            />
+          ) : null}
+
+          {renderListContent()}
+        </div>
+      </div>
+
+      <BulkActionsBar
+        count={selectedIds.size}
+        busy={isBusy}
+        onReanalyze={() => {
+          void handleBulkReanalyze();
+        }}
+        onDelete={() => {
+          void handleBulkDelete();
+        }}
+      />
+    </>
+  );
 }

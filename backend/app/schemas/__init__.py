@@ -83,6 +83,68 @@ class InterviewDetailResponse(InterviewResponse):
     insights: list["InsightResponse"] = []
 
 
+class InterviewThemeChipResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+
+
+class InterviewLibrarySourceResponse(BaseModel):
+    provider: str
+    label: str
+    count: int
+
+
+class InterviewLibrarySummaryResponse(BaseModel):
+    total_count: int
+    filtered_count: int
+    storage_bytes_used: int
+    storage_bytes_limit: int
+    plan: PlanType
+    has_data: bool
+    available_sources: list[InterviewLibrarySourceResponse] = []
+
+
+class InterviewLibraryItemResponse(BaseModel):
+    id: uuid.UUID
+    filename: str
+    file_type: FileType
+    created_at: datetime
+    updated_at: datetime
+    duration_seconds: Optional[int] = None
+    file_size_bytes: int
+    raw_status: InterviewStatus
+    display_status: str
+    error_message: Optional[str] = None
+    participant_summary: Optional[str] = None
+    source_provider: str
+    source_label: str
+    insights_count: int
+    themes_count: int
+    theme_chips: list[InterviewThemeChipResponse] = []
+
+
+class InterviewLibraryResponse(BaseModel):
+    summary: InterviewLibrarySummaryResponse
+    items: list[InterviewLibraryItemResponse] = []
+
+
+class InterviewBulkRequest(BaseModel):
+    interview_ids: list[uuid.UUID]
+
+
+class InterviewBulkFailureResponse(BaseModel):
+    interview_id: uuid.UUID
+    error: str
+
+
+class InterviewBulkResultResponse(BaseModel):
+    requested_count: int
+    success_count: int
+    failed_count: int
+    succeeded_ids: list[uuid.UUID] = []
+    failures: list[InterviewBulkFailureResponse] = []
+
+
 # ─── Speakers ────────────────────────────────────────────
 
 class SpeakerResponse(BaseModel):
