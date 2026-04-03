@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls /c/Users/Deep/.gemini/antigravity/scratch/spec10x/frontend/src/app/\\\\\\(app\\\\\\)/integrations/)",
+      "Bash(ls /c/Users/Deep/.gemini/antigravity/scratch/spec10x/frontend/src/app/\\\\\\(app\\\\\\)/)",
+      "Bash(ls /c/Users/Deep/.gemini/antigravity/scratch/spec10x/frontend/src/app/\\\\\\(app\\\\\\)/interviews/)"
+    ]
+  }
+}

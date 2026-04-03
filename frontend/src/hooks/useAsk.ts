@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { api } from '@/lib/api';
-import type { AskResponse, AskCitation } from '@/lib/api';
+import type { AskResponse, AskCitation, AskConversationDetail } from '@/lib/api';
 
 export interface ChatMessage {
     id: string;
@@ -68,6 +68,18 @@ export function useAsk(token: string | null) {
         setError(null);
     }, []);
 
+    const loadConversation = useCallback((conversation: AskConversationDetail) => {
+        const loaded: ChatMessage[] = conversation.messages.map(msg => ({
+            id: msg.id,
+            role: msg.role,
+            content: msg.content,
+            citations: msg.citations,
+        }));
+        setMessages(loaded);
+        setConversationId(conversation.id);
+        setError(null);
+    }, []);
+
     return {
         messages,
         loading,
@@ -75,5 +87,6 @@ export function useAsk(token: string | null) {
         conversationId,
         sendQuestion,
         startNewChat,
+        loadConversation,
     };
 }

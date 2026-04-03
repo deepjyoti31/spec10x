@@ -443,6 +443,7 @@ class SourceConnectionResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     data_source: DataSourceResponse
+    total_records_synced: int = 0
 
     model_config = {"from_attributes": True}
 

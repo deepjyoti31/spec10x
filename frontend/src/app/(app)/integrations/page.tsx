@@ -1,33 +1,39 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+
+import ConnectModal from './ConnectModal';
+import { formatRelativeTime, useIntegrations } from '@/hooks/useIntegrations';
+import { useToast } from '@/components/ui/Toast';
+import { SourceConnectionResponse } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
-// Data
+// Static display metadata
 // ---------------------------------------------------------------------------
 
-const CONNECTED = [
+const PROVIDER_DISPLAY: Record<string, { iconBg: string; icon: string; description: string }> = {
+    zendesk: {
+        iconBg: '#03363D',
+        icon: 'support',
+        description: 'Support tickets and customer conversations',
+    },
+    fireflies: {
+        iconBg: '#5340FF',
+        icon: 'mic',
+        description: 'Meeting recordings and AI transcriptions',
+    },
+};
+
+const AVAILABLE = [
     {
         id: 'zendesk',
         name: 'Zendesk',
-        description: 'Support tickets and customer conversations',
-        iconBg: '#03363D',
+        description: 'Support tickets and customer conversations.',
+        iconBg: 'rgba(3,54,61,0.6)',
+        iconColor: '#03363D',
         icon: 'support',
-        synced: '89 tickets synced',
-        lastSync: 'Last sync: 2 hours ago',
+        category: 'Support',
     },
-    {
-        id: 'fireflies',
-        name: 'Fireflies.ai',
-        description: 'Meeting recordings and AI transcriptions',
-        iconBg: '#5340FF',
-        icon: 'mic',
-        synced: '23 meetings synced',
-        lastSync: 'Last sync: 12 hours ago',
-    },
-];
-
-const AVAILABLE = [
     {
         id: 'intercom',
         name: 'Intercom',
@@ -96,7 +102,23 @@ const FILTER_TABS = ['All', 'Support', 'Meetings', 'Surveys', 'Analytics'];
 // Connected card
 // ---------------------------------------------------------------------------
 
-function ConnectedCard({ integration }: { integration: typeof CONNECTED[0] }) {
+interface ConnectedCardProps {
+    integration: {
+        id: string;
+        name: string;
+        description: string;
+        iconBg: string;
+        icon: string;
+        synced: string;
+        lastSync: string;
+    };
+    isSyncing: boolean;
+    isDisconnecting: boolean;
+    onSyncNow: () => void;
+    onDisconnect: () => void;
+}
+
+function ConnectedCard({ integration, isSyncing, isDisconnecting, onSyncNow, onDisconnect }: ConnectedCardProps) {
     return (
         <div
             className="rounded-xl p-6 flex flex-col"
@@ -138,25 +160,67 @@ function ConnectedCard({ integration }: { integration: typeof CONNECTED[0] }) {
             {/* Actions */}
             <div className="mt-auto flex items-center justify-between">
                 <div className="flex gap-4">
-                    {['Sync Now', 'Configure'].map(action => (
-                        <button
-                            key={action}
-                            className="text-xs font-semibold text-white transition-colors"
-                            onMouseEnter={e => (e.currentTarget.style.color = '#afc6ff')}
-                            onMouseLeave={e => (e.currentTarget.style.color = 'white')}
-                        >
-                            {action}
-                        </button>
-                    ))}
+                    <button
+                        disabled={isSyncing}
+                        onClick={onSyncNow}
+                        className="text-xs font-semibold text-white transition-colors disabled:opacity-60"
+                        onMouseEnter={e => { if (!isSyncing) e.currentTarget.style.color = '#afc6ff'; }}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'white')}
+                    >
+                        {isSyncing ? 'Syncing…' : 'Sync Now'}
+                    </button>
+                    <button
+                        className="text-xs font-semibold text-white transition-colors"
+                        onMouseEnter={e => (e.currentTarget.style.color = '#afc6ff')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'white')}
+                    >
+                        Configure
+                    </button>
                 </div>
                 <button
-                    className="text-xs font-semibold transition-colors"
+                    disabled={isDisconnecting}
+                    onClick={onDisconnect}
+                    className="text-xs font-semibold transition-colors disabled:opacity-60"
                     style={{ color: 'rgba(248,113,113,0.8)' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#ffb4ab')}
+                    onMouseEnter={e => { if (!isDisconnecting) e.currentTarget.style.color = '#ffb4ab'; }}
                     onMouseLeave={e => (e.currentTarget.style.color = 'rgba(248,113,113,0.8)')}
                 >
-                    Disconnect
+                    {isDisconnecting ? 'Disconnecting…' : 'Disconnect'}
                 </button>
+            </div>
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Connected card skeleton
+// ---------------------------------------------------------------------------
+
+function ConnectedCardSkeleton() {
+    return (
+        <div
+            className="rounded-xl p-6 flex flex-col"
+            style={{ backgroundColor: '#161820', border: '1px solid rgba(255,255,255,0.03)' }}
+        >
+            <div className="flex justify-between items-start mb-4">
+                <div className="w-12 h-12 rounded-lg animate-pulse" style={{ backgroundColor: '#33343b' }} />
+                <div className="w-16 h-5 rounded animate-pulse" style={{ backgroundColor: '#33343b' }} />
+            </div>
+            <div className="w-32 h-5 rounded animate-pulse mb-2" style={{ backgroundColor: '#33343b' }} />
+            <div className="w-48 h-3 rounded animate-pulse mb-6" style={{ backgroundColor: '#33343b' }} />
+            <div className="space-y-4 mb-8">
+                <div className="flex justify-between">
+                    <div className="w-24 h-3 rounded animate-pulse" style={{ backgroundColor: '#33343b' }} />
+                    <div className="w-28 h-3 rounded animate-pulse" style={{ backgroundColor: '#33343b' }} />
+                </div>
+                <div className="h-1 rounded-full animate-pulse" style={{ backgroundColor: '#33343b' }} />
+            </div>
+            <div className="mt-auto flex justify-between">
+                <div className="flex gap-4">
+                    <div className="w-14 h-3 rounded animate-pulse" style={{ backgroundColor: '#33343b' }} />
+                    <div className="w-16 h-3 rounded animate-pulse" style={{ backgroundColor: '#33343b' }} />
+                </div>
+                <div className="w-16 h-3 rounded animate-pulse" style={{ backgroundColor: '#33343b' }} />
             </div>
         </div>
     );
@@ -166,7 +230,12 @@ function ConnectedCard({ integration }: { integration: typeof CONNECTED[0] }) {
 // Available card
 // ---------------------------------------------------------------------------
 
-function AvailableCard({ integration }: { integration: typeof AVAILABLE[0] }) {
+interface AvailableCardProps {
+    integration: typeof AVAILABLE[0];
+    onConnect: () => void;
+}
+
+function AvailableCard({ integration, onConnect }: AvailableCardProps) {
     return (
         <div
             className="rounded-xl p-6 flex flex-col transition-all"
@@ -193,18 +262,14 @@ function AvailableCard({ integration }: { integration: typeof AVAILABLE[0] }) {
             </div>
 
             {/* Name */}
-            <h4
-                className="text-base font-bold text-white transition-colors"
-                /* hover color handled by parent group — using inline onMouseEnter instead */
-            >
-                {integration.name}
-            </h4>
+            <h4 className="text-base font-bold text-white transition-colors">{integration.name}</h4>
 
             {/* Description */}
             <p className="text-xs text-[#5A5C66] mt-2 mb-6 line-clamp-2">{integration.description}</p>
 
             {/* Connect button */}
             <button
+                onClick={onConnect}
                 className="mt-auto w-full py-2 rounded text-xs font-semibold transition-colors"
                 style={{ border: '1px solid rgba(66,71,83,0.3)', color: '#c2c6d6' }}
                 onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#33343b')}
@@ -212,6 +277,28 @@ function AvailableCard({ integration }: { integration: typeof AVAILABLE[0] }) {
             >
                 Connect
             </button>
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Available card skeleton
+// ---------------------------------------------------------------------------
+
+function AvailableCardSkeleton() {
+    return (
+        <div
+            className="rounded-xl p-6 flex flex-col"
+            style={{ backgroundColor: '#161820', border: '1px solid rgba(255,255,255,0.02)' }}
+        >
+            <div className="flex justify-between items-start mb-4">
+                <div className="w-10 h-10 rounded animate-pulse" style={{ backgroundColor: '#33343b' }} />
+                <div className="w-14 h-4 rounded animate-pulse" style={{ backgroundColor: '#33343b' }} />
+            </div>
+            <div className="w-28 h-4 rounded animate-pulse mb-2" style={{ backgroundColor: '#33343b' }} />
+            <div className="w-full h-3 rounded animate-pulse mb-2" style={{ backgroundColor: '#33343b' }} />
+            <div className="w-3/4 h-3 rounded animate-pulse mb-6" style={{ backgroundColor: '#33343b' }} />
+            <div className="mt-auto w-full h-8 rounded animate-pulse" style={{ backgroundColor: '#33343b' }} />
         </div>
     );
 }
@@ -260,6 +347,91 @@ function ComingSoonCard({ item }: { item: typeof COMING_SOON[0] }) {
 
 export default function IntegrationsPage() {
     const [activeFilter, setActiveFilter] = useState('All');
+    const [searchQuery, setSearchQuery] = useState('');
+    const { showToast } = useToast();
+
+    const {
+        connections,
+        dataSources,
+        loading,
+        error,
+        syncingIds,
+        disconnectingIds,
+        connectModalOpen,
+        connectModalStep,
+        connectModalError,
+        syncNow,
+        disconnect,
+        openConnectModal,
+        closeConnectModal,
+        submitConnect,
+    } = useIntegrations();
+
+    // Surface load errors as toasts
+    useEffect(() => {
+        if (error) showToast(`Failed to load integrations: ${error}`, 'error');
+    }, [error, showToast]);
+
+    // ── Derived data ──────────────────────────────────────────────────────────
+
+    // Map real connections to the shape ConnectedCard expects
+    const connectedCards = connections.map((conn: SourceConnectionResponse) => {
+        const display = PROVIDER_DISPLAY[conn.data_source.provider] ?? {
+            iconBg: '#1e1f26',
+            icon: 'cloud',
+            description: '',
+        };
+        return {
+            id: conn.id,
+            connectionId: conn.id,
+            name: conn.data_source.display_name,
+            description: display.description,
+            iconBg: display.iconBg,
+            icon: display.icon,
+            synced: `${conn.total_records_synced} records synced`,
+            lastSync: `Last sync: ${formatRelativeTime(conn.last_synced_at)}`,
+        };
+    });
+
+    // Providers that already have an active connection
+    const connectedProviders = new Set(connections.map(c => c.data_source.provider));
+
+    // Available items: exclude already-connected, apply category filter + search
+    const availableCards = AVAILABLE
+        .filter(a => !connectedProviders.has(a.id))
+        .filter(a => activeFilter === 'All' || a.category === activeFilter)
+        .filter(a => a.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    // ── Handlers ──────────────────────────────────────────────────────────────
+
+    const handleSyncNow = async (connectionId: string) => {
+        try {
+            await syncNow(connectionId);
+            showToast('Sync started successfully', 'success');
+        } catch (err) {
+            showToast(err instanceof Error ? err.message : 'Sync failed', 'error');
+        }
+    };
+
+    const handleDisconnect = async (connectionId: string) => {
+        try {
+            await disconnect(connectionId);
+            showToast('Integration disconnected', 'info');
+        } catch (err) {
+            showToast(err instanceof Error ? err.message : 'Disconnect failed', 'error');
+        }
+    };
+
+    const handleConnect = (providerId: string, name: string) => {
+        const ds = dataSources.find(d => d.provider === providerId);
+        if (ds) {
+            openConnectModal(ds.id);
+        } else {
+            showToast(`${name} integration coming soon!`, 'info');
+        }
+    };
+
+    // ── Render ────────────────────────────────────────────────────────────────
 
     return (
         <div className="overflow-y-auto flex-1" style={{ backgroundColor: '#0F1117' }}>
@@ -292,13 +464,30 @@ export default function IntegrationsPage() {
                         >
                             <div className="w-1.5 h-1.5 rounded-full bg-[#34D399] animate-pulse" />
                             <span className="text-[11px] font-bold text-[#34D399] uppercase tracking-wider">
-                                2 active
+                                {loading ? '—' : `${connections.length} active`}
                             </span>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {CONNECTED.map(c => <ConnectedCard key={c.id} integration={c} />)}
+                        {loading ? (
+                            [0, 1].map(i => <ConnectedCardSkeleton key={i} />)
+                        ) : connectedCards.length > 0 ? (
+                            connectedCards.map(c => (
+                                <ConnectedCard
+                                    key={c.id}
+                                    integration={c}
+                                    isSyncing={syncingIds.has(c.connectionId)}
+                                    isDisconnecting={disconnectingIds.has(c.connectionId)}
+                                    onSyncNow={() => handleSyncNow(c.connectionId)}
+                                    onDisconnect={() => handleDisconnect(c.connectionId)}
+                                />
+                            ))
+                        ) : (
+                            <p className="text-sm text-[#5A5C66] col-span-2">
+                                No integrations connected yet. Connect one below to start ingesting signals.
+                            </p>
+                        )}
                     </div>
                 </section>
 
@@ -308,7 +497,9 @@ export default function IntegrationsPage() {
                         <h2 className="text-sm font-semibold tracking-wide text-[#F0F0F3]">
                             Available Integrations
                         </h2>
-                        <span className="text-[13px] text-[#8B8D97]">4 available</span>
+                        <span className="text-[13px] text-[#8B8D97]">
+                            {loading ? '—' : `${availableCards.length} available`}
+                        </span>
                     </div>
 
                     {/* Filter row */}
@@ -354,6 +545,8 @@ export default function IntegrationsPage() {
                             <input
                                 type="text"
                                 placeholder="Filter by name..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
                                 className="w-full rounded-lg py-2 pl-10 pr-4 text-xs outline-none transition-all"
                                 style={{
                                     backgroundColor: '#0c0e14',
@@ -368,7 +561,21 @@ export default function IntegrationsPage() {
 
                     {/* Available grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {AVAILABLE.map(a => <AvailableCard key={a.id} integration={a} />)}
+                        {loading ? (
+                            [0, 1, 2, 3, 4, 5].map(i => <AvailableCardSkeleton key={i} />)
+                        ) : availableCards.length > 0 ? (
+                            availableCards.map(a => (
+                                <AvailableCard
+                                    key={a.id}
+                                    integration={a}
+                                    onConnect={() => handleConnect(a.id, a.name)}
+                                />
+                            ))
+                        ) : (
+                            <p className="text-sm text-[#5A5C66] col-span-3">
+                                No integrations match your filter.
+                            </p>
+                        )}
                     </div>
                 </section>
 
@@ -391,6 +598,16 @@ export default function IntegrationsPage() {
                 </section>
 
             </div>
+
+            {/* ── Connect Modal ── */}
+            <ConnectModal
+                open={connectModalOpen}
+                step={connectModalStep}
+                error={connectModalError}
+                onClose={closeConnectModal}
+                onSubmit={submitConnect}
+            />
+
         </div>
     );
 }

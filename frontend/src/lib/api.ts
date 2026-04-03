@@ -1015,6 +1015,7 @@ export interface SourceConnectionResponse {
   created_at: string;
   updated_at: string;
   data_source: DataSourceResponse;
+  total_records_synced: number;
 }
 
 export interface SourceConnectionDetailResponse extends SourceConnectionResponse {

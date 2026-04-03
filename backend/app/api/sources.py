@@ -5,7 +5,7 @@ Source foundation API routes.
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -102,7 +102,34 @@ async def list_connections(
         .order_by(SourceConnection.created_at.desc())
     )
     result = await db.execute(stmt)
-    return list(result.scalars().all())
+    connections = list(result.scalars().all())
+
+    if connections:
+        connection_ids = [c.id for c in connections]
+        totals_stmt = (
+            select(
+                SyncRun.source_connection_id,
+                func.coalesce(
+                    func.sum(SyncRun.records_created + SyncRun.records_updated), 0
+                ).label("total"),
+            )
+            .where(
+                SyncRun.source_connection_id.in_(connection_ids),
+                SyncRun.status == SyncRunStatus.succeeded,
+            )
+            .group_by(SyncRun.source_connection_id)
+        )
+        totals_result = await db.execute(totals_stmt)
+        totals_map = {row.source_connection_id: int(row.total) for row in totals_result}
+    else:
+        totals_map = {}
+
+    return [
+        SourceConnectionResponse.model_validate(conn).model_copy(
+            update={"total_records_synced": totals_map.get(conn.id, 0)}
+        )
+        for conn in connections
+    ]
 
 
 @router.get(
