@@ -41,6 +41,12 @@ class UserResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class UserUpdateRequest(BaseModel):
+    """Request body for PATCH /api/users/me"""
+    name: Optional[str] = None
+    avatar_url: Optional[str] = None
+
+
 # ─── Interviews ──────────────────────────────────────────
 
 class UploadUrlRequest(BaseModel):

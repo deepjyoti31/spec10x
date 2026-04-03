@@ -119,6 +119,14 @@ class ApiClient {
     });
   }
 
+  async updateMe(token: string, data: UserUpdateRequest) {
+    return this.request<UserResponse>('/api/users/me', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+      token,
+    });
+  }
+
   // === Interviews ===
 
   async getUploadUrl(token: string, data: UploadUrlRequest) {
@@ -538,6 +546,11 @@ export interface UserResponse {
   avatar_url?: string;
   plan: 'free' | 'pro' | 'business';
   created_at: string;
+}
+
+export interface UserUpdateRequest {
+  name?: string;
+  avatar_url?: string;
 }
 
 export interface UploadUrlRequest {
