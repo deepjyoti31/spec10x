@@ -251,11 +251,8 @@ export default function HomePageClient() {
                             <span className="material-symbols-outlined text-[#5A5C66]" style={{ fontSize: 40 }}>lock</span>
                         </div>
                         <h3 className="text-[20px] font-bold text-[#F0F0F3] mb-1">Spec Pipeline</h3>
-                        <span className="px-2 py-0.5 rounded-sm bg-[#afc6ff]/20 text-[#afc6ff] text-[10px] font-bold uppercase tracking-widest mb-3 inline-block">Coming in v0.8</span>
-                        <p className="text-[14px] text-[#5A5C66] max-w-xs mb-6">Automate the creation of PRDs and product specs directly from validated themes and user insights.</p>
-                        <button className="px-6 py-2 border border-white/20 rounded-full text-[13px] font-semibold text-[#F0F0F3] hover:bg-white/5 transition-all">
-                            Notify me
-                        </button>
+                        <span className="px-2 py-0.5 rounded-sm bg-[#afc6ff]/20 text-[#afc6ff] text-[10px] font-bold uppercase tracking-widest mb-3 inline-block">Coming Soon</span>
+                        <p className="text-[14px] text-[#5A5C66] max-w-xs">Automate the creation of PRDs and product specs directly from validated themes and user insights.</p>
                     </div>
                 </section>
             </div>
@@ -267,18 +264,10 @@ export default function HomePageClient() {
                         <span className="material-symbols-outlined text-[#5A5C66]" style={{ fontSize: 48 }}>lock</span>
                     </div>
                     <h3 className="text-[24px] font-bold text-[#F0F0F3] mb-2 tracking-tight">Outcome Tracking</h3>
-                    <span className="px-3 py-1 rounded-sm bg-[#afc6ff]/20 text-[#afc6ff] text-[11px] font-bold uppercase tracking-widest mb-4 inline-block">Coming in v1.0</span>
-                    <p className="text-[15px] text-[#5A5C66] max-w-lg mb-8 leading-relaxed">
+                    <span className="px-3 py-1 rounded-sm bg-[#afc6ff]/20 text-[#afc6ff] text-[11px] font-bold uppercase tracking-widest mb-4 inline-block">Coming Soon</span>
+                    <p className="text-[15px] text-[#5A5C66] max-w-lg leading-relaxed">
                         Closing the feedback loop. Connect your post-launch metrics to historical themes and insights to measure the true ROI of your product decisions and iterate with precision.
                     </p>
-                    <div className="flex gap-4 flex-wrap justify-center">
-                        <button className="px-8 py-2.5 bg-[#afc6ff] text-white rounded-full text-[14px] font-bold hover:brightness-110 transition-all shadow-lg shadow-[#afc6ff]/20">
-                            Pre-register Interest
-                        </button>
-                        <button className="px-8 py-2.5 border border-white/20 rounded-full text-[14px] font-bold text-[#F0F0F3] hover:bg-white/5 transition-all">
-                            Watch the Teaser
-                        </button>
-                    </div>
                 </div>
             </section>
         </div>

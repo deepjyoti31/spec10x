@@ -164,7 +164,7 @@ def _build_interview_activity(interview: Interview) -> dict:
         "title": title,
         "subtitle": subtitle,
         "occurred_at": occurred_at,
-        "href": "/interviews",
+        "href": f"/interview/{interview.id}",
         "tone": tone,
     }
 
@@ -176,7 +176,7 @@ def _build_theme_activity(theme: Theme) -> dict:
         "title": f"New theme: {theme.name}",
         "subtitle": "AI Insight Engine",
         "occurred_at": occurred_at,
-        "href": "/insights",
+        "href": f"/insights?theme={theme.id}",
         "tone": "accent",
     }
 
@@ -393,7 +393,7 @@ async def get_home_dashboard(
                     signals=theme_signal_rows,
                     now=now,
                 ),
-                "href": "/insights",
+                "href": f"/insights?theme={theme.id}",
                 "_sort_key": (current_count, reference_time),
             }
         )

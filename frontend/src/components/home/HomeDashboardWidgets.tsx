@@ -112,7 +112,7 @@ export function ActivePriorityRow({
 
     return (
         <Link
-            href="/insights"
+            href={`/insights?theme=${priority.id}`}
             className="px-6 py-4 flex items-center justify-between hover:bg-white/[0.02] transition-colors"
         >
             <div className="flex flex-col gap-1">
