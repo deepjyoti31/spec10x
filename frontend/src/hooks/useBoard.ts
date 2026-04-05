@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from './useAuth';
-import { api, BoardThemeCardResponse } from '@/lib/api';
+import { api, BoardThemeCardResponse, ThemePriorityState } from '@/lib/api';
 
 interface UseBoardReturn {
   pinned: BoardThemeCardResponse[];
@@ -14,6 +14,7 @@ interface UseBoardReturn {
   refetch: () => Promise<void>;
   pinTheme: (id: string) => Promise<void>;
   unpinTheme: (id: string) => Promise<void>;
+  moveTheme: (id: string, state: ThemePriorityState) => Promise<void>;
 }
 
 export function useBoard(): UseBoardReturn {
@@ -67,9 +68,15 @@ export function useBoard(): UseBoardReturn {
     await fetchBoard();
   }, [token, fetchBoard]);
 
+  const moveTheme = useCallback(async (id: string, state: ThemePriorityState) => {
+    if (!token) throw new Error('Not authenticated');
+    await api.updateTheme(token, id, { priority_state: state });
+    await fetchBoard();
+  }, [token, fetchBoard]);
+
   const pinned = allThemes.filter(t => t.priority_state === 'pinned');
   const investigate = allThemes.filter(t => t.priority_state === 'default');
   const monitoring = allThemes.filter(t => t.priority_state === 'monitoring');
 
-  return { pinned, investigate, monitoring, loading, error, refetch, pinTheme, unpinTheme };
+  return { pinned, investigate, monitoring, loading, error, refetch, pinTheme, unpinTheme, moveTheme };
 }

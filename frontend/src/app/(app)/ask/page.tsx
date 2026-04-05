@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { useSearchParams } from 'next/navigation';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -34,15 +35,18 @@ function citationToQuote(citation: AskCitation, index: number) {
 }
 
 function groupConversations(convs: AskConversation[]) {
-    const now = Date.now();
-    const recent: AskConversation[] = [];
-    const lastMonth: AskConversation[] = [];
+    const now = new Date();
+    const today: AskConversation[] = [];
+    const yesterday: AskConversation[] = [];
+    const older: AskConversation[] = [];
     for (const c of convs) {
-        const days = (now - new Date(c.created_at).getTime()) / 86_400_000;
-        if (days <= 7) recent.push(c);
-        else lastMonth.push(c);
+        const d = new Date(c.created_at);
+        const diffDays = Math.floor((now.getTime() - d.getTime()) / 86_400_000);
+        if (diffDays === 0) today.push(c);
+        else if (diffDays === 1) yesterday.push(c);
+        else older.push(c);
     }
-    return { recent, lastMonth };
+    return { today, yesterday, older };
 }
 
 // ---------------------------------------------------------------------------
@@ -50,22 +54,35 @@ function groupConversations(convs: AskConversation[]) {
 // ---------------------------------------------------------------------------
 
 interface HistoryPanelProps {
-    recent: AskConversation[];
-    lastMonth: AskConversation[];
+    today: AskConversation[];
+    yesterday: AskConversation[];
+    older: AskConversation[];
     activeId: string | null;
     loading: boolean;
     onNewChat: () => void;
     onSelect: (id: string) => void;
 }
 
-function HistoryPanel({ recent, lastMonth, activeId, loading, onNewChat, onSelect }: HistoryPanelProps) {
+function HistoryPanel({ today, yesterday, older, activeId, loading, onNewChat, onSelect }: HistoryPanelProps) {
+    const [search, setSearch] = React.useState('');
+
+    const filter = (convs: AskConversation[]) =>
+        search.trim()
+            ? convs.filter(c => (c.title || '').toLowerCase().includes(search.toLowerCase()))
+            : convs;
+
+    const filteredToday = filter(today);
+    const filteredYesterday = filter(yesterday);
+    const filteredOlder = filter(older);
+    const hasAny = filteredToday.length > 0 || filteredYesterday.length > 0 || filteredOlder.length > 0;
+
     return (
         <section
             className="flex flex-col h-full border-r flex-shrink-0"
             style={{ width: 260, backgroundColor: '#0C0D12', borderColor: 'rgba(66,71,83,0.05)' }}
         >
             {/* New chat button */}
-            <div className="p-4">
+            <div className="p-4 pb-2">
                 <button
                     onClick={onNewChat}
                     className="w-full py-2.5 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
@@ -78,6 +95,29 @@ function HistoryPanel({ recent, lastMonth, activeId, loading, onNewChat, onSelec
                 </button>
             </div>
 
+            {/* Search input */}
+            <div className="px-4 pb-3">
+                <div
+                    className="flex items-center gap-2 rounded-lg px-3 py-1.5"
+                    style={{ backgroundColor: '#191b22', border: '1px solid rgba(66,71,83,0.1)' }}
+                >
+                    <span className="material-symbols-outlined flex-shrink-0" style={{ fontSize: 15, color: '#5A5C66' }}>search</span>
+                    <input
+                        type="text"
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder="Search conversations…"
+                        className="bg-transparent border-none outline-none text-[12px] flex-1"
+                        style={{ color: '#c2c6d6' }}
+                    />
+                    {search && (
+                        <button onClick={() => setSearch('')} style={{ color: '#5A5C66' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+                        </button>
+                    )}
+                </div>
+            </div>
+
             {/* Chat history list */}
             <div className="flex-1 overflow-y-auto px-2 pb-6">
                 {loading ? (
@@ -88,32 +128,48 @@ function HistoryPanel({ recent, lastMonth, activeId, loading, onNewChat, onSelec
                     </div>
                 ) : (
                     <>
-                        {/* Recent */}
-                        {recent.length > 0 && (
+                        {/* Today */}
+                        {filteredToday.length > 0 && (
                             <>
-                                <div className="mt-4 px-3 mb-2">
+                                <div className="mt-3 px-3 mb-2">
                                     <h3 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: '#8c909f' }}>
-                                        Recent
+                                        Today
                                     </h3>
                                 </div>
                                 <div className="space-y-0.5">
-                                    {recent.map(chat => (
+                                    {filteredToday.map(chat => (
                                         <ConvButton key={chat.id} chat={chat} activeId={activeId} icon="chat_bubble" onSelect={onSelect} />
                                     ))}
                                 </div>
                             </>
                         )}
 
-                        {/* Last Month */}
-                        {lastMonth.length > 0 && (
+                        {/* Yesterday */}
+                        {filteredYesterday.length > 0 && (
                             <>
-                                <div className="mt-8 px-3 mb-2">
+                                <div className="mt-6 px-3 mb-2">
                                     <h3 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: '#8c909f' }}>
-                                        Last Month
+                                        Yesterday
                                     </h3>
                                 </div>
                                 <div className="space-y-0.5">
-                                    {lastMonth.map(chat => (
+                                    {filteredYesterday.map(chat => (
+                                        <ConvButton key={chat.id} chat={chat} activeId={activeId} icon="chat_bubble" onSelect={onSelect} />
+                                    ))}
+                                </div>
+                            </>
+                        )}
+
+                        {/* Older */}
+                        {filteredOlder.length > 0 && (
+                            <>
+                                <div className="mt-6 px-3 mb-2">
+                                    <h3 className="text-[10px] uppercase tracking-widest font-bold" style={{ color: '#8c909f' }}>
+                                        Older
+                                    </h3>
+                                </div>
+                                <div className="space-y-0.5">
+                                    {filteredOlder.map(chat => (
                                         <ConvButton key={chat.id} chat={chat} activeId={activeId} icon="history" onSelect={onSelect} />
                                     ))}
                                 </div>
@@ -121,9 +177,9 @@ function HistoryPanel({ recent, lastMonth, activeId, loading, onNewChat, onSelec
                         )}
 
                         {/* Empty state */}
-                        {recent.length === 0 && lastMonth.length === 0 && (
+                        {!hasAny && (
                             <p className="mt-8 px-3 text-xs" style={{ color: '#5A5C66' }}>
-                                No conversations yet. Start a new chat above.
+                                {search ? 'No conversations match your search.' : 'No conversations yet. Start a new chat above.'}
                             </p>
                         )}
                     </>
@@ -276,14 +332,31 @@ function QuoteCard({ q }: {
 // ---------------------------------------------------------------------------
 
 function AIMessage({ message }: { message: ChatMessage }) {
-    const paragraphs = message.content.split(/\n{2,}/).filter(Boolean);
     return (
         <div className="flex flex-col gap-4">
             <AILabel />
-            <div className="text-[15px] leading-relaxed space-y-4" style={{ color: '#e2e2eb' }}>
-                {paragraphs.map((para, i) => (
-                    <p key={i}>{para}</p>
-                ))}
+            <div className="text-[15px] leading-relaxed" style={{ color: '#e2e2eb' }}>
+                <ReactMarkdown
+                    components={{
+                        p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
+                        strong: ({ children }) => <strong className="font-semibold" style={{ color: '#F0F0F3' }}>{children}</strong>,
+                        em: ({ children }) => <em className="italic">{children}</em>,
+                        ul: ({ children }) => <ul className="list-disc pl-5 mb-3 space-y-1">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal pl-5 mb-3 space-y-1">{children}</ol>,
+                        li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                        h1: ({ children }) => <h1 className="text-lg font-bold mb-2 mt-4" style={{ color: '#F0F0F3' }}>{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-base font-bold mb-2 mt-4" style={{ color: '#F0F0F3' }}>{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 mt-3" style={{ color: '#F0F0F3' }}>{children}</h3>,
+                        blockquote: ({ children }) => (
+                            <blockquote className="pl-4 my-2 italic" style={{ borderLeft: '2px solid rgba(175,198,255,0.3)', color: '#c2c6d6' }}>{children}</blockquote>
+                        ),
+                        code: ({ children }) => (
+                            <code className="px-1.5 py-0.5 rounded text-[13px]" style={{ backgroundColor: '#1e1f26', color: '#afc6ff' }}>{children}</code>
+                        ),
+                    }}
+                >
+                    {message.content}
+                </ReactMarkdown>
             </div>
             {message.citations && message.citations.length > 0 && (
                 <div className="grid grid-cols-1 gap-3 pt-2">
@@ -383,7 +456,7 @@ function ChatArea({
 
             {/* Messages stream */}
             <div className="flex-1 overflow-y-auto py-8">
-                <div className="max-w-[800px] mx-auto px-6 flex flex-col gap-10">
+                <div className="w-full px-6 flex flex-col gap-10">
 
                     {messages.map(msg => (
                         msg.role === 'user'
@@ -417,16 +490,16 @@ function ChatArea({
                 className="absolute bottom-0 left-0 right-0 pb-8 px-6"
                 style={{ background: 'linear-gradient(to top, #0F1117 60%, rgba(15,17,23,0.95) 80%, transparent 100%)' }}
             >
-                <div className="max-w-[800px] mx-auto flex flex-col gap-4">
+                <div className="w-full flex flex-col gap-4">
 
                     {/* Suggestion chips */}
                     {chips.length > 0 && (
-                        <div className="flex flex-wrap gap-2 justify-center">
-                            {chips.slice(0, 4).map(chip => (
+                        <div className="flex flex-row gap-2">
+                            {chips.slice(0, 1).map(chip => (
                                 <button
                                     key={chip}
                                     onClick={() => { onInputChange(chip); }}
-                                    className="px-3 py-1.5 rounded-full text-[12px] flex items-center gap-1.5 transition-all"
+                                    className="px-3 py-1.5 rounded-full text-[12px] flex items-center gap-1.5 transition-all whitespace-nowrap flex-shrink-0"
                                     style={{
                                         backgroundColor: '#1e1f26',
                                         border: '1px solid rgba(66,71,83,0.1)',
@@ -471,14 +544,6 @@ function ChatArea({
                             disabled={sending}
                         />
                         <div className="flex items-center gap-2 pr-1">
-                            <button
-                                className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors"
-                                style={{ color: '#8c909f' }}
-                                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.backgroundColor = '#1e1f26'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.backgroundColor = 'transparent'; }}
-                            >
-                                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>attach_file</span>
-                            </button>
                             <button
                                 onClick={onSend}
                                 disabled={sending || !inputValue.trim()}
@@ -573,7 +638,7 @@ export default function AskPage() {
         await sendQuestion(q);
     }, [inputValue, sending, sendQuestion]);
 
-    const { recent, lastMonth } = groupConversations(conversations);
+    const { today, yesterday, older } = groupConversations(conversations);
 
     const activeId = activeConversationId ?? conversationId;
     const conversationTitle = conversations.find(c => c.id === activeId)?.title ?? '';
@@ -581,8 +646,9 @@ export default function AskPage() {
     return (
         <div className="flex h-full overflow-hidden">
             <HistoryPanel
-                recent={recent}
-                lastMonth={lastMonth}
+                today={today}
+                yesterday={yesterday}
+                older={older}
                 activeId={activeId}
                 loading={historyLoading}
                 onNewChat={handleNewChat}

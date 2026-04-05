@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 
 import { useBoard } from '@/hooks/useBoard';
 import { useToast } from '@/components/ui/Toast';
-import { BoardThemeCardResponse } from '@/lib/api';
+import { BoardThemeCardResponse, ThemePriorityState } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -52,7 +53,7 @@ function ScoreRing({
     radius?: number;
 }) {
     const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (score / 10) * circumference;
+    const offset = circumference - (score / 100) * circumference;
     const cx = size / 2;
     const cy = size / 2;
 
@@ -71,27 +72,57 @@ function ScoreRing({
                 />
             </svg>
             <span className="absolute font-bold" style={{ fontSize: size >= 48 ? 11 : 10, color: '#F0F0F3' }}>
-                {score.toFixed(1)}
+                {(score / 10).toFixed(1)}
             </span>
         </div>
     );
 }
 
 // ---------------------------------------------------------------------------
-// Score pill
+// Metrics grid — 4-column breakdown shown on all cards
 // ---------------------------------------------------------------------------
 
-function ScorePill({ score, highlight }: { score: number; highlight?: boolean }) {
+function MetricsGrid({ theme, compact = false }: { theme: BoardThemeCardResponse; compact?: boolean }) {
+    const firstEvidence = theme.evidence_preview[0];
+    const metrics = [
+        { label: 'FREQ', value: freqLabel(theme.mention_count),                           danger: false },
+        { label: 'NEG',  value: `${Math.round(theme.sentiment_negative * 100)}%`,          danger: theme.sentiment_negative > 0.5 },
+        { label: 'REC',  value: recencyLabel(firstEvidence?.occurred_at),                  danger: false },
+        { label: 'DIV',  value: `${theme.source_breakdown.length || 1}S`,                  danger: false },
+    ];
+
     return (
-        <span
-            className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-            style={{
-                backgroundColor: highlight ? 'rgba(82,141,255,0.1)' : '#282a30',
-                color: highlight ? '#528dff' : 'rgba(194,198,214,0.6)',
-            }}
+        <div className={`grid grid-cols-4 gap-1.5 ${compact ? 'mb-2' : 'mb-4'}`}>
+            {metrics.map(m => (
+                <div
+                    key={m.label}
+                    className="p-1.5 rounded text-center"
+                    style={{ backgroundColor: '#191b22' }}
+                >
+                    <span className="block font-bold mb-0.5" style={{ fontSize: 9, color: 'rgba(194,198,214,0.4)' }}>{m.label}</span>
+                    <span className="font-semibold" style={{ fontSize: compact ? 10 : 11, color: m.danger ? '#ffb4ab' : '#F0F0F3' }}>{m.value}</span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// View in Insights link
+// ---------------------------------------------------------------------------
+
+function ViewInInsightsLink({ themeId }: { themeId: string }) {
+    return (
+        <Link
+            href={`/insights?theme=${themeId}`}
+            className="text-[10px] font-medium flex items-center gap-0.5 transition-colors w-fit"
+            style={{ color: 'rgba(175,198,255,0.5)' }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#afc6ff')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(175,198,255,0.5)')}
         >
-            SCORE {score.toFixed(1)}
-        </span>
+            View in Insights
+            <span className="material-symbols-outlined" style={{ fontSize: 12 }}>arrow_forward</span>
+        </Link>
     );
 }
 
@@ -129,18 +160,27 @@ function PinButton({ onClick }: { onClick: () => void }) {
 }
 
 // ---------------------------------------------------------------------------
-// Generate Spec button
+// Generate Spec button — disabled, Coming Soon
 // ---------------------------------------------------------------------------
 
 function GenerateSpecBtn() {
     return (
-        <button
-            className="flex-1 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all hover:brightness-110 active:scale-[0.98]"
-            style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
-        >
-            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>auto_awesome</span>
-            Generate Spec
-        </button>
+        <div className="flex-1 relative">
+            <button
+                disabled
+                className="w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 cursor-not-allowed"
+                style={{ backgroundColor: '#1e2028', color: 'rgba(194,198,214,0.3)', border: '1px solid rgba(66,71,83,0.3)' }}
+            >
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>auto_awesome</span>
+                Generate Spec
+            </button>
+            <span
+                className="absolute -top-2 -right-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
+                style={{ backgroundColor: '#282a30', color: 'rgba(194,198,214,0.5)', border: '1px solid rgba(66,71,83,0.4)' }}
+            >
+                SOON
+            </span>
+        </div>
     );
 }
 
@@ -148,20 +188,21 @@ function GenerateSpecBtn() {
 // Pinned card — full (first pinned theme)
 // ---------------------------------------------------------------------------
 
-function PinnedCardFull({ theme, onUnpin }: { theme: BoardThemeCardResponse; onUnpin: () => void }) {
+function PinnedCardFull({
+    theme,
+    onDragStart,
+}: {
+    theme: BoardThemeCardResponse;
+    onDragStart: (e: React.DragEvent) => void;
+}) {
     const score = theme.impact_score ?? 0;
     const firstEvidence = theme.evidence_preview[0];
 
-    const metrics = [
-        { label: 'FREQ', value: freqLabel(theme.mention_count),                                danger: false },
-        { label: 'NEG',  value: `${Math.round(theme.sentiment_negative * 100)}%`,              danger: theme.sentiment_negative > 0.5 },
-        { label: 'REC',  value: recencyLabel(firstEvidence?.occurred_at),                      danger: false },
-        { label: 'DIV',  value: `${theme.source_breakdown.length || 1} Seg`,                   danger: false },
-    ];
-
     return (
         <div
-            className="rounded-xl p-4 group cursor-default transition-all"
+            draggable
+            onDragStart={onDragStart}
+            className="rounded-xl p-4 group cursor-grab active:cursor-grabbing transition-all"
             style={{ backgroundColor: '#161820', border: '1px solid #1E2028' }}
             onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(175,198,255,0.3)')}
             onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E2028')}
@@ -198,14 +239,7 @@ function PinnedCardFull({ theme, onUnpin }: { theme: BoardThemeCardResponse; onU
             </div>
 
             {/* Metrics grid */}
-            <div className="grid grid-cols-4 gap-2 mb-4">
-                {metrics.map(m => (
-                    <div key={m.label} className="p-2 rounded text-center" style={{ backgroundColor: '#191b22' }}>
-                        <span className="block text-[10px] font-bold mb-0.5" style={{ color: 'rgba(194,198,214,0.4)' }}>{m.label}</span>
-                        <span className="text-xs font-semibold" style={{ color: m.danger ? '#ffb4ab' : '#F0F0F3' }}>{m.value}</span>
-                    </div>
-                ))}
-            </div>
+            <MetricsGrid theme={theme} />
 
             {/* Evidence quote */}
             {firstEvidence && (
@@ -230,18 +264,14 @@ function PinnedCardFull({ theme, onUnpin }: { theme: BoardThemeCardResponse; onU
                 </div>
             )}
 
-            {/* Hover actions */}
-            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* View in Insights */}
+            <div className="mb-3">
+                <ViewInInsightsLink themeId={theme.id} />
+            </div>
+
+            {/* Generate Spec */}
+            <div className="flex gap-2">
                 <GenerateSpecBtn />
-                <button
-                    onClick={onUnpin}
-                    className="px-2.5 py-2 rounded-lg transition-colors"
-                    style={{ backgroundColor: '#282a30', color: '#c2c6d6' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = 'white')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#c2c6d6')}
-                >
-                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
-                </button>
             </div>
         </div>
     );
@@ -251,13 +281,20 @@ function PinnedCardFull({ theme, onUnpin }: { theme: BoardThemeCardResponse; onU
 // Pinned card — simple (subsequent pinned themes)
 // ---------------------------------------------------------------------------
 
-function PinnedCardSimple({ theme }: { theme: BoardThemeCardResponse }) {
+function PinnedCardSimple({
+    theme,
+    onDragStart,
+}: {
+    theme: BoardThemeCardResponse;
+    onDragStart: (e: React.DragEvent) => void;
+}) {
     const score = theme.impact_score ?? 0;
-    const preview = theme.evidence_preview[0]?.excerpt ?? theme.description ?? '';
 
     return (
         <div
-            className="rounded-xl p-4 group cursor-default transition-all"
+            draggable
+            onDragStart={onDragStart}
+            className="rounded-xl p-4 group cursor-grab active:cursor-grabbing transition-all"
             style={{ backgroundColor: '#161820', border: '1px solid #1E2028' }}
             onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(175,198,255,0.3)')}
             onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E2028')}
@@ -265,11 +302,12 @@ function PinnedCardSimple({ theme }: { theme: BoardThemeCardResponse }) {
             <div className="flex justify-between items-start mb-4">
                 <ScoreRing score={score} size={48} strokeWidth={3} radius={20} />
             </div>
-            <h3 className="text-base font-semibold text-[#F0F0F3] mb-1">{theme.name}</h3>
-            {preview && (
-                <p className="text-[11px] mb-4 line-clamp-2" style={{ color: '#c2c6d6' }}>{preview}</p>
-            )}
-            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <h3 className="text-base font-semibold text-[#F0F0F3] mb-3">{theme.name}</h3>
+            <MetricsGrid theme={theme} />
+            <div className="mb-3">
+                <ViewInInsightsLink themeId={theme.id} />
+            </div>
+            <div className="flex gap-2">
                 <GenerateSpecBtn />
             </div>
         </div>
@@ -280,22 +318,32 @@ function PinnedCardSimple({ theme }: { theme: BoardThemeCardResponse }) {
 // Investigate card with ring (first investigate theme)
 // ---------------------------------------------------------------------------
 
-function InvestigateCardRing({ theme, onPin }: { theme: BoardThemeCardResponse; onPin: () => void }) {
+function InvestigateCardRing({
+    theme,
+    onPin,
+    onDragStart,
+}: {
+    theme: BoardThemeCardResponse;
+    onPin: () => void;
+    onDragStart: (e: React.DragEvent) => void;
+}) {
     const score = theme.impact_score ?? 0;
     const quote = theme.evidence_preview[0]?.excerpt;
 
     return (
         <div
-            className="rounded-xl p-4 group cursor-default transition-all"
+            draggable
+            onDragStart={onDragStart}
+            className="rounded-xl p-4 group cursor-grab active:cursor-grabbing transition-all"
             style={{ backgroundColor: '#161820', border: '1px solid #1E2028' }}
             onMouseEnter={e => (e.currentTarget.style.borderColor = '#424753')}
             onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E2028')}
         >
             <div className="flex justify-between items-start mb-4">
-                <ScoreRing score={score} size={40} strokeWidth={2.5} radius={16} />
+                <ScoreRing score={score} size={48} strokeWidth={3} radius={20} />
                 <PinButton onClick={onPin} />
             </div>
-            <h3 className="text-sm font-semibold text-[#F0F0F3] mb-2">{theme.name}</h3>
+            <h3 className="text-sm font-semibold text-[#F0F0F3] mb-3">{theme.name}</h3>
             {theme.source_breakdown.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-3">
                     {theme.source_breakdown.slice(0, 3).map(s => (
@@ -303,14 +351,16 @@ function InvestigateCardRing({ theme, onPin }: { theme: BoardThemeCardResponse; 
                     ))}
                 </div>
             )}
+            <MetricsGrid theme={theme} compact />
             {quote && (
                 <div
-                    className="p-2 rounded text-[10px] leading-relaxed"
+                    className="p-2 rounded text-[10px] leading-relaxed mb-3"
                     style={{ backgroundColor: '#0c0e14', borderLeft: '2px solid #528dff', color: 'rgba(194,198,214,0.8)' }}
                 >
                     &ldquo;{quote}&rdquo;
                 </div>
             )}
+            <ViewInInsightsLink themeId={theme.id} />
         </div>
     );
 }
@@ -321,43 +371,38 @@ function InvestigateCardRing({ theme, onPin }: { theme: BoardThemeCardResponse; 
 
 function CompactCard({
     theme,
-    highlight,
     muted,
     onPin,
+    onDragStart,
 }: {
     theme: BoardThemeCardResponse;
-    highlight?: boolean;
     muted?: boolean;
     onPin: () => void;
+    onDragStart: (e: React.DragEvent) => void;
 }) {
     const score = theme.impact_score ?? 0;
-    const description = theme.evidence_preview[0]?.excerpt ?? theme.description ?? '';
 
     return (
         <div
-            className="rounded-xl p-4 cursor-default transition-all"
+            draggable
+            onDragStart={onDragStart}
+            className="rounded-xl p-4 cursor-grab active:cursor-grabbing transition-all"
             style={{ backgroundColor: '#161820', border: '1px solid #1E2028' }}
             onMouseEnter={e => (e.currentTarget.style.borderColor = '#424753')}
             onMouseLeave={e => (e.currentTarget.style.borderColor = '#1E2028')}
         >
-            <div className="flex justify-between items-center mb-3">
-                <ScorePill score={score} highlight={highlight} />
+            <div className="flex justify-between items-start mb-4">
+                <ScoreRing score={score} size={48} strokeWidth={3} radius={20} />
                 <PinButton onClick={onPin} />
             </div>
             <h3
-                className="text-sm font-semibold mb-1"
+                className="text-sm font-semibold mb-3"
                 style={{ color: muted ? 'rgba(226,226,235,0.8)' : '#F0F0F3' }}
             >
                 {theme.name}
             </h3>
-            {description && (
-                <p
-                    className="text-[11px] line-clamp-2"
-                    style={{ color: muted ? 'rgba(194,198,214,0.5)' : 'rgba(194,198,214,0.6)' }}
-                >
-                    {description}
-                </p>
-            )}
+            <MetricsGrid theme={theme} compact />
+            <ViewInInsightsLink themeId={theme.id} />
         </div>
     );
 }
@@ -430,28 +475,97 @@ function CardSkeleton() {
 }
 
 // ---------------------------------------------------------------------------
+// Column drop zone wrapper
+// ---------------------------------------------------------------------------
+
+function DroppableColumn({
+    column,
+    onDrop,
+    children,
+    className,
+    style,
+    onMouseEnter,
+    onMouseLeave,
+}: {
+    column: ThemePriorityState;
+    onDrop: (themeId: string, targetColumn: ThemePriorityState) => void;
+    children: React.ReactNode;
+    className?: string;
+    style?: React.CSSProperties;
+    onMouseEnter?: (e: React.MouseEvent<HTMLDivElement>) => void;
+    onMouseLeave?: (e: React.MouseEvent<HTMLDivElement>) => void;
+}) {
+    const [isDragOver, setIsDragOver] = useState(false);
+
+    return (
+        <div
+            className={className}
+            style={{
+                ...style,
+                outline: isDragOver ? '2px dashed rgba(175,198,255,0.3)' : '2px dashed transparent',
+                borderRadius: 12,
+                transition: 'outline 150ms ease',
+            }}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
+            onDragOver={e => { e.preventDefault(); setIsDragOver(true); }}
+            onDragLeave={e => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setIsDragOver(false);
+                }
+            }}
+            onDrop={e => {
+                e.preventDefault();
+                setIsDragOver(false);
+                const themeId = e.dataTransfer.getData('text/plain');
+                if (themeId) onDrop(themeId, column);
+            }}
+        >
+            {children}
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 export default function BoardPage() {
     const { showToast } = useToast();
-    const { pinned, investigate, monitoring, loading, error, pinTheme, unpinTheme } = useBoard();
+    const { pinned, investigate, monitoring, loading, error, moveTheme } = useBoard();
+    const dragThemeId = useRef<string | null>(null);
+    const dragSourceColumn = useRef<ThemePriorityState | null>(null);
 
     useEffect(() => {
         if (error) showToast(`Failed to load board: ${error}`, 'error');
     }, [error, showToast]);
 
+    const handleDragStart = (themeId: string, sourceColumn: ThemePriorityState) =>
+        (e: React.DragEvent) => {
+            dragThemeId.current = themeId;
+            dragSourceColumn.current = sourceColumn;
+            e.dataTransfer.setData('text/plain', themeId);
+            e.dataTransfer.effectAllowed = 'move';
+        };
+
+    const handleDrop = async (themeId: string, targetColumn: ThemePriorityState) => {
+        if (!themeId || dragSourceColumn.current === targetColumn) return;
+        try {
+            await moveTheme(themeId, targetColumn);
+        } catch (err) {
+            showToast(err instanceof Error ? err.message : 'Failed to move theme', 'error');
+        } finally {
+            dragThemeId.current = null;
+            dragSourceColumn.current = null;
+        }
+    };
+
     const handlePin = async (id: string) => {
-        try { await pinTheme(id); }
+        try { await moveTheme(id, 'pinned'); }
         catch (err) { showToast(err instanceof Error ? err.message : 'Failed to pin theme', 'error'); }
     };
 
-    const handleUnpin = async (id: string) => {
-        try { await unpinTheme(id); }
-        catch (err) { showToast(err instanceof Error ? err.message : 'Failed to unpin theme', 'error'); }
-    };
-
-    const pinnedBadge   = loading ? '—' : `${pinned.length} THEME${pinned.length === 1 ? '' : 'S'}`;
+    const pinnedBadge      = loading ? '—' : `${pinned.length} THEME${pinned.length === 1 ? '' : 'S'}`;
     const investigateBadge = loading ? '—' : `${investigate.length} THEME${investigate.length === 1 ? '' : 'S'}`;
     const monitoringBadge  = loading ? '—' : `${monitoring.length} THEME${monitoring.length === 1 ? '' : 'S'}`;
 
@@ -471,7 +585,12 @@ export default function BoardPage() {
                         labelColor="#F0F0F3"
                         iconFilled
                     />
-                    <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-12" style={{ scrollbarWidth: 'none' }}>
+                    <DroppableColumn
+                        column="pinned"
+                        onDrop={handleDrop}
+                        className="flex-1 overflow-y-auto flex flex-col gap-4 pb-12"
+                        style={{ scrollbarWidth: 'none' } as React.CSSProperties}
+                    >
                         {loading ? (
                             [0, 1].map(i => <CardSkeleton key={i} />)
                         ) : pinned.length === 0 ? (
@@ -479,11 +598,19 @@ export default function BoardPage() {
                         ) : (
                             pinned.map((theme, i) =>
                                 i === 0
-                                    ? <PinnedCardFull key={theme.id} theme={theme} onUnpin={() => handleUnpin(theme.id)} />
-                                    : <PinnedCardSimple key={theme.id} theme={theme} />
+                                    ? <PinnedCardFull
+                                        key={theme.id}
+                                        theme={theme}
+                                        onDragStart={handleDragStart(theme.id, 'pinned')}
+                                      />
+                                    : <PinnedCardSimple
+                                        key={theme.id}
+                                        theme={theme}
+                                        onDragStart={handleDragStart(theme.id, 'pinned')}
+                                      />
                             )
                         )}
-                    </div>
+                    </DroppableColumn>
                 </section>
 
                 {/* ── Column 2: Investigate Next ── */}
@@ -493,7 +620,12 @@ export default function BoardPage() {
                         label="Investigate Next"
                         badge={investigateBadge}
                     />
-                    <div className="flex-1 overflow-y-auto flex flex-col gap-4 pb-12" style={{ scrollbarWidth: 'none' }}>
+                    <DroppableColumn
+                        column="default"
+                        onDrop={handleDrop}
+                        className="flex-1 overflow-y-auto flex flex-col gap-4 pb-12"
+                        style={{ scrollbarWidth: 'none' } as React.CSSProperties}
+                    >
                         {loading ? (
                             [0, 1, 2].map(i => <CardSkeleton key={i} />)
                         ) : investigate.length === 0 ? (
@@ -501,11 +633,21 @@ export default function BoardPage() {
                         ) : (
                             investigate.map((theme, i) =>
                                 i === 0
-                                    ? <InvestigateCardRing key={theme.id} theme={theme} onPin={() => handlePin(theme.id)} />
-                                    : <CompactCard key={theme.id} theme={theme} highlight onPin={() => handlePin(theme.id)} />
+                                    ? <InvestigateCardRing
+                                        key={theme.id}
+                                        theme={theme}
+                                        onPin={() => handlePin(theme.id)}
+                                        onDragStart={handleDragStart(theme.id, 'default')}
+                                      />
+                                    : <CompactCard
+                                        key={theme.id}
+                                        theme={theme}
+                                        onPin={() => handlePin(theme.id)}
+                                        onDragStart={handleDragStart(theme.id, 'default')}
+                                      />
                             )
                         )}
-                    </div>
+                    </DroppableColumn>
                 </section>
 
                 {/* ── Column 3: Monitoring ── */}
@@ -515,9 +657,11 @@ export default function BoardPage() {
                         label="Monitoring"
                         badge={monitoringBadge}
                     />
-                    <div
+                    <DroppableColumn
+                        column="monitoring"
+                        onDrop={handleDrop}
                         className="flex-1 overflow-y-auto flex flex-col gap-4 pb-12 transition-opacity"
-                        style={{ scrollbarWidth: 'none', opacity: 0.8 }}
+                        style={{ scrollbarWidth: 'none', opacity: 0.8 } as React.CSSProperties}
                         onMouseEnter={e => (e.currentTarget.style.opacity = '1')}
                         onMouseLeave={e => (e.currentTarget.style.opacity = '0.8')}
                     >
@@ -527,10 +671,16 @@ export default function BoardPage() {
                             <p className="text-xs text-[#5A5C66] px-1">No themes in monitoring.</p>
                         ) : (
                             monitoring.map(theme => (
-                                <CompactCard key={theme.id} theme={theme} muted onPin={() => handlePin(theme.id)} />
+                                <CompactCard
+                                    key={theme.id}
+                                    theme={theme}
+                                    muted
+                                    onPin={() => handlePin(theme.id)}
+                                    onDragStart={handleDragStart(theme.id, 'monitoring')}
+                                />
                             ))
                         )}
-                    </div>
+                    </DroppableColumn>
                 </section>
 
             </div>
