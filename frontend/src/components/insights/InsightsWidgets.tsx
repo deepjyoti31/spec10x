@@ -152,16 +152,11 @@ export function InsightsFilterRail({
               </label>
             ))}
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2.5 opacity-40">
+              <label className="flex items-center gap-2.5 opacity-40 cursor-default">
                 <input type="checkbox" disabled className="w-3.5 h-3.5 rounded-sm" />
                 <span className="text-xs text-[#8B8D97]">Analytics</span>
               </label>
-              <span
-                className="text-[9px] text-[#5A5C66] px-1 rounded"
-                style={{ backgroundColor: '#1e1f26' }}
-              >
-                SOON
-              </span>
+              <span className="text-[9px] text-[#5A5C66] px-1 rounded" style={{ backgroundColor: '#1e1f26' }}>SOON</span>
             </div>
           </div>
         </div>
@@ -191,6 +186,13 @@ export function InsightsFilterRail({
                 </span>
               </label>
             ))}
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2.5 opacity-40 cursor-default">
+                <input type="radio" name="sentiment" disabled className="w-3.5 h-3.5" />
+                <span className="text-xs text-[#8B8D97]">Polarizing</span>
+              </label>
+              <span className="text-[9px] text-[#5A5C66] px-1 rounded" style={{ backgroundColor: '#1e1f26' }}>SOON</span>
+            </div>
           </div>
         </div>
 
@@ -234,31 +236,46 @@ export function InsightsFilterRail({
           </div>
         </div>
 
-        <div className="space-y-2 pb-6">
-          {['Collection', 'Saved Views'].map((item) => (
+        <div className="space-y-6 pb-6">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-[#c8cad6]">Collection</h3>
+              <span className="text-[9px] text-[#5A5C66] px-1 rounded" style={{ backgroundColor: '#1e1f26' }}>SOON</span>
+            </div>
             <button
-              key={item}
               type="button"
-              className="w-full flex items-center justify-between p-2 rounded transition-colors group"
-              style={{ color: '#8B8D97' }}
-              onMouseEnter={(event) => {
-                event.currentTarget.style.backgroundColor = '#1e1f26';
-                event.currentTarget.style.color = '#F0F0F3';
-              }}
-              onMouseLeave={(event) => {
-                event.currentTarget.style.backgroundColor = 'transparent';
-                event.currentTarget.style.color = '#8B8D97';
-              }}
+              disabled
+              className="w-full flex items-center justify-between px-3 py-2 rounded text-[11px] cursor-not-allowed opacity-40"
+              style={{ backgroundColor: '#161820', color: '#8B8D97', border: '1px solid rgba(66,71,83,0.1)' }}
             >
-              <span className="text-xs">{item}</span>
-              <span
-                className="material-symbols-outlined text-[#5A5C66]"
-                style={{ fontSize: 14 }}
-              >
-                lock
-              </span>
+              <span>Select collection…</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#5A5C66' }}>expand_more</span>
             </button>
-          ))}
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold text-[#c8cad6]">Saved View</h3>
+              <span className="text-[9px] text-[#5A5C66] px-1 rounded" style={{ backgroundColor: '#1e1f26' }}>SOON</span>
+            </div>
+            <button
+              type="button"
+              disabled
+              className="w-full flex items-center justify-between px-3 py-2 rounded text-[11px] cursor-not-allowed opacity-40 mb-2"
+              style={{ backgroundColor: '#161820', color: '#8B8D97', border: '1px solid rgba(66,71,83,0.1)' }}
+            >
+              <span>Select view…</span>
+              <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#5A5C66' }}>expand_more</span>
+            </button>
+            <button
+              type="button"
+              disabled
+              className="w-full text-center py-1.5 rounded text-[11px] cursor-not-allowed opacity-40"
+              style={{ color: '#8B8D97', border: '1px solid rgba(66,71,83,0.1)' }}
+            >
+              Save current
+            </button>
+          </div>
         </div>
       </div>
     </section>
@@ -342,7 +359,7 @@ export function ThemeCard({ card, selected, onClick }: ThemeCardProps) {
           )}
           <span
             className="text-xs font-bold"
-            style={{ color: selected ? '#F0F0F3' : '#8B8D97' }}
+            style={{ color: card.impact_score > 70 ? '#34D399' : card.impact_score > 40 ? '#ffb77b' : '#ffb4ab' }}
           >
             {formatImpactScore(card.impact_score)}
           </span>

@@ -32,9 +32,14 @@ import type {
   InterviewLibrarySort,
 } from '@/lib/api';
 
-type InterviewStatus = 'done' | 'processing' | 'error';
+type InterviewStatus = 'done' | 'processing' | 'error' | 'low_insight';
 type FileIcon = InterviewFileIcon;
 type FilterMenu = 'sort' | 'status' | 'source' | null;
+
+interface InterviewTag {
+  id: string;
+  name: string;
+}
 
 interface Interview {
   id: string;
@@ -47,7 +52,8 @@ interface Interview {
   date: string;
   duration?: string;
   insights: number;
-  tags: string[];
+  themes: number;
+  tags: InterviewTag[];
   status: InterviewStatus;
   processingPct?: number;
 }
@@ -142,7 +148,10 @@ function mapInterviewItem(
     date: formatInterviewDate(item.created_at),
     duration: formatInterviewDuration(item.duration_seconds) ?? undefined,
     insights: item.display_status === 'error' ? 0 : item.insights_count,
-    tags: item.display_status === 'done' ? item.theme_chips.slice(0, 3).map((chip) => chip.name) : [],
+    themes: item.display_status === 'error' ? 0 : item.themes_count,
+    tags: (item.display_status === 'done' || item.display_status === 'low_insight')
+      ? item.theme_chips.slice(0, 3)
+      : [],
     status,
     processingPct: getProcessingPct(item, progressById),
   };
@@ -249,12 +258,14 @@ function InlineStateCard({
   actionLabel,
   onAction,
   tone = 'default',
+  footer,
 }: {
   title: string;
   body: string;
   actionLabel?: string;
   onAction?: () => void;
   tone?: 'default' | 'error';
+  footer?: ReactNode;
 }) {
   return (
     <InterviewInlineStateCard
@@ -263,6 +274,7 @@ function InlineStateCard({
       actionLabel={actionLabel}
       onAction={onAction}
       tone={tone}
+      footer={footer}
     />
   );
 }
@@ -273,6 +285,7 @@ function InterviewRow({
   onCheck,
   onOpen,
   onRetry,
+  onPillClick,
   retrying,
 }: {
   interview: Interview;
@@ -280,6 +293,7 @@ function InterviewRow({
   onCheck: (id: string) => void;
   onOpen: (id: string) => void;
   onRetry: (id: string) => void;
+  onPillClick: (themeId: string) => void;
   retrying: boolean;
 }) {
   const isProcessing = interview.status === 'processing';
@@ -365,15 +379,26 @@ function InterviewRow({
         </div>
       </div>
 
-      {interview.status === 'done' ? (
+      {(interview.status === 'done' || interview.status === 'low_insight') ? (
         <div className="mr-12 flex items-center gap-8">
           <div className="flex flex-col text-right">
-            <span className="text-xs font-semibold text-[#c8cad6]">{interview.insights} insights</span>
+            <span className="text-xs font-semibold text-[#c8cad6]">
+              {interview.insights} insights · {interview.themes} themes
+            </span>
             <span className="text-[10px] uppercase tracking-widest text-[#5A5C66]">Analysis</span>
           </div>
           <div className="flex flex-wrap gap-2">
             {interview.tags.map((tag) => (
-              <InterviewPill key={tag} label={tag} />
+              <button
+                key={tag.id}
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onPillClick(tag.id);
+                }}
+              >
+                <InterviewPill label={tag.name} />
+              </button>
             ))}
           </div>
         </div>
@@ -532,6 +557,7 @@ export default function InterviewsPage() {
     reanalyzeInterview,
     bulkReanalyze,
     bulkDelete,
+    loadSampleData,
   } = useInterviews({ q, sort, status, source });
 
   useEffect(() => {
@@ -778,7 +804,20 @@ export default function InterviewsPage() {
       return (
         <InlineStateCard
           title="No interviews yet"
-          body="Use the Upload button to add your first transcript, recording, or video."
+          body="Upload transcripts, recordings, or documents to start extracting insights."
+          actionLabel="Upload your first interview"
+          onAction={() => uploadInputRef.current?.click()}
+          footer={
+            <button
+              type="button"
+              onClick={() => {
+                void loadSampleData();
+              }}
+              className="text-xs text-[#5A5C66] underline hover:text-[#c8cad6]"
+            >
+              Or load sample interviews
+            </button>
+          }
         />
       );
     }
@@ -807,6 +846,7 @@ export default function InterviewsPage() {
         onRetry={(id) => {
           void handleRetry(id);
         }}
+        onPillClick={(themeId) => router.push(`/insights?theme=${themeId}`)}
         retrying={retryingId === interview.id}
       />
     ));
@@ -857,7 +897,7 @@ export default function InterviewsPage() {
             <input
               type="text"
               value={searchValue}
-              placeholder="Filter interviews..."
+              placeholder="Search interviews…"
               className="h-full w-full rounded-xl pl-10 pr-4 text-sm outline-none transition-colors"
               style={{
                 backgroundColor: '#161820',
@@ -927,6 +967,23 @@ export default function InterviewsPage() {
             ))}
           </FilterDropdown>
 
+          <div className="relative flex-shrink-0" title="Collections coming soon">
+            <button
+              type="button"
+              disabled
+              className="h-10 cursor-not-allowed rounded-xl px-3 text-xs font-medium text-[#5A5C66] opacity-50"
+              style={{ backgroundColor: '#161820', border: '1px solid #1E2028' }}
+            >
+              <span className="flex items-center gap-2">
+                <span>Collection:</span>
+                <span className="text-[#5A5C66]">All</span>
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                  lock
+                </span>
+              </span>
+            </button>
+          </div>
+
           <FilterDropdown
             label="Source"
             value={selectedSourceLabel}
@@ -979,16 +1036,18 @@ export default function InterviewsPage() {
         </div>
       </div>
 
-      <BulkActionsBar
-        count={selectedIds.size}
-        busy={isBusy}
-        onReanalyze={() => {
-          void handleBulkReanalyze();
-        }}
-        onDelete={() => {
-          void handleBulkDelete();
-        }}
-      />
+      {selectedIds.size > 0 ? (
+        <BulkActionsBar
+          count={selectedIds.size}
+          busy={isBusy}
+          onReanalyze={() => {
+            void handleBulkReanalyze();
+          }}
+          onDelete={() => {
+            void handleBulkDelete();
+          }}
+        />
+      ) : null}
     </>
   );
 }

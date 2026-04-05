@@ -34,6 +34,7 @@ interface UseIntegrationsReturn {
   openConnectModal: (dataSourceId: string) => void;
   closeConnectModal: () => void;
   submitConnect: (credentials: ZendeskCredentials) => Promise<void>;
+  submitCsvConnect: (file: File) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -195,6 +196,24 @@ export function useIntegrations(): UseIntegrationsReturn {
     }
   }, [token, connectModalDataSourceId, fetchAll]);
 
+  const submitCsvConnect = useCallback(async (file: File) => {
+    if (!token) throw new Error('Not authenticated');
+
+    setConnectModalError(null);
+    setConnectModalStep('validating');
+
+    try {
+      await api.confirmSurveyImport(token, file);
+      setConnectModalStep('success');
+      await fetchAll();
+    } catch (err) {
+      setConnectModalStep('error');
+      setConnectModalError(
+        err instanceof Error ? err.message : 'Import failed. Please check your file and try again.'
+      );
+    }
+  }, [token, fetchAll]);
+
   return {
     connections,
     dataSources,
@@ -212,5 +231,6 @@ export function useIntegrations(): UseIntegrationsReturn {
     openConnectModal,
     closeConnectModal,
     submitConnect,
+    submitCsvConnect,
   };
 }

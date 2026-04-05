@@ -206,15 +206,17 @@ export default function HomePageClient() {
                     {dashboard.recent_activity.length > 0 ? (
                         <div className="px-6 py-6 relative">
                             <div className="absolute left-[31px] top-6 bottom-6 w-[1px] bg-white/5" />
-                            <ul className="space-y-6">
-                                {dashboard.recent_activity.map((item, index) => (
-                                    <ActivityItem
-                                        key={`${item.kind}-${index}-${item.occurred_at}`}
-                                        item={item}
-                                        formatRelativeTime={formatRelativeTime}
-                                    />
-                                ))}
-                            </ul>
+                            <div className="max-h-[480px] overflow-y-auto">
+                                <ul className="space-y-6">
+                                    {dashboard.recent_activity.map((item, index) => (
+                                        <ActivityItem
+                                            key={`${item.kind}-${index}-${item.occurred_at}`}
+                                            item={item}
+                                            formatRelativeTime={formatRelativeTime}
+                                        />
+                                    ))}
+                                </ul>
+                            </div>
                         </div>
                     ) : (
                         <SectionEmptyState
@@ -263,7 +265,7 @@ export default function HomePageClient() {
                     <div className="w-20 h-20 rounded-full bg-[#1C1E28] flex items-center justify-center mb-6 border border-white/5">
                         <span className="material-symbols-outlined text-[#5A5C66]" style={{ fontSize: 48 }}>lock</span>
                     </div>
-                    <h3 className="text-[24px] font-bold text-[#F0F0F3] mb-2 tracking-tight">Outcome Tracking</h3>
+                    <h3 className="text-[24px] font-bold text-[#F0F0F3] mb-2 tracking-tight">Post-Launch Impact</h3>
                     <span className="px-3 py-1 rounded-sm bg-[#afc6ff]/20 text-[#afc6ff] text-[11px] font-bold uppercase tracking-widest mb-4 inline-block">Coming Soon</span>
                     <p className="text-[15px] text-[#5A5C66] max-w-lg leading-relaxed">
                         Closing the feedback loop. Connect your post-launch metrics to historical themes and insights to measure the true ROI of your product decisions and iterate with precision.

@@ -1112,20 +1112,7 @@ export default function FeedPage() {
         className="flex-shrink-0 border-b px-8 py-8"
         style={{ borderColor: 'rgba(66,71,83,0.1)' }}
       >
-        <div className="mb-6 flex items-end justify-between">
-          <div>
-            <h1 className="mb-1 text-[24px] font-bold tracking-tight text-[#e2e2eb]">Feed</h1>
-            <p className="text-sm text-[#8B8D97]">Signals across interviews, support, and surveys</p>
-          </div>
-          <div className="flex gap-6 text-xs font-medium text-[#5A5C66]">
-            <StatValue value={signals ? String(stats.total) : loading ? '...' : '0'} label="Signals" accent />
-            <StatValue value={signals ? String(stats.interviews) : loading ? '...' : '0'} label="Interviews" />
-            <StatValue value={signals ? String(stats.tickets) : loading ? '...' : '0'} label="Tickets" />
-            <StatValue value={signals ? String(stats.surveys) : loading ? '...' : '0'} label="Surveys" />
-          </div>
-        </div>
-
-        <div className="flex gap-3">
+        <div className="flex items-center gap-3">
           <FilterDropdown
             label={`Source: ${sourceLabel}`}
             open={openMenu === 'source'}
@@ -1185,6 +1172,8 @@ export default function FeedPage() {
           />
 
           <div className="flex-1" />
+
+          <StatValue value={signals ? String(stats.total) : loading ? '...' : '0'} label="Signals" accent />
 
           <button
             type="button"

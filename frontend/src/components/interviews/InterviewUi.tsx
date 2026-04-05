@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-export type InterviewUiStatus = 'done' | 'processing' | 'error';
+export type InterviewUiStatus = 'done' | 'processing' | 'error' | 'low_insight';
 export type InterviewFileIcon = 'description' | 'mic' | 'videocam';
 export type InterviewPillTone = 'accent' | 'neutral' | 'success' | 'warning' | 'danger';
 
@@ -47,6 +47,7 @@ export function getInterviewUiStatus(status: string): InterviewUiStatus {
   if (status === 'processing' || status === 'queued' || status === 'transcribing' || status === 'analyzing') {
     return 'processing';
   }
+  if (status === 'low_insight') return 'low_insight';
   return 'done';
 }
 
@@ -104,6 +105,25 @@ export function InterviewStatusBadge({
         </span>
         <span className="text-[11px] font-bold uppercase tracking-wider text-[#FBBF24]">
           Processing
+        </span>
+      </div>
+    );
+  }
+
+  if (status === 'low_insight') {
+    return (
+      <div
+        className={cx('flex items-center gap-2 rounded-full px-3 py-1', className)}
+        style={{
+          backgroundColor: 'rgba(251,191,36,0.1)',
+          border: '1px solid rgba(251,191,36,0.2)',
+        }}
+      >
+        <span className="material-symbols-outlined text-[#FBBF24]" style={{ fontSize: 14 }}>
+          warning
+        </span>
+        <span className="text-[11px] font-bold uppercase tracking-wider text-[#FBBF24]">
+          Low Insight
         </span>
       </div>
     );
