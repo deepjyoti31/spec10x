@@ -42,16 +42,13 @@ export default function LoginPage() {
         <div className="w-full max-w-[400px]">
 
             {/* Logo */}
-            <div className="flex items-center justify-center gap-3 mb-8">
-                <div className="w-9 h-9 rounded-xl bg-[var(--color-brand)] flex items-center justify-center shadow-lg shadow-[var(--color-brand)]/20">
-                    <span
-                        className="material-symbols-outlined text-white"
-                        style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}
-                    >
-                        category
-                    </span>
-                </div>
-                <span className="text-[20px] font-bold text-[#F0F0F3]">Spec10x</span>
+            <div className="flex items-center justify-center gap-2 mb-6">
+                <img
+                    src="/assets/logos/spec10x_logo_transparent_1080.png"
+                    alt="Spec10x"
+                    className="w-7 h-7 object-contain"
+                />
+                <span className="text-[18px] font-bold text-[#F0F0F3]">Spec10x</span>
             </div>
 
             {/* Card */}

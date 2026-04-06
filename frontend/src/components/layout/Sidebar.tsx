@@ -66,10 +66,7 @@ const NAV_SECTIONS: NavSection[] = [
     },
 ];
 
-const WORKSPACE_ITEMS: NavItem[] = [
-    { label: 'Team',     icon: 'group',    href: '/team' },
-    { label: 'Settings', icon: 'settings', href: '/settings' },
-];
+
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -109,7 +106,14 @@ function NavItemRow({
 
     return (
         <div className="relative group/tooltip">
-            <Link href={item.href} className={className}>
+            <Link 
+                href={item.locked ? '#' : item.href} 
+                className={className}
+                onClick={(e) => {
+                    if (item.locked) e.preventDefault();
+                }}
+                style={item.locked ? { cursor: 'default' } : undefined}
+            >
                 {item.locked ? (
                     <>
                         <div className="flex items-center gap-3">
@@ -121,8 +125,8 @@ function NavItemRow({
                             )}
                         </div>
                         {!collapsed && (
-                            <span className="material-symbols-outlined text-[#5A5C66]" style={{ fontSize: 12 }}>
-                                lock
+                            <span className="px-1.5 py-0.5 rounded-[4px] bg-white/[0.05] text-[6px] whitespace-nowrap font-medium text-[#8B8D97] uppercase tracking-wider">
+                                Coming Soon
                             </span>
                         )}
                     </>
@@ -144,7 +148,9 @@ function NavItemRow({
                     <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#1E2028] border border-[#2A2C38] rounded-[6px] whitespace-nowrap shadow-lg">
                         <span className="text-[13px] font-medium text-[#F0F0F3]">{item.label}</span>
                         {item.locked && (
-                            <span className="material-symbols-outlined text-[#5A5C66]" style={{ fontSize: 11 }}>lock</span>
+                            <span className="px-1.5 py-0.5 rounded-[4px] bg-white/[0.1] text-[6px] whitespace-nowrap font-medium text-[#8B8D97] uppercase tracking-wider ml-1">
+                                Coming Soon
+                            </span>
                         )}
                     </div>
                 </div>
@@ -204,20 +210,17 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
                 {/* ── Logo row ── */}
                 <div
-                    className="flex items-center justify-between px-3 py-4 mb-2"
+                    className="flex items-center justify-between px-3 py-[2px] mb-4"
                     style={collapsed ? { justifyContent: 'center' } : {}}
                 >
                     {!collapsed && (
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-8 h-8 flex-shrink-0 rounded-lg bg-[var(--color-brand)] flex items-center justify-center shadow-lg shadow-[var(--color-brand)]/20">
-                                <span
-                                    className="material-symbols-outlined text-white"
-                                    style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}
-                                >
-                                    category
-                                </span>
-                            </div>
-                            <h1 className="text-[16px] font-bold text-[#F0F0F3] leading-none whitespace-nowrap">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <img
+                                src="/assets/logos/spec10x_logo_transparent_1080.png"
+                                alt="Spec10x"
+                                className="w-6 h-6 flex-shrink-0 object-contain"
+                            />
+                            <h1 className="text-[15px] font-bold text-[#F0F0F3] leading-none whitespace-nowrap">
                                 Spec10x
                             </h1>
                         </div>
@@ -227,15 +230,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         /* Collapsed: show logo icon centered, clicking expands */
                         <button
                             onClick={onToggle}
-                            className="w-8 h-8 rounded-lg bg-[var(--color-brand)] flex items-center justify-center shadow-lg shadow-[var(--color-brand)]/20 hover:brightness-110 transition-all"
+                            className="w-6 h-6 flex-shrink-0 hover:brightness-110 transition-all rounded-lg overflow-hidden"
                             aria-label="Expand sidebar"
                         >
-                            <span
-                                className="material-symbols-outlined text-white"
-                                style={{ fontSize: 20, fontVariationSettings: "'FILL' 1" }}
-                            >
-                                category
-                            </span>
+                            <img
+                                src="/assets/logos/spec10x_logo_transparent_1080.png"
+                                alt="Spec10x"
+                                className="w-full h-full object-contain"
+                            />
                         </button>
                     ) : (
                         <button
@@ -267,45 +269,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         </div>
                     ))}
 
-                    {/* ── Separator ── */}
-                    <div className="my-4 h-[1px] bg-[#1E2028] mx-3" />
 
-                    {/* ── Workspace ── */}
-                    {!collapsed && (
-                        <div className="pb-1 px-3">
-                            <span className="text-[11px] text-[#5A5C66] font-semibold uppercase tracking-[0.05em]">
-                                Workspace
-                            </span>
-                        </div>
-                    )}
-                    {collapsed && <div className="pt-1" />}
-                    {WORKSPACE_ITEMS.map(item => (
-                        <NavItemRow key={item.href} item={item} collapsed={collapsed} />
-                    ))}
                 </nav>
 
                 {/* ── Bottom pin ── */}
                 <div className="mt-auto pt-4 border-t border-[#1E2028] space-y-2">
-                    {/* Help & Feedback */}
-                    <div className="relative group/tooltip">
-                        <a
-                            href="#"
-                            className="flex items-center gap-3 px-3 py-1.5 text-[#5A5C66] hover:text-[#F0F0F3] transition-colors"
-                            style={collapsed ? { justifyContent: 'center' } : {}}
-                        >
-                            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>help_outline</span>
-                            {!collapsed && (
-                                <span className="text-[13px] font-medium">Help &amp; Feedback</span>
-                            )}
-                        </a>
-                        {collapsed && (
-                            <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-3 z-[200] opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-150">
-                                <div className="px-2.5 py-1.5 bg-[#1E2028] border border-[#2A2C38] rounded-[6px] whitespace-nowrap shadow-lg">
-                                    <span className="text-[13px] font-medium text-[#F0F0F3]">Help &amp; Feedback</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
+
 
                     {/* User row */}
                     <div className="relative" ref={userMenuRef}>
@@ -318,12 +287,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                             </div>
                             {!collapsed && (
                                 <>
-                                    <div className="flex flex-col min-w-0 flex-1 text-left">
+                                    <div className="flex-1 min-w-0 flex flex-col justify-center text-left">
                                         <span className="text-[14px] font-semibold text-[#F0F0F3] truncate leading-tight">
                                             {user?.name ?? 'User'}
-                                        </span>
-                                        <span className="text-[12px] text-[#5A5C66] leading-tight">
-                                            Pro Plan
                                         </span>
                                     </div>
                                     <span className="material-symbols-outlined text-[#5A5C66] flex-shrink-0" style={{ fontSize: 18 }}>
@@ -343,6 +309,18 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                                     <div className="text-[14px] font-medium text-[#F0F0F3]">{user?.name ?? 'User'}</div>
                                     <div className="text-[12px] text-[#8B8D97]">{user?.email}</div>
                                 </div>
+                                <button
+                                    className="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-[13px] text-[#5A5C66] cursor-not-allowed text-left opacity-80"
+                                    onClick={(e) => e.preventDefault()}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>group</span>
+                                        Team
+                                    </div>
+                                    <span className="px-1.5 py-0.5 rounded-[4px] bg-white/[0.05] text-[6px] whitespace-nowrap font-medium text-[#8B8D97] uppercase tracking-wider">
+                                        Coming Soon
+                                    </span>
+                                </button>
                                 <button
                                     className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] text-[#B0B2BA] hover:text-[#F0F0F3] hover:bg-white/[0.04] transition-colors text-left"
                                     onClick={() => { router.push('/settings'); setShowUserMenu(false); }}
