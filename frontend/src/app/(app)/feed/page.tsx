@@ -1109,7 +1109,7 @@ export default function FeedPage() {
       />
 
       <section
-        className="flex-shrink-0 border-b px-8 py-8"
+        className="flex-shrink-0 border-b px-8 py-4"
         style={{ borderColor: 'rgba(66,71,83,0.1)' }}
       >
         <div className="flex items-center gap-3">

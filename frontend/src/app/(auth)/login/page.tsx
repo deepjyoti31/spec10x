@@ -1,15 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { loginWithEmail, loginWithGoogle } from '@/lib/auth';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
     const router = useRouter();
+    const { user, loading: authLoading } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (!authLoading && user) {
+            router.push('/home');
+        }
+    }, [user, authLoading, router]);
+
+    // Don't render the form while auth is initializing or if we're redirecting
+    if (authLoading || user) {
+        return null;
+    }
 
     async function handleEmailLogin(e: React.FormEvent) {
         e.preventDefault();

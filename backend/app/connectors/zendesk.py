@@ -53,6 +53,16 @@ class ZendeskConnector(BaseConnector):
         subdomain = config.get("subdomain")
         if not subdomain:
             raise ConnectorError("Missing 'subdomain' in connection config")
+        
+        subdomain = subdomain.strip().lower()
+        if subdomain.startswith("http://"):
+            subdomain = subdomain[7:]
+        elif subdomain.startswith("https://"):
+            subdomain = subdomain[8:]
+            
+        if subdomain.endswith(".zendesk.com"):
+            subdomain = subdomain[:-12]
+            
         return subdomain
 
     @property
@@ -61,13 +71,13 @@ class ZendeskConnector(BaseConnector):
         email = config.get("email")
         if not email:
             raise ConnectorError("Missing 'email' in connection config")
-        return email
+        return email.strip()
 
     @property
     def api_token(self) -> str:
         if not self.connection.secret_ref:
             raise ConnectorError("No API token provided for Zendesk connection")
-        return self.connection.secret_ref
+        return self.connection.secret_ref.strip()
 
     @property
     def base_url(self) -> str:
