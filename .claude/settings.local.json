@@ -3,7 +3,10 @@
     "allow": [
       "Bash(ls /c/Users/Deep/.gemini/antigravity/scratch/spec10x/frontend/src/app/\\\\\\(app\\\\\\)/integrations/)",
       "Bash(ls /c/Users/Deep/.gemini/antigravity/scratch/spec10x/frontend/src/app/\\\\\\(app\\\\\\)/)",
-      "Bash(ls /c/Users/Deep/.gemini/antigravity/scratch/spec10x/frontend/src/app/\\\\\\(app\\\\\\)/interviews/)"
+      "Bash(ls /c/Users/Deep/.gemini/antigravity/scratch/spec10x/frontend/src/app/\\\\\\(app\\\\\\)/interviews/)",
+      "WebSearch",
+      "Bash(grep -E \"\\\\.\\(tsx?|jsx?|py\\)$\")",
+      "Bash(grep -E \"\\\\.py$\")"
     ]
   }
 }

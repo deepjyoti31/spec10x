@@ -121,8 +121,11 @@ export function useIntegrations(): UseIntegrationsReturn {
 
     setSyncingIds(prev => new Set(prev).add(connectionId));
     try {
-      await api.triggerSourceConnectionSync(token, connectionId);
+      const syncRun = await api.triggerSourceConnectionSync(token, connectionId);
       await fetchAll();
+      if (syncRun.status === 'failed') {
+        throw new Error(syncRun.error_summary ?? 'Sync failed');
+      }
     } finally {
       setSyncingIds(prev => {
         const next = new Set(prev);
@@ -173,8 +176,8 @@ export function useIntegrations(): UseIntegrationsReturn {
     setConnectModalError(null);
 
     try {
-      // Build the secret_ref as "<email>/token:<apiToken>" — Zendesk API token format
-      const secretRef = `${credentials.email}/token:${credentials.apiToken}`;
+      // Store only the raw API token — the connector builds the "email/token:token" format itself
+      const secretRef = credentials.apiToken;
 
       const newConnection = await api.createSourceConnection(token, {
         data_source_id: connectModalDataSourceId,
@@ -185,6 +188,9 @@ export function useIntegrations(): UseIntegrationsReturn {
       setConnectModalStep('validating');
 
       await api.validateSourceConnection(token, newConnection.id);
+
+      // Kick off initial sync immediately after successful connection
+      await api.triggerSourceConnectionSync(token, newConnection.id);
 
       setConnectModalStep('success');
       await fetchAll();

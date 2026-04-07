@@ -236,6 +236,11 @@ async def validate_connection(
     await connector.validate()
     await db.commit()
     await db.refresh(connection)
+    if connection.status == SourceConnectionStatus.error:
+        raise HTTPException(
+            status_code=400,
+            detail=connection.last_error_summary or "Validation failed",
+        )
     return connection
 
 
