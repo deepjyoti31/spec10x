@@ -308,7 +308,18 @@ export default function InterviewDetailPageClient() {
                     const confidence = Math.round(insight.confidence * 100);
 
                     return (
-                      <article key={insight.id} className={`${interviewInsetCardClassName} px-4 py-4`}>
+                      <article
+                        key={insight.id}
+                        className={`${interviewInsetCardClassName} px-4 py-4`}
+                        style={{
+                          opacity: insight.is_interviewer_voice ? 0.6 : 1,
+                          borderLeft: insight.is_interviewer_voice
+                            ? '3px solid rgba(251,146,60,0.4)'
+                            : insight.provenance_label === 'review_recommended'
+                            ? '3px solid rgba(175,198,255,0.3)'
+                            : undefined,
+                        }}
+                      >
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0 flex-1">
                             <h3 className="text-sm font-semibold text-[#F0F0F3]">
@@ -326,6 +337,28 @@ export default function InterviewDetailPageClient() {
                         <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[#D7D9E0]">
                           "{insight.quote}"
                         </p>
+
+                        {/* Provenance banner */}
+                        {insight.is_interviewer_voice && (
+                          <div
+                            className="mt-3 flex items-center gap-2 rounded-md px-3 py-2 text-[11px]"
+                            style={{ backgroundColor: 'rgba(251,146,60,0.08)', color: '#fb923c' }}
+                            title={insight.provenance_reason ?? undefined}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>volume_off</span>
+                            Likely from interviewer — excluded from themes
+                          </div>
+                        )}
+                        {!insight.is_interviewer_voice && insight.provenance_label === 'review_recommended' && (
+                          <div
+                            className="mt-3 flex items-center gap-2 rounded-md px-3 py-2 text-[11px]"
+                            style={{ backgroundColor: 'rgba(175,198,255,0.08)', color: '#afc6ff' }}
+                            title={insight.provenance_reason ?? undefined}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>search</span>
+                            May echo your product positioning — verify this is from the customer
+                          </div>
+                        )}
 
                         <InterviewMetaRow
                           items={[

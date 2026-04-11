@@ -15,6 +15,37 @@ SYSTEM_PROMPT = """You are an expert product research analyst specializing in cu
 2. Extract key insights: pain points, feature requests, positive feedback, suggestions
 3. Assign each insight to a **theme** for cross-interview clustering
 4. Rate confidence and sentiment for each insight
+5. Determine whether each insight comes from the INTERVIEWER or the CUSTOMER
+
+## CRITICAL: Speaker Role Analysis
+
+Before extracting insights, analyze the conversational dynamics to determine speaker roles:
+
+### Interviewer Indicators (the person conducting the interview / the PM / the product person):
+- Introduces a product or company at the start of the conversation
+- Asks questions and probes for more detail
+- Describes problems that their product solves (pitching / framing)
+- Uses "we" when referring to a product being built or offered
+- Gives a demo, walkthrough, or explanation of how something works
+- Uses polished, marketing-style, or positioning language
+- Sets the agenda or structure of the conversation
+- Monologues early in the conversation explaining context
+
+### Customer/Interviewee Indicators (the person being interviewed):
+- Answers questions and responds to prompts
+- Shares personal experiences using first person: "I", "my team", "at our company", "when I try to..."
+- Describes their own daily workflow, processes, and tools
+- Expresses genuine frustrations with specific, personal details and stories
+- Mentions their own company, role, or industry context
+- Provides unprompted elaboration and anecdotes
+- Reacts to what the interviewer shows or describes
+
+### For Each Insight — Is It Interviewer Voice?
+- Set `is_interviewer_voice` to **true** if the statement appears to come from the person CONDUCTING the interview, NOT the customer being interviewed
+- Pay special attention to the **opening section** of interviews where interviewers typically pitch their product — statements in this section describing problems or value propositions are almost always the interviewer, NOT customer insights
+- A customer giving a short agreement to a leading question ("yes", "yeah", "sure", "I guess") is LOW-CONFIDENCE and should have a low confidence score (0.3-0.5)
+- A customer ELABORATING with personal details, stories, or specifics after a question is HIGH-CONFIDENCE genuine feedback (0.8-1.0)
+- When in doubt, lean toward marking as interviewer voice — false negatives (missing a real insight) are less damaging than false positives (attributing the interviewer's pitch to the customer)
 
 ## CRITICAL: Theme Naming Rules
 
@@ -64,6 +95,23 @@ Existing themes:
 When an insight relates to one of these existing themes, use the EXACT theme name from the list above as the theme_suggestion value."""
 
 
+# When the user has set up product context, this gets appended to the system prompt
+PRODUCT_CONTEXT_BLOCK = """
+
+## Product Context — DO NOT Extract These As Customer Insights
+
+The user's product is described below. Statements that merely restate or echo this product positioning are likely from the interviewer's pitch, NOT from customers.
+
+Be very careful to distinguish between:
+- **Interviewer pitch** (third-person, generalized, marketing language matching the description below) → mark as `is_interviewer_voice: true`
+- **Customer experience** (first-person, specific, personal stories about the same TOPIC) → these ARE valid insights even if the topic overlaps with the product positioning below
+
+The key difference is FRAMING, not topic. A customer talking about the same problem the product solves is VALID feedback. The interviewer describing that problem as part of their pitch is NOT.
+
+Product Context:
+{product_context}"""
+
+
 # JSON output schema for structured extraction
 OUTPUT_SCHEMA = {
     "type": "object",
@@ -111,8 +159,12 @@ OUTPUT_SCHEMA = {
                         "type": "number",
                         "description": "Confidence score between 0 and 1",
                     },
+                    "is_interviewer_voice": {
+                        "type": "boolean",
+                        "description": "True if this insight appears to come from the interviewer/PM conducting the interview, not the customer being interviewed. Mark true for product pitches, problem framing by the interviewer, demos, and marketing language.",
+                    },
                 },
-                "required": ["category", "title", "quote", "theme_suggestion", "sentiment", "confidence"],
+                "required": ["category", "title", "quote", "theme_suggestion", "sentiment", "confidence", "is_interviewer_voice"],
             },
         },
         "summary": {"type": "string", "description": "2-3 sentence summary of the interview"},
@@ -134,6 +186,7 @@ For each distinct insight in the interview, provide:
 - **Theme**: A 2-4 word noun phrase in Title Case (e.g., "Onboarding Friction", "Search Performance"). This is used to group similar insights across different interviews, so consistency matters enormously.
 - **Sentiment**: positive, negative, or neutral
 - **Confidence**: 0-1 score based on clarity and actionability
+- **is_interviewer_voice**: true if this was said by the interviewer/PM, false if by the customer
 
 ## Important Guidelines
 
@@ -141,6 +194,8 @@ For each distinct insight in the interview, provide:
 2. Multiple insights from the same interview CAN share the same theme
 3. Use specific, topical themes — not generic labels
 4. Extract the speaker's actual words as quotes, not paraphrases
+5. **CRITICAL**: Carefully determine WHO said each quote. Statements from the interviewer describing their product, pitching problems, or framing value propositions should have `is_interviewer_voice: true`. Only genuine customer/interviewee statements should have `is_interviewer_voice: false`.
+6. Be especially cautious with the opening section of interviews — this is where interviewers typically introduce themselves and pitch their product.
 
 TRANSCRIPT:
 ---

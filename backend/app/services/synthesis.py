@@ -76,17 +76,18 @@ async def synthesize_themes(
     lock_key = hash(str(user_id)) % (2**31)  # PostgreSQL advisory lock needs int
     try:
         await db.execute(text(f"SELECT pg_advisory_xact_lock({lock_key})"))
-        logger.trace(f"Acquired advisory lock {lock_key} for user {user_id}")
+        logger.debug(f"Acquired advisory lock {lock_key} for user {user_id}")
     except Exception as e:
         # Advisory locks may not be available in all environments (e.g., test DBs)
         logger.warning(f"Could not acquire advisory lock: {e}")
 
-    # Fetch all non-dismissed insights with theme suggestions
+    # Fetch all non-dismissed, non-interviewer insights with theme suggestions
     stmt = (
         select(Insight)
         .where(
             Insight.user_id == user_id,
             Insight.is_dismissed == False,  # noqa: E712
+            Insight.is_interviewer_voice == False,  # noqa: E712  — exclude interviewer's own statements
             Insight.theme_suggestion.isnot(None),
         )
     )

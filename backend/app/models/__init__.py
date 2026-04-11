@@ -150,6 +150,12 @@ class User(Base):
         Enum(PlanType, name="plan_type"), default=PlanType.free
     )
     stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Product Context — used to filter interviewer's own positioning from insights
+    product_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    product_website_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    product_context_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -628,6 +634,14 @@ class Insight(Base):
     is_manual: Mapped[bool] = mapped_column(Boolean, default=False)
     theme_suggestion: Mapped[str | None] = mapped_column(String(512), nullable=True)
     sentiment: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
+    # Provenance scoring — helps identify interviewer-voice vs customer-voice
+    provenance_label: Mapped[str | None] = mapped_column(
+        String(50), nullable=True
+    )  # "high_confidence", "review_recommended", "likely_interviewer"
+    provenance_reason: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    is_interviewer_voice: Mapped[bool] = mapped_column(Boolean, default=False)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

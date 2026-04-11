@@ -11,10 +11,67 @@ from firebase_admin import auth as firebase_auth
 from app.core.auth import get_current_user
 from app.core.database import get_db
 from app.models import User, Interview, Theme, Insight, AskConversation, Usage
-from app.schemas import UserResponse, UserUpdateRequest
+from app.schemas import (
+    UserResponse, UserUpdateRequest,
+    ProductContextUpdate, ProductContextResponse,
+)
 
 router = APIRouter(prefix="/api/users", tags=["Users"])
 logger = logging.getLogger(__name__)
+
+
+@router.get("/me/product-context", response_model=ProductContextResponse)
+async def get_product_context(
+    current_user: User = Depends(get_current_user),
+):
+    """Get the current user's product context settings."""
+    return ProductContextResponse(
+        description=current_user.product_description,
+        website_url=current_user.product_website_url,
+        product_context_summary=current_user.product_context_summary,
+        has_context=bool(current_user.product_context_summary),
+    )
+
+
+@router.put("/me/product-context", response_model=ProductContextResponse)
+async def update_product_context(
+    data: ProductContextUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update the current user's product context.
+
+    Accepts a manual product description and/or a website URL.
+    If a website URL is provided, uses Gemini UrlContext to extract
+    a product fingerprint from the website.
+    """
+    from app.services.product_context import save_product_context
+
+    try:
+        user = await save_product_context(
+            db=db,
+            user=current_user,
+            description=data.description,
+            website_url=data.website_url,
+        )
+        await db.commit()
+        await db.refresh(user)
+
+        return ProductContextResponse(
+            description=user.product_description,
+            website_url=user.product_website_url,
+            product_context_summary=user.product_context_summary,
+            has_context=bool(user.product_context_summary),
+        )
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"Error updating product context for user {current_user.id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to update product context",
+        )
+
 
 
 @router.patch("/me", response_model=UserResponse)

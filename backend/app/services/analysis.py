@@ -14,7 +14,10 @@ from google import genai
 from google.genai import types
 
 from app.core.config import get_settings
-from app.prompts.extraction import SYSTEM_PROMPT, EXISTING_THEMES_CONTEXT, USER_PROMPT_TEMPLATE, OUTPUT_SCHEMA
+from app.prompts.extraction import (
+    SYSTEM_PROMPT, EXISTING_THEMES_CONTEXT, PRODUCT_CONTEXT_BLOCK,
+    USER_PROMPT_TEMPLATE, OUTPUT_SCHEMA,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +37,7 @@ class InsightData:
     sub_themes: list[str] = field(default_factory=list)
     sentiment: str = "neutral"  # positive, negative, neutral
     confidence: float = 0.85
+    is_interviewer_voice: bool = False
 
 
 @dataclass
@@ -113,6 +117,7 @@ THEME_KEYWORDS = {
 def analyze_transcript(
     transcript: str,
     existing_themes: list[str] | None = None,
+    product_context: str | None = None,
 ) -> AnalysisResult:
     """
     Analyze an interview transcript and extract structured insights.
@@ -120,16 +125,22 @@ def analyze_transcript(
     Args:
         transcript: Full text of the interview
         existing_themes: Optional list of existing theme names to encourage reuse
+        product_context: Optional product context to help filter interviewer voice
 
     Returns:
         AnalysisResult with insights, speakers, summary, language
     """
-    return _real_analyze(transcript, existing_themes=existing_themes)
+    return _real_analyze(
+        transcript,
+        existing_themes=existing_themes,
+        product_context=product_context,
+    )
 
 
 def _real_analyze(
     transcript: str,
     existing_themes: list[str] | None = None,
+    product_context: str | None = None,
 ) -> AnalysisResult:
     """
     Real analysis using Gemini. Sends the transcript with the extraction
@@ -145,11 +156,13 @@ def _real_analyze(
     try:
         prompt = USER_PROMPT_TEMPLATE.format(transcript=transcript[:50000])  # Limit transcript length
 
-        # Build system prompt with existing theme context
+        # Build system prompt with existing theme context and product context
         system_prompt = SYSTEM_PROMPT
         if existing_themes:
             themes_list = "\n".join(f"- {t}" for t in existing_themes)
             system_prompt += EXISTING_THEMES_CONTEXT.format(themes_list=themes_list)
+        if product_context:
+            system_prompt += PRODUCT_CONTEXT_BLOCK.format(product_context=product_context)
 
         response = client.models.generate_content(
             model=settings.gemini_model,
@@ -199,6 +212,7 @@ def _real_analyze(
                 sub_themes=i.get("sub_themes", []),
                 sentiment=i.get("sentiment", "neutral"),
                 confidence=i.get("confidence", 0.85),
+                is_interviewer_voice=i.get("is_interviewer_voice", False),
             ))
 
         logger.info(

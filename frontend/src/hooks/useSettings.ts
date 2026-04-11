@@ -8,9 +8,75 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { api, LimitsResponse, SurveyImportHistoryItem } from '@/lib/api';
+import { api, LimitsResponse, SurveyImportHistoryItem, ProductContextResponse } from '@/lib/api';
 import { useAuth } from './useAuth';
 import { getAuth, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+
+// ─────────────────────────────────────────────────────────
+// Product Context
+// ─────────────────────────────────────────────────────────
+
+export function useProductContextSettings() {
+  const { token } = useAuth();
+  const [context, setContext] = useState<ProductContextResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  // Load existing product context
+  useEffect(() => {
+    if (!token) return;
+    setLoading(true);
+    api
+      .getProductContext(token)
+      .then(setContext)
+      .catch(() => {
+        // No product context yet — that's fine
+        setContext({ has_context: false });
+      })
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const save = useCallback(
+    async (description?: string, websiteUrl?: string) => {
+      if (!token) return;
+      setSaving(true);
+      setError(null);
+      setSuccess(false);
+      // If there's a URL, the API call may take a while (Gemini fetches the URL)
+      if (websiteUrl && websiteUrl.trim()) {
+        setFetching(true);
+      }
+      try {
+        const result = await api.updateProductContext(token, {
+          description: description || undefined,
+          website_url: websiteUrl || undefined,
+        });
+        setContext(result);
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to save product context');
+      } finally {
+        setSaving(false);
+        setFetching(false);
+      }
+    },
+    [token]
+  );
+
+  return {
+    context,
+    loading,
+    saving,
+    fetching,
+    error,
+    success,
+    save,
+  };
+}
 
 // ─────────────────────────────────────────────────────────
 // Profile

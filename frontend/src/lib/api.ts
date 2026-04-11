@@ -127,6 +127,22 @@ class ApiClient {
     });
   }
 
+  // === Product Context ===
+
+  async getProductContext(token: string) {
+    return this.request<ProductContextResponse>('/api/users/me/product-context', {
+      token,
+    });
+  }
+
+  async updateProductContext(token: string, data: ProductContextUpdate) {
+    return this.request<ProductContextResponse>('/api/users/me/product-context', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      token,
+    });
+  }
+
   // === Interviews ===
 
   async getUploadUrl(token: string, data: UploadUrlRequest) {
@@ -553,6 +569,18 @@ export interface UserUpdateRequest {
   avatar_url?: string;
 }
 
+export interface ProductContextUpdate {
+  description?: string;
+  website_url?: string;
+}
+
+export interface ProductContextResponse {
+  description?: string;
+  website_url?: string;
+  product_context_summary?: string;
+  has_context: boolean;
+}
+
 export interface UploadUrlRequest {
   filename: string;
   content_type: string;
@@ -847,6 +875,9 @@ export interface InsightResponse {
   is_manual: boolean;
   theme_suggestion?: string;
   sentiment?: string;
+  provenance_label?: string;  // "high_confidence", "review_recommended", "likely_interviewer"
+  provenance_reason?: string;
+  is_interviewer_voice: boolean;
   created_at: string;
 }
 

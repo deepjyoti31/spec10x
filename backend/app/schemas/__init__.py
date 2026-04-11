@@ -47,6 +47,22 @@ class UserUpdateRequest(BaseModel):
     avatar_url: Optional[str] = None
 
 
+class ProductContextUpdate(BaseModel):
+    """Request body for PUT /api/users/me/product-context"""
+    description: Optional[str] = None
+    website_url: Optional[str] = None
+
+
+class ProductContextResponse(BaseModel):
+    """Response for product context endpoints"""
+    description: Optional[str] = None
+    website_url: Optional[str] = None
+    product_context_summary: Optional[str] = None
+    has_context: bool
+
+    model_config = {"from_attributes": True}
+
+
 # ─── Interviews ──────────────────────────────────────────
 
 class UploadUrlRequest(BaseModel):
@@ -343,6 +359,9 @@ class InsightResponse(BaseModel):
     is_manual: bool
     theme_suggestion: Optional[str] = None
     sentiment: Optional[str] = None
+    provenance_label: Optional[str] = None  # "high_confidence", "review_recommended", "likely_interviewer"
+    provenance_reason: Optional[str] = None
+    is_interviewer_voice: bool = False
     created_at: datetime
 
     model_config = {"from_attributes": True}

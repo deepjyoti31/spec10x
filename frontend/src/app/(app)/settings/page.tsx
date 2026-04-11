@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { useProfileSettings, useBillingSettings, useDataSettings, useImportExportSettings, useDangerZone } from '@/hooks/useSettings';
+import { useProfileSettings, useBillingSettings, useDataSettings, useImportExportSettings, useDangerZone, useProductContextSettings } from '@/hooks/useSettings';
 
 // ---------------------------------------------------------------------------
 // Nav config
@@ -11,9 +11,10 @@ const NAV_SECTIONS = [
     {
         title: 'Account',
         items: [
-            { id: 'profile',       label: 'Profile',       icon: 'person' },
-            { id: 'notifications', label: 'Notifications',  icon: 'notifications', disabled: true },
-            { id: 'appearance',    label: 'Appearance',     icon: 'palette', disabled: true },
+            { id: 'profile',         label: 'Profile',          icon: 'person' },
+            { id: 'product-context',  label: 'Your Product',     icon: 'storefront' },
+            { id: 'notifications',   label: 'Notifications',    icon: 'notifications', disabled: true },
+            { id: 'appearance',      label: 'Appearance',       icon: 'palette', disabled: true },
         ],
     },
     {
@@ -328,6 +329,135 @@ function ProfilePanel() {
 }
 
 // ---------------------------------------------------------------------------
+// Product Context Panel (Dynamic)
+// ---------------------------------------------------------------------------
+
+function ProductContextPanel() {
+    const { context, loading, saving, fetching, error, success, save } = useProductContextSettings();
+    const [description, setDescription] = useState('');
+    const [websiteUrl, setWebsiteUrl] = useState('');
+
+    // Sync form fields from server state whenever context updates (initial load + after save)
+    React.useEffect(() => {
+        if (context) {
+            setDescription(context.description ?? '');
+            setWebsiteUrl(context.website_url ?? '');
+        }
+    }, [context]);
+
+    const hasChanges = (
+        description !== (context?.description ?? '') ||
+        websiteUrl !== (context?.website_url ?? '')
+    );
+
+    const handleSave = () => save(description, websiteUrl);
+
+    return (
+        <div className="space-y-8">
+            <header className="mb-10">
+                <h1 className="text-[22px] font-bold text-white mb-1">About Your Product</h1>
+                <p className="text-[13px]" style={{ color: '#8B8D97' }}>
+                    Help us understand what you build so we can give you more accurate, personalized insights.
+                    This information is used to distinguish your product pitch from genuine customer feedback.
+                </p>
+            </header>
+
+            {loading ? (
+                <div className="rounded-xl flex items-center justify-center py-16" style={{ backgroundColor: '#161820', border: '1px solid #1E2028' }}>
+                    <p className="text-sm" style={{ color: '#424753' }}>Loading product context…</p>
+                </div>
+            ) : (
+                <>
+                    {/* Product description card */}
+                    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#161820', border: '1px solid #1E2028' }}>
+                        <div className="p-6">
+                            <h3 className="text-sm font-semibold text-white mb-1">Describe Your Product</h3>
+                            <p className="text-[11px] mb-4" style={{ color: '#424753' }}>
+                                What does your product do? What problems does it solve? Who are your users?
+                            </p>
+                            <textarea
+                                value={description}
+                                onChange={e => setDescription(e.target.value)}
+                                rows={5}
+                                placeholder="e.g. We build a B2B SaaS platform for logistics companies that helps them optimize route planning and reduce delivery times. Our users are fleet managers and operations directors at mid-sized delivery companies…"
+                                className="w-full rounded-lg text-sm outline-none transition-all py-2.5 px-3 resize-y"
+                                style={{ backgroundColor: '#0C0D12', border: '1px solid #1E2028', color: '#e2e2eb', minHeight: 120 }}
+                                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(175,198,255,0.5)')}
+                                onBlur={e => (e.currentTarget.style.borderColor = '#1E2028')}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Website URL card */}
+                    <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#161820', border: '1px solid #1E2028' }}>
+                        <div className="p-6">
+                            <h3 className="text-sm font-semibold text-white mb-1">Or paste your website URL</h3>
+                            <p className="text-[11px] mb-4" style={{ color: '#424753' }}>
+                                We&apos;ll use AI to extract key information about your product from your website
+                            </p>
+                            <div className="flex gap-3">
+                                <div className="flex-1">
+                                    <TextInput
+                                        value={websiteUrl}
+                                        onChange={setWebsiteUrl}
+                                        placeholder="https://yourproduct.com"
+                                    />
+                                </div>
+                            </div>
+                            {fetching && (
+                                <div className="mt-3 flex items-center gap-2">
+                                    <div className="w-3 h-3 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#afc6ff', borderTopColor: 'transparent' }} />
+                                    <span className="text-[11px]" style={{ color: '#afc6ff' }}>Analyzing your website with AI…</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* AI-generated summary display */}
+                    {context?.product_context_summary && (
+                        <div className="rounded-xl overflow-hidden" style={{ backgroundColor: '#161820', border: '1px solid rgba(175,198,255,0.15)' }}>
+                            <div className="p-6">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#afc6ff' }}>auto_awesome</span>
+                                    <h3 className="text-sm font-semibold" style={{ color: '#afc6ff' }}>Product Fingerprint</h3>
+                                </div>
+                                <p className="text-[11px] mb-3" style={{ color: '#424753' }}>
+                                    This is how our AI understands your product. Insights matching this positioning will be flagged if they come from the interviewer rather than the customer.
+                                </p>
+                                <div
+                                    className="rounded-lg p-4 text-xs leading-relaxed whitespace-pre-wrap"
+                                    style={{ backgroundColor: '#0C0D12', border: '1px solid #1E2028', color: '#c8c8d4' }}
+                                >
+                                    {context.product_context_summary}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Save button */}
+                    <div className="flex items-center justify-between">
+                        <div>
+                            {!context?.has_context && (
+                                <p className="text-[11px] flex items-center gap-1.5" style={{ color: '#f59e0b' }}>
+                                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>info</span>
+                                    No product context set yet — your insights may include interviewer statements
+                                </p>
+                            )}
+                        </div>
+                        <PrimaryBtn onClick={handleSave} loading={saving} disabled={!hasChanges && !websiteUrl}>
+                            {websiteUrl && !context?.product_context_summary ? 'Fetch & Save' : 'Save Changes'}
+                        </PrimaryBtn>
+                    </div>
+                </>
+            )}
+
+            {success && <Toast message="Product context saved successfully" />}
+            {error && <Toast message={error} type="error" />}
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
 // Billing Panel (Dynamic)
 // ---------------------------------------------------------------------------
 
@@ -628,11 +758,12 @@ const DISABLED_META: Record<string, { title: string; description: string }> = {
 
 function ContentPanel({ activeSection }: { activeSection: string }) {
     switch (activeSection) {
-        case 'profile':  return <ProfilePanel />;
-        case 'billing':  return <BillingPanel />;
-        case 'data':     return <DataManagementPanel />;
-        case 'import':   return <ImportExportPanel />;
-        case 'danger':   return <DangerZonePanel />;
+        case 'profile':          return <ProfilePanel />;
+        case 'product-context':  return <ProductContextPanel />;
+        case 'billing':          return <BillingPanel />;
+        case 'data':             return <DataManagementPanel />;
+        case 'import':           return <ImportExportPanel />;
+        case 'danger':           return <DangerZonePanel />;
         default: {
             const meta = DISABLED_META[activeSection];
             return meta ? <DisabledPanel title={meta.title} description={meta.description} /> : null;

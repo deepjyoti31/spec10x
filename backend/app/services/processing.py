@@ -98,10 +98,22 @@ async def process_interview(interview_id: str) -> dict:
             theme_result = await db.execute(stmt_themes)
             existing_theme_names = [row[0] for row in theme_result.all()]
 
+            # Fetch product context for false-positive prevention
+            from app.services.product_context import get_product_context_for_extraction
+            from app.models import User
+            stmt_user = select(User).where(User.id == interview.user_id)
+            user_result = await db.execute(stmt_user)
+            current_user = user_result.scalar_one_or_none()
+            product_context = (
+                get_product_context_for_extraction(current_user)
+                if current_user else None
+            )
+
             from app.services.analysis import analyze_transcript
             analysis_result = analyze_transcript(
                 transcript,
                 existing_themes=existing_theme_names if existing_theme_names else None,
+                product_context=product_context,
             )
             logger.info(f"✅ AI Analysis complete: {len(analysis_result.insights)} insights found")
 
@@ -285,12 +297,26 @@ async def _save_analysis_results(
         speaker_map[speaker_data.label] = speaker.id
 
     # Save insights
+    interviewer_count = 0
     for insight_data in analysis_result.insights:
         # Map category string to enum
         try:
             category = InsightCategory(insight_data.category)
         except ValueError:
             category = InsightCategory.suggestion
+
+        # Determine provenance label based on AI role inference
+        is_iv = insight_data.is_interviewer_voice
+        if is_iv:
+            provenance_label = "likely_interviewer"
+            provenance_reason = (
+                "AI identified this as a statement from the interviewer/PM, "
+                "not customer feedback"
+            )
+            interviewer_count += 1
+        else:
+            provenance_label = "high_confidence"
+            provenance_reason = None
 
         insight = Insight(
             user_id=interview.user_id,
@@ -305,11 +331,20 @@ async def _save_analysis_results(
             is_flagged=insight_data.confidence < 0.7,
             theme_suggestion=insight_data.theme_suggestion,
             sentiment=insight_data.sentiment,
+            provenance_label=provenance_label,
+            provenance_reason=provenance_reason,
+            is_interviewer_voice=is_iv,
         )
         db.add(insight)
 
     await db.flush()
-    return len(analysis_result.insights)
+    total_count = len(analysis_result.insights)
+    if interviewer_count > 0:
+        logger.info(
+            f"Provenance scoring: {interviewer_count}/{total_count} insights "
+            f"flagged as interviewer voice"
+        )
+    return total_count
 
 
 def _cleanup(file_path: str) -> None:
