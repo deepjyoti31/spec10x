@@ -119,7 +119,8 @@ export default function HomePageClient() {
                     </div>
                     <button
                         onClick={() => void refetch()}
-                        className="text-[13px] font-medium text-[#afc6ff] hover:underline"
+                        className="flex items-center gap-2 rounded px-4 py-2 text-xs font-bold transition-all hover:brightness-110 flex-shrink-0"
+                        style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
                     >
                         Retry
                     </button>

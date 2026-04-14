@@ -133,7 +133,7 @@ function SelectInput({ options, value, onChange }: { options: string[]; value?: 
         <div className="relative">
             <select
                 value={value} onChange={e => onChange?.(e.target.value)}
-                className="w-full rounded-lg text-sm outline-none py-2.5 px-3 appearance-none transition-all"
+                className="w-full rounded text-xs outline-none py-2 px-3 appearance-none transition-all"
                 style={{ backgroundColor: '#0C0D12', border: '1px solid #1E2028', color: '#e2e2eb' }}
                 onFocus={e => (e.currentTarget.style.borderColor = 'rgba(175,198,255,0.5)')}
                 onBlur={e => (e.currentTarget.style.borderColor = '#1E2028')}
@@ -152,7 +152,7 @@ function CardFooter({ children }: { children: React.ReactNode }) {
 function PrimaryBtn({ children, onClick, disabled, loading }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; loading?: boolean }) {
     return (
         <button onClick={onClick} disabled={disabled || loading}
-            className="text-xs font-bold px-4 py-2 rounded-lg transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="text-xs font-bold px-4 py-2 rounded transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}>
             {loading ? 'Saving…' : children}
         </button>
@@ -162,8 +162,8 @@ function PrimaryBtn({ children, onClick, disabled, loading }: { children: React.
 function SecondaryBtn({ children, onClick, disabled, loading }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; loading?: boolean }) {
     return (
         <button onClick={onClick} disabled={disabled || loading}
-            className="text-xs font-bold px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
-            style={{ border: '1px solid #424753', color: '#8B8D97' }}
+            className="text-xs font-bold px-4 py-2 rounded transition-colors disabled:opacity-50"
+            style={{ border: '1px solid #1E2028', color: '#8B8D97' }}
             onMouseEnter={e => (e.currentTarget.style.color = 'white')}
             onMouseLeave={e => (e.currentTarget.style.color = '#8B8D97')}>
             {loading ? 'Working…' : children}
@@ -208,7 +208,7 @@ function ConfirmModal({ title, message, confirmLabel, onConfirm, onCancel, loadi
                 <div className="flex justify-end gap-3">
                     <SecondaryBtn onClick={onCancel} disabled={loading}>Cancel</SecondaryBtn>
                     <button onClick={onConfirm} disabled={loading}
-                        className="text-xs font-bold px-4 py-2 rounded-lg disabled:opacity-50"
+                        className="text-xs font-bold px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{ backgroundColor: danger ? '#dc2626' : '#afc6ff', color: danger ? 'white' : '#002d6c' }}>
                         {loading ? 'Processing…' : confirmLabel}
                     </button>

@@ -83,7 +83,7 @@ export function InsightsErrorState({ onRetry }: InsightsErrorStateProps) {
         <button
           type="button"
           onClick={() => void onRetry()}
-          className="mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-semibold"
+          className="mt-6 inline-flex items-center gap-2 rounded px-4 py-2 text-xs font-bold transition-all hover:brightness-110"
           style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
         >
           <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
@@ -122,7 +122,7 @@ export function ExplorerEmptyState({
         <button
           type="button"
           onClick={onPrimaryAction}
-          className="mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] font-semibold"
+          className="mt-6 inline-flex items-center gap-2 rounded px-4 py-2 text-xs font-bold transition-all hover:brightness-110"
           style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
         >
           <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
@@ -189,8 +189,10 @@ export function ThemeDetailErrorState({ onRetry }: InsightsErrorStateProps) {
         <button
           type="button"
           onClick={() => void onRetry()}
-          className="mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-semibold"
-          style={{ backgroundColor: '#1e1f26', color: '#afc6ff', border: '1px solid rgba(175,198,255,0.2)' }}
+          className="mt-5 inline-flex items-center gap-2 rounded px-4 py-2 text-xs font-bold transition-colors"
+          style={{ border: '1px solid #1E2028', color: '#8B8D97' }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'white')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#8B8D97')}
         >
           <span className="material-symbols-outlined" style={{ fontSize: 16 }}>
             refresh

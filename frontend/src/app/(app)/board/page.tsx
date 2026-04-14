@@ -168,7 +168,7 @@ function GenerateSpecBtn() {
         <div className="flex-1 relative">
             <button
                 disabled
-                className="w-full py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 cursor-not-allowed"
+                className="w-full py-2 rounded text-xs font-bold flex items-center justify-center gap-1.5 cursor-not-allowed"
                 style={{ backgroundColor: '#1e2028', color: 'rgba(194,198,214,0.3)', border: '1px solid rgba(66,71,83,0.3)' }}
             >
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>auto_awesome</span>

@@ -189,13 +189,13 @@ function FilterDropdown({
         type="button"
         aria-expanded={open}
         onClick={onToggle}
-        className="h-full rounded-xl px-3 text-xs font-medium text-[#8B8D97] transition-colors"
-        style={{ backgroundColor: '#161820', border: '1px solid #1E2028' }}
+        className="h-full rounded px-3 py-2 text-xs transition-colors"
+        style={{ backgroundColor: '#161820', border: '1px solid #1E2028', color: '#c2c6d6' }}
         onMouseEnter={(event) => {
-          event.currentTarget.style.borderColor = '#2A2C38';
+          event.currentTarget.style.borderColor = 'rgba(175,198,255,0.5)';
         }}
         onMouseLeave={(event) => {
-          event.currentTarget.style.borderColor = open ? 'rgba(175,198,255,0.4)' : '#1E2028';
+          event.currentTarget.style.borderColor = open ? 'rgba(175,198,255,0.5)' : '#1E2028';
         }}
       >
         <span className="flex items-center gap-2">
@@ -208,7 +208,7 @@ function FilterDropdown({
       </button>
       {open ? (
         <div
-          className="absolute right-0 top-full z-30 mt-2 min-w-[220px] overflow-hidden rounded-xl"
+          className="absolute right-0 top-full z-30 mt-2 min-w-[180px] overflow-hidden rounded"
           style={{
             backgroundColor: '#161820',
             border: '1px solid #1E2028',
@@ -237,7 +237,7 @@ function FilterOption({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm text-[#c8cad6] transition-colors hover:bg-[#1E2028]"
+      className="flex w-full items-center justify-between gap-3 px-4 py-2 text-left text-xs text-[#c8cad6] transition-colors hover:bg-[#1E2028]"
     >
       <span>{label}</span>
       <span className="flex items-center gap-2">

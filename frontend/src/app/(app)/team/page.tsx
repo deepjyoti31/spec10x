@@ -237,12 +237,10 @@ export default function TeamPage() {
                         </p>
                     </div>
                     <button
-                        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold text-sm transition-all active:scale-95 flex-shrink-0"
-                        style={{ backgroundColor: 'var(--color-brand)', color: 'white' }}
-                        onMouseEnter={e =>
-                            (e.currentTarget.style.boxShadow = '0 0 20px rgba(175,198,255,0.2)')
-                        }
-                        onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded font-bold text-xs transition-all flex-shrink-0"
+                        style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
+                        onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.1)')}
+                        onMouseLeave={e => (e.currentTarget.style.filter = 'none')}
                     >
                         <span className="material-symbols-outlined" style={{ fontSize: 16 }}>person_add</span>
                         Invite Member
@@ -353,18 +351,10 @@ export default function TeamPage() {
                                 Revoke
                             </button>
                             <button
-                                className="text-xs font-bold px-4 py-1.5 rounded-md transition-all"
-                                style={{
-                                    color: '#afc6ff',
-                                    border: '1px solid rgba(175,198,255,0.2)',
-                                    backgroundColor: 'rgba(175,198,255,0.05)',
-                                }}
-                                onMouseEnter={e =>
-                                    (e.currentTarget.style.backgroundColor = 'rgba(175,198,255,0.1)')
-                                }
-                                onMouseLeave={e =>
-                                    (e.currentTarget.style.backgroundColor = 'rgba(175,198,255,0.05)')
-                                }
+                                className="text-xs font-bold px-4 py-2 rounded transition-colors"
+                                style={{ border: '1px solid #1E2028', color: '#8B8D97' }}
+                                onMouseEnter={e => (e.currentTarget.style.color = 'white')}
+                                onMouseLeave={e => (e.currentTarget.style.color = '#8B8D97')}
                             >
                                 Resend
                             </button>

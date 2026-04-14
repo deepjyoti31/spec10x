@@ -12,9 +12,9 @@ export const interviewSurfaceCardClassName = 'rounded-xl border border-[#1E2028]
 export const interviewInsetCardClassName =
   'rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#191b22]';
 export const interviewPrimaryButtonClassName =
-  'rounded-xl bg-[var(--color-brand)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(79,140,255,0.25)] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60';
+  'rounded bg-[#afc6ff] px-4 py-2 text-xs font-bold text-[#002d6c] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60';
 export const interviewSecondaryButtonClassName =
-  'rounded-xl border border-[#1E2028] bg-[#161820] px-4 py-2 text-sm font-medium text-[#B0B2BA] transition-colors hover:bg-[#1E1F26] hover:text-[#F0F0F3] disabled:cursor-not-allowed disabled:opacity-60';
+  'rounded border border-[#1E2028] bg-[#161820] px-4 py-2 text-xs font-medium text-[#B0B2BA] transition-colors hover:bg-[#1E1F26] hover:text-[#F0F0F3] disabled:cursor-not-allowed disabled:opacity-60';
 
 export function formatInterviewDate(value: string, includeTime = false): string {
   return new Intl.DateTimeFormat(

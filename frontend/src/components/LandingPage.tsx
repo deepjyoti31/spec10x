@@ -260,7 +260,8 @@ export default function LandingPage() {
                         </Link>
                         <Link
                             href="/login"
-                            className="h-8 px-4 rounded-lg bg-[#4F8CFF] hover:brightness-110 text-white text-[13px] font-semibold transition-all flex items-center"
+                            className="h-8 px-4 rounded hover:brightness-110 text-[13px] font-semibold transition-all flex items-center"
+                            style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
                         >
                             Get started free
                         </Link>
@@ -306,14 +307,15 @@ export default function LandingPage() {
                     <div className="flex items-center justify-center gap-4 mb-16">
                         <Link
                             href="/login"
-                            className="inline-flex items-center gap-2 h-12 px-7 rounded-lg bg-[#4F8CFF] hover:brightness-110 text-white text-[15px] font-semibold transition-all shadow-lg shadow-[#4F8CFF]/20"
+                            className="inline-flex items-center gap-2 h-12 px-7 rounded hover:brightness-110 text-[15px] font-semibold transition-all"
+                            style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
                         >
                             Get started free
                             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>arrow_forward</span>
                         </Link>
                         <a
                             href="#how-it-works"
-                            className="inline-flex items-center gap-2 h-12 px-7 rounded-lg border border-[#2A2C38] hover:border-[#3A3C48] hover:bg-[#161820] text-[#F0F0F3] text-[15px] font-medium transition-all"
+                            className="inline-flex items-center gap-2 h-12 px-7 rounded border border-[#1E2028] hover:border-[rgba(175,198,255,0.5)] hover:bg-[#161820] text-[#c2c6d6] text-[15px] font-medium transition-all"
                         >
                             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>play_circle</span>
                             See how it works
@@ -773,11 +775,12 @@ export default function LandingPage() {
                                 <p className="text-[13px] text-[#8B8D97] mb-6">{tier.description}</p>
                                 <Link
                                     href="/login"
-                                    className={`block w-full h-10 rounded-lg text-[14px] font-semibold transition-all flex items-center justify-center mb-6 ${
+                                    className={`block w-full h-10 rounded text-[14px] font-semibold transition-all flex items-center justify-center mb-6 hover:brightness-110 ${
                                         tier.highlight
-                                            ? 'bg-[#4F8CFF] hover:brightness-110 text-white'
-                                            : 'border border-[#2A2C38] hover:border-[#3A3C48] hover:bg-[#1C1E28] text-[#F0F0F3]'
+                                            ? ''
+                                            : 'border border-[#1E2028] hover:border-[rgba(175,198,255,0.5)] hover:bg-[#161820] text-[#c2c6d6]'
                                     }`}
+                                    style={tier.highlight ? { backgroundColor: '#afc6ff', color: '#002d6c' } : undefined}
                                 >
                                     {tier.cta}
                                 </Link>
@@ -819,7 +822,8 @@ export default function LandingPage() {
                     <div className="flex items-center justify-center gap-4">
                         <Link
                             href="/login"
-                            className="inline-flex items-center gap-2 h-13 px-8 rounded-lg bg-[#4F8CFF] hover:brightness-110 text-white text-[16px] font-bold transition-all shadow-lg shadow-[#4F8CFF]/25"
+                            className="inline-flex items-center gap-2 h-13 px-8 rounded hover:brightness-110 text-[16px] font-bold transition-all"
+                            style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
                             style={{ height: 52 }}
                         >
                             Start for free — no card required

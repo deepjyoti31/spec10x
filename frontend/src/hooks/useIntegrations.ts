@@ -176,6 +176,17 @@ export function useIntegrations(): UseIntegrationsReturn {
     setConnectModalError(null);
 
     try {
+      // Guard: prevent creating a duplicate connection for the same provider
+      const targetSource = dataSources.find(d => d.id === connectModalDataSourceId);
+      if (targetSource) {
+        const alreadyConnected = connections.some(
+          c => c.data_source.provider === targetSource.provider && c.status !== 'disconnected'
+        );
+        if (alreadyConnected) {
+          throw new Error(`${targetSource.display_name} is already connected. Disconnect it first to reconnect.`);
+        }
+      }
+
       // Store only the raw API token — the connector builds the "email/token:token" format itself
       const secretRef = credentials.apiToken;
 
@@ -200,7 +211,7 @@ export function useIntegrations(): UseIntegrationsReturn {
         err instanceof Error ? err.message : 'Connection failed. Please check your credentials.'
       );
     }
-  }, [token, connectModalDataSourceId, fetchAll]);
+  }, [token, connectModalDataSourceId, connections, dataSources, fetchAll]);
 
   const submitCsvConnect = useCallback(async (file: File) => {
     if (!token) throw new Error('Not authenticated');

@@ -4,13 +4,17 @@ Spec10x Backend — Users API Routes
 
 import logging
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from firebase_admin import auth as firebase_auth
 
 from app.core.auth import get_current_user
 from app.core.database import get_db
-from app.models import User, Interview, Theme, Insight, AskConversation, Usage
+from app.models import (
+    User, Interview, Theme, Insight, AskConversation, Usage,
+    Workspace, SourceConnection, SourceConnectionStatus, SourceItem, SyncRun, Signal,
+    WorkspaceKind,
+)
 from app.schemas import (
     UserResponse, UserUpdateRequest,
     ProductContextUpdate, ProductContextResponse,
@@ -101,17 +105,70 @@ async def delete_my_data(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Delete all data associated with the current user (interviews, insights, themes, etc.),
-    but keep the user account intact.
+    Delete all ingested data for the current user but keep integration connections intact.
+
+    Deleted: interviews, themes, insights, ask conversations, signals, source items,
+             and sync run history (so the next sync performs a clean backfill).
+    Kept:    SourceConnection records — the user can re-sync or disconnect from the
+             Integrations page without needing to re-enter credentials.
     """
     try:
-        # Delete top-level entities, cascades will handle the rest
+        # ── Resolve the user's personal workspace ──────────────────────────────
+        workspace_result = await db.execute(
+            select(Workspace).where(
+                Workspace.owner_user_id == current_user.id,
+                Workspace.kind == WorkspaceKind.personal,
+            )
+        )
+        workspace = workspace_result.scalar_one_or_none()
+
+        # ── Wipe integration-sourced data ──────────────────────────────────────
+        if workspace is not None:
+            # Delete signals for the workspace (covers both interview-derived and
+            # connector-derived signals).
+            await db.execute(
+                delete(Signal).where(Signal.workspace_id == workspace.id)
+            )
+            # Delete raw source items (connector-synced records).
+            await db.execute(
+                delete(SourceItem).where(SourceItem.workspace_id == workspace.id)
+            )
+            # Delete sync run history so next sync starts as a clean backfill.
+            conn_ids_result = await db.execute(
+                select(SourceConnection.id).where(
+                    SourceConnection.workspace_id == workspace.id
+                )
+            )
+            conn_ids = [row[0] for row in conn_ids_result.all()]
+            if conn_ids:
+                await db.execute(
+                    delete(SyncRun).where(SyncRun.source_connection_id.in_(conn_ids))
+                )
+            # Reset connection state so the user can trigger a fresh sync immediately.
+            await db.execute(
+                update(SourceConnection)
+                .where(
+                    SourceConnection.workspace_id == workspace.id,
+                    SourceConnection.status.in_([
+                        SourceConnectionStatus.connected,
+                        SourceConnectionStatus.error,
+                        SourceConnectionStatus.syncing,
+                    ]),
+                )
+                .values(
+                    status=SourceConnectionStatus.connected,
+                    last_synced_at=None,
+                    last_error_summary=None,
+                )
+            )
+
+        # ── Wipe interview-side data ───────────────────────────────────────────
         await db.execute(delete(Interview).where(Interview.user_id == current_user.id))
         await db.execute(delete(Theme).where(Theme.user_id == current_user.id))
         await db.execute(delete(Insight).where(Insight.user_id == current_user.id))
         await db.execute(delete(AskConversation).where(AskConversation.user_id == current_user.id))
-        # Keep Usage records to avoid historical billing drops, or delete them if preferred.
-        # We'll leave usage intact for billing history
+        # Usage records are left intact for billing history.
+
         await db.commit()
     except Exception as e:
         await db.rollback()

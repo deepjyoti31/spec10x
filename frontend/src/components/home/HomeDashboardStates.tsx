@@ -114,14 +114,18 @@ export function HomeEmptyState({
                     <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
                         <button
                             onClick={onUpload}
-                            className="px-8 py-3 bg-[#afc6ff] text-white rounded-full text-[14px] font-bold hover:brightness-110 transition-all shadow-lg shadow-[#afc6ff]/20 min-w-[220px]"
+                            className="flex items-center justify-center gap-2 rounded px-4 py-2 text-xs font-bold transition-all hover:brightness-110"
+                            style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
                         >
                             Upload Interviews
                         </button>
                         <button
                             onClick={() => void onLoadSample()}
                             disabled={sampleDataLoading}
-                            className="px-8 py-3 border border-white/20 rounded-full text-[14px] font-bold text-[#F0F0F3] hover:bg-white/5 transition-all min-w-[220px] disabled:opacity-60 disabled:cursor-not-allowed"
+                            className="flex items-center justify-center gap-2 rounded px-4 py-2 text-xs font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                            style={{ border: '1px solid #1E2028', color: '#c2c6d6' }}
+                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1E1F26')}
+                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                         >
                             {sampleDataLoading ? 'Loading Sample Data...' : 'Try with Sample Data →'}
                         </button>
@@ -150,7 +154,8 @@ export function ErrorState({ onRetry }: { onRetry: () => Promise<void> }) {
                 </p>
                 <button
                     onClick={() => void onRetry()}
-                    className="px-6 py-2.5 bg-[#afc6ff] text-white rounded-full text-[14px] font-bold hover:brightness-110 transition-all"
+                    className="flex items-center gap-2 rounded px-4 py-2 text-xs font-bold transition-all hover:brightness-110"
+                    style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
                 >
                     Retry
                 </button>

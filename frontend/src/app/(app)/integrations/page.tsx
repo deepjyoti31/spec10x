@@ -517,7 +517,24 @@ export default function IntegrationsPage() {
 
     // ── Derived data ──────────────────────────────────────────────────────────
 
-    const connectedCards = connections.map((conn: SourceConnectionResponse) => {
+    // Deduplicate by provider — prefer 'connected' over 'error' so only one card
+    // shows per provider. This also prevents the catalog from offering a second
+    // "Connect" for a provider that already has an active or errored connection.
+    const STATUS_ORDER = ['connected', 'syncing', 'error'];
+    const dedupedConnections = Object.values(
+        connections.reduce((acc, conn) => {
+            const key = conn.data_source.provider;
+            if (
+                !acc[key] ||
+                STATUS_ORDER.indexOf(conn.status) < STATUS_ORDER.indexOf(acc[key].status)
+            ) {
+                acc[key] = conn;
+            }
+            return acc;
+        }, {} as Record<string, SourceConnectionResponse>)
+    );
+
+    const connectedCards = dedupedConnections.map((conn: SourceConnectionResponse) => {
         const display = PROVIDER_DISPLAY[conn.data_source.provider] ?? {
             iconBg: '#1e1f26',
             icon: 'cloud',
@@ -560,6 +577,10 @@ export default function IntegrationsPage() {
     };
 
     const handleConnect = (providerId: string, name: string) => {
+        if (connectedProviders.has(providerId)) {
+            showToast(`${name} is already connected. Disconnect it first to reconnect.`, 'error');
+            return;
+        }
         const ds = dataSources.find(d => d.provider === providerId);
         if (ds) {
             openConnectModal(ds.id);

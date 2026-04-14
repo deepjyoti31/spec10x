@@ -547,7 +547,7 @@ function ChatArea({
                             <button
                                 onClick={onSend}
                                 disabled={sending || !inputValue.trim()}
-                                className="w-9 h-9 flex items-center justify-center rounded-xl transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                                className="flex items-center justify-center rounded p-2 transition-all hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed"
                                 style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
                             >
                                 <span className="material-symbols-outlined" style={{ fontSize: 20 }}>send</span>
