@@ -2,15 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginWithEmail, loginWithGoogle } from '@/lib/auth';
+import { signUpWithEmail, loginWithGoogle } from '@/lib/auth';
 import { useAuth } from '@/hooks/useAuth';
 
-export default function LoginPage() {
+export default function SignUpPage() {
     const router = useRouter();
     const { user, loading: authLoading } = useAuth();
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -19,33 +22,44 @@ export default function LoginPage() {
         }
     }, [user, authLoading, router]);
 
-    // Don't render the form while auth is initializing or if we're redirecting
     if (authLoading || user) {
         return null;
     }
 
-    async function handleEmailLogin(e: React.FormEvent) {
+    async function handleSignUp(e: React.FormEvent) {
         e.preventDefault();
         setError('');
+        setSuccess('');
+
+        if (password !== confirmPassword) {
+            setError('Passwords do not match.');
+            return;
+        }
+        if (password.length < 8) {
+            setError('Password must be at least 8 characters.');
+            return;
+        }
+
         setLoading(true);
         try {
-            await loginWithEmail(email, password);
-            router.push('/home');
+            await signUpWithEmail(email, password, name);
+            setSuccess('Account created! Check your inbox and click the verification link before signing in.');
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Sign in failed. Please try again.');
+            setError(err instanceof Error ? err.message : 'Sign up failed. Please try again.');
         } finally {
             setLoading(false);
         }
     }
 
-    async function handleGoogleLogin() {
+    async function handleGoogleSignUp() {
         setError('');
+        setSuccess('');
         setLoading(true);
         try {
             await loginWithGoogle();
             router.push('/home');
         } catch (err: unknown) {
-            setError(err instanceof Error ? err.message : 'Google sign in failed.');
+            setError(err instanceof Error ? err.message : 'Google sign up failed.');
         } finally {
             setLoading(false);
         }
@@ -66,17 +80,16 @@ export default function LoginPage() {
 
             {/* Card */}
             <div className="bg-[#161820] border border-[#1E2028] rounded-xl p-8">
-                <h1 className="text-[22px] font-bold text-[#F0F0F3] mb-1">Welcome back</h1>
-                <p className="text-[14px] text-[#8B8D97] mb-6">Sign in to your workspace</p>
+                <h1 className="text-[22px] font-bold text-[#F0F0F3] mb-1">Create an account</h1>
+                <p className="text-[14px] text-[#8B8D97] mb-6">Start building with Spec10x</p>
 
                 {/* Google */}
                 <button
                     type="button"
-                    onClick={handleGoogleLogin}
+                    onClick={handleGoogleSignUp}
                     disabled={loading}
                     className="w-full flex items-center justify-center gap-3 h-10 bg-[#1C1E28] border border-[#2A2C38] rounded-lg text-[14px] font-medium text-[#F0F0F3] hover:bg-[#22242E] hover:border-[#3A3C48] transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-5"
                 >
-                    {/* Google SVG icon */}
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                         <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z" fill="#4285F4"/>
                         <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18Z" fill="#34A853"/>
@@ -93,8 +106,20 @@ export default function LoginPage() {
                     <div className="flex-1 h-[1px] bg-[#1E2028]" />
                 </div>
 
-                {/* Email form */}
-                <form onSubmit={handleEmailLogin} className="space-y-4">
+                {/* Sign up form */}
+                <form onSubmit={handleSignUp} className="space-y-4">
+                    <div>
+                        <label className="block text-[13px] font-medium text-[#B0B2BA] mb-1.5">
+                            Full name
+                        </label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            placeholder="Jane Smith"
+                            className="w-full h-10 px-3 bg-[#1C1E28] border border-[#2A2C38] rounded-lg text-[14px] text-[#F0F0F3] placeholder:text-[#5A5C66] focus:outline-none focus:border-[#afc6ff] focus:ring-1 focus:ring-[#afc6ff]/30 transition-all"
+                        />
+                    </div>
                     <div>
                         <label className="block text-[13px] font-medium text-[#B0B2BA] mb-1.5">
                             Email
@@ -121,6 +146,19 @@ export default function LoginPage() {
                             className="w-full h-10 px-3 bg-[#1C1E28] border border-[#2A2C38] rounded-lg text-[14px] text-[#F0F0F3] placeholder:text-[#5A5C66] focus:outline-none focus:border-[#afc6ff] focus:ring-1 focus:ring-[#afc6ff]/30 transition-all"
                         />
                     </div>
+                    <div>
+                        <label className="block text-[13px] font-medium text-[#B0B2BA] mb-1.5">
+                            Confirm password
+                        </label>
+                        <input
+                            type="password"
+                            value={confirmPassword}
+                            onChange={e => setConfirmPassword(e.target.value)}
+                            placeholder="••••••••"
+                            required
+                            className="w-full h-10 px-3 bg-[#1C1E28] border border-[#2A2C38] rounded-lg text-[14px] text-[#F0F0F3] placeholder:text-[#5A5C66] focus:outline-none focus:border-[#afc6ff] focus:ring-1 focus:ring-[#afc6ff]/30 transition-all"
+                        />
+                    </div>
 
                     {/* Error message */}
                     {error && (
@@ -130,21 +168,29 @@ export default function LoginPage() {
                         </div>
                     )}
 
+                    {/* Success message */}
+                    {success && (
+                        <div className="flex items-start gap-2 p-3 bg-[#a8f0c6]/10 border border-[#a8f0c6]/20 rounded-lg">
+                            <span className="material-symbols-outlined text-[#a8f0c6] flex-shrink-0" style={{ fontSize: 16 }}>check_circle</span>
+                            <p className="text-[13px] text-[#a8f0c6] leading-snug">{success}</p>
+                        </div>
+                    )}
+
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || Boolean(success)}
                         className="w-full h-10 bg-[var(--color-brand)] hover:brightness-110 text-white text-[14px] font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                     >
-                        {loading ? 'Signing in…' : 'Sign in'}
+                        {loading ? 'Creating account…' : 'Create account'}
                     </button>
                 </form>
             </div>
 
-            {/* Sign up link */}
+            {/* Sign in link */}
             <p className="text-center text-[13px] text-[#8B8D97] mt-5">
-                Don&apos;t have an account?{' '}
-                <a href="/signup" className="text-[#afc6ff] hover:text-[#6B9FFF] font-medium transition-colors">
-                    Sign up
+                Already have an account?{' '}
+                <a href="/login" className="text-[#afc6ff] hover:text-[#6B9FFF] font-medium transition-colors">
+                    Sign in
                 </a>
             </p>
         </div>

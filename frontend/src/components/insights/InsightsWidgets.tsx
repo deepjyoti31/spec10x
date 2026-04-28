@@ -83,6 +83,12 @@ function getSourceAccent(sourceType: string): string {
   return '#afc6ff';
 }
 
+function formatBreakdownPoints(value?: number, max?: number): string {
+  if (typeof value !== 'number') return '0.0';
+  if (typeof max !== 'number') return value.toFixed(1);
+  return `${value.toFixed(1)} / ${max}`;
+}
+
 function getInitials(value?: string): string {
   if (!value) return 'AI';
   const pieces = value
@@ -456,6 +462,32 @@ export function ThemeDetailPanel({ theme, onAskTheme }: ThemeDetailPanelProps) {
     (sum, source) => sum + source.count,
     0
   );
+  const breakdownItems = [
+    {
+      label: 'Frequency',
+      value: formatBreakdownPoints(theme.impact_breakdown?.frequency, 40),
+      width: Math.min(100, ((theme.impact_breakdown?.frequency ?? 0) / 40) * 100),
+      color: '#afc6ff',
+    },
+    {
+      label: 'Negative sentiment',
+      value: formatBreakdownPoints(theme.impact_breakdown?.negative, 25),
+      width: Math.min(100, ((theme.impact_breakdown?.negative ?? 0) / 25) * 100),
+      color: '#ffb4ab',
+    },
+    {
+      label: 'Recency',
+      value: formatBreakdownPoints(theme.impact_breakdown?.recency, 20),
+      width: Math.min(100, ((theme.impact_breakdown?.recency ?? 0) / 20) * 100),
+      color: '#ffb77b',
+    },
+    {
+      label: 'Source diversity',
+      value: formatBreakdownPoints(theme.impact_breakdown?.source_diversity, 15),
+      width: Math.min(100, ((theme.impact_breakdown?.source_diversity ?? 0) / 15) * 100),
+      color: '#34D399',
+    },
+  ];
 
   return (
     <div className="p-6">
@@ -523,6 +555,33 @@ export function ThemeDetailPanel({ theme, onAskTheme }: ThemeDetailPanelProps) {
             </div>
           </div>
         ))}
+      </div>
+
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-[11px] text-[#5A5C66] font-bold uppercase">
+            Why This Ranks Here
+          </h4>
+          <span className="text-[10px] text-[#5A5C66]">
+            Total {formatBreakdownPoints(theme.impact_breakdown?.total, 100)}
+          </span>
+        </div>
+        <div className="space-y-3">
+          {breakdownItems.map((item) => (
+            <div key={item.label}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] text-[#8B8D97]">{item.label}</span>
+                <span className="text-[11px] text-[#F0F0F3]">{item.value}</span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#161820' }}>
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${item.width}%`, backgroundColor: item.color }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="mb-8">

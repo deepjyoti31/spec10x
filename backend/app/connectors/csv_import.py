@@ -8,6 +8,7 @@ Implements the BaseConnector contract for CSV-based imports.
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import logging
 from datetime import datetime
@@ -172,6 +173,25 @@ def _parse_datetime(value: str) -> datetime:
     raise ValueError(f"Cannot parse datetime: {value}")
 
 
+def _build_external_id(row: dict[str, Any], row_index: int) -> str:
+    respondent_id = str(row.get("respondent_id", "") or "").strip()
+    if respondent_id:
+        return respondent_id
+
+    fingerprint = "|".join(
+        [
+            str(row_index),
+            str(row.get("submitted_at", "") or "").strip(),
+            str(row.get("question", "") or "").strip(),
+            str(row.get("response_text", "") or "").strip(),
+            str(row.get("channel", "") or "").strip(),
+            str(row.get("nps_score", "") or "").strip(),
+        ]
+    )
+    digest = hashlib.sha256(fingerprint.encode("utf-8")).hexdigest()[:24]
+    return f"csv-row-{digest}"
+
+
 # ── Connector ─────────────────────────────────────────────
 
 @register_connector(source_type="survey", provider="csv_import")
@@ -234,7 +254,7 @@ class CSVImportConnector(BaseConnector):
     ) -> list[NormalizedSignal]:
         """Convert parsed CSV rows to NormalizedSignals."""
         signals: list[NormalizedSignal] = []
-        for row in raw_records:
+        for row_index, row in enumerate(raw_records, start=1):
             submitted_at = row.get("submitted_at", "")
             try:
                 occurred_at = _parse_datetime(submitted_at)
@@ -256,7 +276,7 @@ class CSVImportConnector(BaseConnector):
 
             signals.append(
                 NormalizedSignal(
-                    external_id=row.get("respondent_id", ""),
+                    external_id=_build_external_id(row, row_index),
                     source_record_type="survey_response",
                     signal_kind="survey_response",
                     occurred_at=occurred_at,

@@ -208,7 +208,7 @@ export default function LandingPage() {
                             Sign in
                         </Link>
                         <Link
-                            href="/login"
+                            href="/signup"
                             className="h-8 px-4 rounded hover:brightness-110 text-[13px] font-semibold transition-all flex items-center"
                             style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
                         >
@@ -243,7 +243,7 @@ export default function LandingPage() {
                     {/* CTAs */}
                     <div className="flex items-center justify-center gap-4 mb-16">
                         <Link
-                            href="/login"
+                            href="/signup"
                             className="inline-flex items-center gap-2 h-12 px-7 rounded hover:brightness-110 text-[15px] font-semibold transition-all"
                             style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
                         >
@@ -693,7 +693,7 @@ export default function LandingPage() {
                     </p>
                     <div className="flex items-center justify-center gap-4">
                         <Link
-                            href="/login"
+                            href="/signup"
                             className="inline-flex items-center gap-2 px-8 rounded hover:brightness-110 text-[16px] font-bold transition-all"
                             style={{ backgroundColor: '#afc6ff', color: '#002d6c', height: 52 }}
                         >

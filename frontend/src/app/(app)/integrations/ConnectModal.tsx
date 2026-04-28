@@ -3,10 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import { ZendeskCredentials } from '@/hooks/useIntegrations';
-
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
+import { SurveyImportHistoryItem, SurveyImportValidationResponse } from '@/lib/api';
 
 interface ConnectModalProps {
   open: boolean;
@@ -14,13 +11,11 @@ interface ConnectModalProps {
   error: string | null;
   provider: string | null;
   onClose: () => void;
-  onSubmit: (credentials: ZendeskCredentials) => void;
-  onSubmitCsv: (file: File) => void;
+  onSubmit: (credentials: ZendeskCredentials) => Promise<void>;
+  onValidateCsv: (file: File) => Promise<SurveyImportValidationResponse>;
+  onSubmitCsv: (file: File) => Promise<void>;
+  surveyImportHistory: SurveyImportHistoryItem[];
 }
-
-// ---------------------------------------------------------------------------
-// Shared styles
-// ---------------------------------------------------------------------------
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -43,10 +38,6 @@ const labelStyle: React.CSSProperties = {
   marginBottom: 6,
 };
 
-// ---------------------------------------------------------------------------
-// Zendesk form
-// ---------------------------------------------------------------------------
-
 function ZendeskForm({
   step,
   error,
@@ -54,7 +45,7 @@ function ZendeskForm({
 }: {
   step: ConnectModalProps['step'];
   error: string | null;
-  onSubmit: (credentials: ZendeskCredentials) => void;
+  onSubmit: (credentials: ZendeskCredentials) => Promise<void>;
 }) {
   const [subdomain, setSubdomain] = useState('');
   const [email, setEmail] = useState('');
@@ -68,10 +59,10 @@ function ZendeskForm({
 
   const isBusy = step === 'validating';
 
-  const handleSubmit = (e: SubmitEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (isBusy) return;
-    onSubmit({ subdomain: subdomain.trim(), email: email.trim(), apiToken });
+    void onSubmit({ subdomain: subdomain.trim(), email: email.trim(), apiToken });
   };
 
   return (
@@ -178,7 +169,7 @@ function ZendeskForm({
           {isBusy ? (
             <span className="flex items-center justify-center gap-2">
               <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin inline-block" />
-              Validating credentials…
+              Validating credentials...
             </span>
           ) : (
             'Connect Zendesk'
@@ -189,41 +180,78 @@ function ZendeskForm({
   );
 }
 
-// ---------------------------------------------------------------------------
-// CSV import form
-// ---------------------------------------------------------------------------
-
 function CsvImportForm({
   step,
   error,
+  historyItems,
+  onValidate,
   onSubmit,
 }: {
   step: ConnectModalProps['step'];
   error: string | null;
-  onSubmit: (file: File) => void;
+  historyItems: SurveyImportHistoryItem[];
+  onValidate: (file: File) => Promise<SurveyImportValidationResponse>;
+  onSubmit: (file: File) => Promise<void>;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<SurveyImportValidationResponse | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const isBusy = step === 'validating';
+  const isSubmitting = step === 'validating';
+  const isBusy = isSubmitting || previewing;
 
-  const handleFile = (f: File) => {
-    if (f.name.toLowerCase().endsWith('.csv')) setFile(f);
+  const resetPreview = () => {
+    setPreview(null);
+    setPreviewError(null);
+  };
+
+  const handleFile = (nextFile: File) => {
+    resetPreview();
+    if (!nextFile.name.toLowerCase().endsWith('.csv')) {
+      setFile(null);
+      setPreviewError('Please choose a CSV (.csv) file.');
+      return;
+    }
+    setFile(nextFile);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
-    const f = e.dataTransfer.files[0];
-    if (f) handleFile(f);
+    const nextFile = e.dataTransfer.files[0];
+    if (nextFile) handleFile(nextFile);
   };
 
-  const handleSubmit = (e: SubmitEvent) => {
-    e.preventDefault();
+  const handlePreview = async () => {
     if (!file || isBusy) return;
-    onSubmit(file);
+
+    setPreviewError(null);
+    setPreviewing(true);
+    try {
+      const result = await onValidate(file);
+      setPreview(result);
+      if (!result.valid) {
+        setPreviewError('Please fix the CSV issues below before importing.');
+      }
+    } catch (err) {
+      setPreview(null);
+      setPreviewError(err instanceof Error ? err.message : 'Preview failed');
+    } finally {
+      setPreviewing(false);
+    }
   };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!file || isBusy || !preview?.valid) return;
+    void onSubmit(file);
+  };
+
+  const activeError = previewError ?? (step === 'error' ? error : null);
+  const canImport = Boolean(file && preview?.valid && !isBusy);
 
   return (
     <>
@@ -236,12 +264,11 @@ function CsvImportForm({
         </div>
         <div>
           <h3 className="text-base font-bold text-white">Import CSV Survey / NPS</h3>
-          <p className="text-[12px] text-[#5A5C66] mt-0.5">Upload a CSV file with survey or NPS responses</p>
+          <p className="text-[12px] text-[#5A5C66] mt-0.5">Preview rows and warnings before you import.</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        {/* Drop zone */}
         <div
           onClick={() => !isBusy && inputRef.current?.click()}
           onDragOver={e => { e.preventDefault(); setDragging(true); }}
@@ -270,10 +297,19 @@ function CsvImportForm({
           type="file"
           accept=".csv"
           className="hidden"
-          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+          onChange={e => {
+            const nextFile = e.target.files?.[0];
+            if (nextFile) handleFile(nextFile);
+          }}
         />
 
-        {/* Template download */}
+        <div
+          className="rounded-lg px-4 py-3 text-[12px] leading-relaxed"
+          style={{ backgroundColor: '#0c0e14', color: '#8B8D97', border: '1px solid rgba(66,71,83,0.2)' }}
+        >
+          Nothing is imported until you preview and confirm. You can close this modal before confirming.
+        </div>
+
         <a
           href="/api/survey-import/template"
           download
@@ -286,46 +322,182 @@ function CsvImportForm({
           Download CSV template
         </a>
 
-        {step === 'error' && error && (
+        {activeError && (
           <div
             className="rounded-lg px-4 py-3 text-xs"
             style={{ backgroundColor: 'rgba(248,113,113,0.08)', color: '#F87171', border: '1px solid rgba(248,113,113,0.2)' }}
           >
-            {error}
+            {activeError}
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={isBusy || !file}
-          className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all mt-1"
-          style={{
-            backgroundColor: isBusy ? 'rgba(175,198,255,0.15)' : '#afc6ff',
-            color: isBusy ? '#afc6ff' : '#002D6C',
-            cursor: (isBusy || !file) ? 'default' : 'pointer',
-            opacity: !file && !isBusy ? 0.5 : 1,
-          }}
-        >
-          {isBusy ? (
-            <span className="flex items-center justify-center gap-2">
+        {preview && (
+          <div
+            className="rounded-lg p-4 space-y-4"
+            style={{ backgroundColor: '#0c0e14', border: '1px solid rgba(66,71,83,0.2)' }}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h4 className="text-sm font-semibold text-white">Preview</h4>
+                <p className="text-[12px] text-[#8B8D97] mt-1">
+                  {preview.total_rows} row{preview.total_rows === 1 ? '' : 's'} detected across {preview.columns_found.length} column{preview.columns_found.length === 1 ? '' : 's'}.
+                </p>
+              </div>
+              <span
+                className="text-[10px] font-bold px-2 py-1 rounded uppercase tracking-widest"
+                style={{
+                  backgroundColor: preview.valid ? 'rgba(52,211,153,0.1)' : 'rgba(248,113,113,0.1)',
+                  color: preview.valid ? '#34D399' : '#F87171',
+                }}
+              >
+                {preview.valid ? 'Ready' : 'Needs fixes'}
+              </span>
+            </div>
+
+            {preview.warnings.length > 0 && (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-[#ffb77b] mb-2">Warnings</p>
+                <ul className="space-y-1 text-[12px] text-[#B0B2BA]">
+                  {preview.warnings.map((warning) => (
+                    <li key={warning}>- {warning}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {preview.errors.length > 0 && (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-[#F87171] mb-2">Errors</p>
+                <ul className="space-y-1 text-[12px] text-[#F0B4B4]">
+                  {preview.errors.map((previewItemError) => (
+                    <li key={previewItemError}>- {previewItemError}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {preview.preview_rows.length > 0 && (
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-[#8B8D97] mb-2">Mapped rows</p>
+                <div className="space-y-2">
+                  {preview.preview_rows.slice(0, 3).map((row, index) => (
+                    <div
+                      key={`${index}-${row.response_text ?? row.submitted_at ?? 'row'}`}
+                      className="rounded-lg px-3 py-2"
+                      style={{ backgroundColor: '#161820', border: '1px solid rgba(66,71,83,0.18)' }}
+                    >
+                      <p className="text-[12px] text-white line-clamp-2">
+                        {row.response_text || 'No response text'}
+                      </p>
+                      <p className="text-[11px] text-[#8B8D97] mt-1">
+                        {row.question || 'Survey Response'} · {row.submitted_at || 'Unknown date'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            type="button"
+            disabled={isBusy || !file}
+            onClick={() => { void handlePreview(); }}
+            className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all"
+            style={{
+              backgroundColor: '#1e2028',
+              color: file ? '#c2c6d6' : 'rgba(194,198,214,0.35)',
+              border: '1px solid rgba(66,71,83,0.3)',
+              cursor: isBusy || !file ? 'default' : 'pointer',
+            }}
+          >
+            {previewing ? 'Previewing...' : preview ? 'Refresh Preview' : 'Preview Import'}
+          </button>
+
+          <button
+            type="submit"
+            disabled={!canImport}
+            className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all"
+            style={{
+              backgroundColor: isSubmitting ? 'rgba(175,198,255,0.15)' : '#afc6ff',
+              color: isSubmitting ? '#afc6ff' : '#002D6C',
+              cursor: canImport ? 'pointer' : 'default',
+              opacity: canImport || isSubmitting ? 1 : 0.5,
+            }}
+          >
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-2">
               <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin inline-block" />
-              Importing…
+                Importing...
+              </span>
+            ) : (
+              'Import CSV'
+            )}
+          </button>
+        </div>
+
+        <div className="pt-2">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="text-[11px] font-semibold uppercase tracking-widest text-[#8B8D97]">
+              Recent Imports
+            </h4>
+            <span className="text-[11px] text-[#5A5C66]">
+              {historyItems.length} total
             </span>
+          </div>
+          {historyItems.length === 0 ? (
+            <div className="rounded-lg px-4 py-3 text-[12px] text-[#5A5C66]" style={{ backgroundColor: '#0c0e14' }}>
+              No CSV imports yet.
+            </div>
           ) : (
-            'Import CSV'
+            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+              {historyItems.slice(0, 5).map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-lg px-3 py-2"
+                  style={{ backgroundColor: '#0c0e14', border: '1px solid rgba(66,71,83,0.18)' }}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[12px] font-medium text-white truncate">{item.import_name}</p>
+                    <span
+                      className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-widest"
+                      style={{
+                        backgroundColor: item.status === 'succeeded' ? 'rgba(52,211,153,0.1)' : item.status === 'failed' ? 'rgba(248,113,113,0.1)' : 'rgba(175,198,255,0.1)',
+                        color: item.status === 'succeeded' ? '#34D399' : item.status === 'failed' ? '#F87171' : '#afc6ff',
+                      }}
+                    >
+                      {item.status}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#8B8D97] mt-1">
+                    {item.records_created} created · {item.records_seen} seen
+                  </p>
+                  {item.error_summary && (
+                    <p className="text-[11px] text-[#F87171] mt-1">{item.error_summary}</p>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
-        </button>
+        </div>
       </form>
     </>
   );
 }
 
-// ---------------------------------------------------------------------------
-// ConnectModal
-// ---------------------------------------------------------------------------
-
-export default function ConnectModal({ open, step, error, provider, onClose, onSubmit, onSubmitCsv }: ConnectModalProps) {
-  // Auto-close after success
+export default function ConnectModal({
+  open,
+  step,
+  error,
+  provider,
+  onClose,
+  onSubmit,
+  onValidateCsv,
+  onSubmitCsv,
+  surveyImportHistory,
+}: ConnectModalProps) {
   useEffect(() => {
     if (step === 'success') {
       const timer = setTimeout(onClose, 1500);
@@ -333,7 +505,6 @@ export default function ConnectModal({ open, step, error, provider, onClose, onS
     }
   }, [step, onClose]);
 
-  // Escape key to close
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && open) onClose();
@@ -375,7 +546,6 @@ export default function ConnectModal({ open, step, error, provider, onClose, onS
           </button>
         )}
 
-        {/* Success state */}
         {isSuccess && (
           <div className="flex flex-col items-center py-6 gap-4">
             <div
@@ -393,11 +563,18 @@ export default function ConnectModal({ open, step, error, provider, onClose, onS
           </div>
         )}
 
-        {/* Form / Validating / Error state */}
         {!isSuccess && (
-          isCsv
-            ? <CsvImportForm step={step} error={error} onSubmit={onSubmitCsv} />
-            : <ZendeskForm step={step} error={error} onSubmit={onSubmit} />
+          isCsv ? (
+            <CsvImportForm
+              step={step}
+              error={error}
+              historyItems={surveyImportHistory}
+              onValidate={onValidateCsv}
+              onSubmit={onSubmitCsv}
+            />
+          ) : (
+            <ZendeskForm step={step} error={error} onSubmit={onSubmit} />
+          )
         )}
       </div>
     </div>

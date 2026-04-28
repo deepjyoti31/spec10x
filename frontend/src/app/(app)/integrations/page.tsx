@@ -497,6 +497,7 @@ export default function IntegrationsPage() {
         error,
         syncingIds,
         disconnectingIds,
+        surveyImportHistory,
         connectModalOpen,
         connectModalDataSourceId,
         connectModalStep,
@@ -505,6 +506,7 @@ export default function IntegrationsPage() {
         disconnect,
         openConnectModal,
         closeConnectModal,
+        validateCsvImport,
         submitConnect,
         submitCsvConnect,
     } = useIntegrations();
@@ -701,7 +703,9 @@ export default function IntegrationsPage() {
                 provider={connectModalProvider}
                 onClose={closeConnectModal}
                 onSubmit={submitConnect}
+                onValidateCsv={validateCsvImport}
                 onSubmitCsv={submitCsvConnect}
+                surveyImportHistory={surveyImportHistory}
             />
 
         </div>

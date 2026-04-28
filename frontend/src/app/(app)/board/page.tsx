@@ -37,6 +37,10 @@ function initials(name?: string | null): string {
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
 }
 
+function formatBreakdownLabel(value: number | undefined, max: number): string {
+    return `${(value ?? 0).toFixed(1)}/${max}`;
+}
+
 // ---------------------------------------------------------------------------
 // Score ring — SVG circular progress
 // ---------------------------------------------------------------------------
@@ -103,6 +107,41 @@ function MetricsGrid({ theme, compact = false }: { theme: BoardThemeCardResponse
                     <span className="font-semibold" style={{ fontSize: compact ? 10 : 11, color: m.danger ? '#ffb4ab' : '#F0F0F3' }}>{m.value}</span>
                 </div>
             ))}
+        </div>
+    );
+}
+
+function ImpactBreakdownStrip({
+    theme,
+    compact = false,
+}: {
+    theme: BoardThemeCardResponse;
+    compact?: boolean;
+}) {
+    const breakdown = theme.impact_breakdown;
+    const items = [
+        { label: 'FREQ', value: formatBreakdownLabel(breakdown?.frequency, 40), color: '#afc6ff' },
+        { label: 'NEG', value: formatBreakdownLabel(breakdown?.negative, 25), color: '#ffb4ab' },
+        { label: 'REC', value: formatBreakdownLabel(breakdown?.recency, 20), color: '#ffb77b' },
+        { label: 'DIV', value: formatBreakdownLabel(breakdown?.source_diversity, 15), color: '#34D399' },
+    ];
+
+    return (
+        <div className={compact ? 'mb-3' : 'mb-4'}>
+            <div className="text-[9px] font-bold uppercase tracking-widest mb-2" style={{ color: 'rgba(194,198,214,0.4)' }}>
+                Why This Rank
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+                {items.map(item => (
+                    <span
+                        key={item.label}
+                        className="text-[9px] px-1.5 py-1 rounded"
+                        style={{ backgroundColor: '#1e1f26', color: item.color, border: '1px solid rgba(66,71,83,0.14)' }}
+                    >
+                        {item.label} {item.value}
+                    </span>
+                ))}
+            </div>
         </div>
     );
 }
@@ -240,6 +279,7 @@ function PinnedCardFull({
 
             {/* Metrics grid */}
             <MetricsGrid theme={theme} />
+            <ImpactBreakdownStrip theme={theme} />
 
             {/* Evidence quote */}
             {firstEvidence && (
@@ -304,6 +344,7 @@ function PinnedCardSimple({
             </div>
             <h3 className="text-base font-semibold text-[#F0F0F3] mb-3">{theme.name}</h3>
             <MetricsGrid theme={theme} />
+            <ImpactBreakdownStrip theme={theme} />
             <div className="mb-3">
                 <ViewInInsightsLink themeId={theme.id} />
             </div>
@@ -352,6 +393,7 @@ function InvestigateCardRing({
                 </div>
             )}
             <MetricsGrid theme={theme} compact />
+            <ImpactBreakdownStrip theme={theme} compact />
             {quote && (
                 <div
                     className="p-2 rounded text-[10px] leading-relaxed mb-3"
@@ -402,6 +444,7 @@ function CompactCard({
                 {theme.name}
             </h3>
             <MetricsGrid theme={theme} compact />
+            <ImpactBreakdownStrip theme={theme} compact />
             <ViewInInsightsLink themeId={theme.id} />
         </div>
     );

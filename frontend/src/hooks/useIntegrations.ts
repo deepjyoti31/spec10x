@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { useAuth } from './useAuth';
-import { api, DataSourceResponse, SourceConnectionResponse } from '@/lib/api';
+import {
+  api,
+  DataSourceResponse,
+  SourceConnectionResponse,
+  SurveyImportHistoryItem,
+  SurveyImportValidationResponse,
+} from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -24,6 +30,7 @@ interface UseIntegrationsReturn {
   error: string | null;
   syncingIds: Set<string>;
   disconnectingIds: Set<string>;
+  surveyImportHistory: SurveyImportHistoryItem[];
   connectModalOpen: boolean;
   connectModalDataSourceId: string | null;
   connectModalStep: ConnectModalStep;
@@ -33,6 +40,7 @@ interface UseIntegrationsReturn {
   disconnect: (connectionId: string) => Promise<void>;
   openConnectModal: (dataSourceId: string) => void;
   closeConnectModal: () => void;
+  validateCsvImport: (file: File) => Promise<SurveyImportValidationResponse>;
   submitConnect: (credentials: ZendeskCredentials) => Promise<void>;
   submitCsvConnect: (file: File) => Promise<void>;
 }
@@ -67,6 +75,7 @@ export function useIntegrations(): UseIntegrationsReturn {
 
   const [syncingIds, setSyncingIds] = useState<Set<string>>(new Set());
   const [disconnectingIds, setDisconnectingIds] = useState<Set<string>>(new Set());
+  const [surveyImportHistory, setSurveyImportHistory] = useState<SurveyImportHistoryItem[]>([]);
 
   const [connectModalOpen, setConnectModalOpen] = useState(false);
   const [connectModalDataSourceId, setConnectModalDataSourceId] = useState<string | null>(null);
@@ -81,6 +90,7 @@ export function useIntegrations(): UseIntegrationsReturn {
     if (!token) {
       setConnections([]);
       setDataSources([]);
+      setSurveyImportHistory([]);
       setLoading(false);
       setError(null);
       return;
@@ -90,14 +100,16 @@ export function useIntegrations(): UseIntegrationsReturn {
     setError(null);
 
     try {
-      const [allConnections, allSources] = await Promise.all([
+      const [allConnections, allSources, surveyHistory] = await Promise.all([
         api.listSourceConnections(token),
         api.listDataSources(token),
+        api.getSurveyImportHistory(token),
       ]);
 
       // Exclude fully disconnected connections from the connected section
       setConnections(allConnections.filter(c => c.status !== 'disconnected'));
       setDataSources(allSources);
+      setSurveyImportHistory(surveyHistory.imports);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load integrations');
     } finally {
@@ -169,6 +181,11 @@ export function useIntegrations(): UseIntegrationsReturn {
     setConnectModalError(null);
   }, []);
 
+  const validateCsvImport = useCallback(async (file: File) => {
+    if (!token) throw new Error('Not authenticated');
+    return api.validateSurveyCSV(token, file);
+  }, [token]);
+
   const submitConnect = useCallback(async (credentials: ZendeskCredentials) => {
     if (!token) throw new Error('Not authenticated');
     if (!connectModalDataSourceId) throw new Error('No data source selected');
@@ -238,6 +255,7 @@ export function useIntegrations(): UseIntegrationsReturn {
     error,
     syncingIds,
     disconnectingIds,
+    surveyImportHistory,
     connectModalOpen,
     connectModalDataSourceId,
     connectModalStep,
@@ -247,6 +265,7 @@ export function useIntegrations(): UseIntegrationsReturn {
     disconnect,
     openConnectModal,
     closeConnectModal,
+    validateCsvImport,
     submitConnect,
     submitCsvConnect,
   };

@@ -1099,6 +1099,15 @@ export interface SurveyImportConfirmResponse {
   records_unchanged?: number;
 }
 
+export interface SurveyImportValidationResponse {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  preview_rows: Array<Record<string, string>>;
+  total_rows: number;
+  columns_found: string[];
+}
+
 export interface SurveyImportHistoryItem {
   id: string;
   connection_id: string;
