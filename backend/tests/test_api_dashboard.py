@@ -395,8 +395,8 @@ class TestHomeDashboardApi:
             f"New theme: {high_theme.name}",
         ]
         assert payload["recent_activity"][0]["href"] == "/integrations"
-        assert payload["recent_activity"][1]["href"] == "/interviews"
-        assert payload["recent_activity"][2]["href"] == "/insights"
+        assert payload["recent_activity"][1]["href"] == f"/interview/{event_interview.id}"
+        assert payload["recent_activity"][2]["href"] == f"/insights?theme={high_theme.id}"
         assert payload["recent_activity"][0]["occurred_at"] > payload["recent_activity"][1]["occurred_at"]
         assert payload["recent_activity"][1]["occurred_at"] > payload["recent_activity"][2]["occurred_at"]
 

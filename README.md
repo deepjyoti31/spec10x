@@ -5,9 +5,9 @@ Spec10x is a customer intelligence app for turning raw interview, support, and s
 Current workspace status:
 
 - interview upload, analysis, theme synthesis, and Ask are working
-- Sprint 6 of the `v0.5` alpha is implemented
+- Sprint 7 scope of the `v0.5` alpha is implemented, with the `G1` ship gate next
 - mixed-source feed, source-aware theme detail, Zendesk sync details, repeatable survey CSV import, and Impact Score v1 are in the codebase
-- the priority board, trust package, and observability baseline are in the codebase; Sprint 7 smoke coverage, replay hardening, and rollout docs are next
+- the priority board, trust package, observability baseline, connector replay tests, and pilot rollout documentation are in the codebase; frontend smoke coverage remains deferred pending UI redesign
 
 ## Current Product Surface
 
@@ -185,7 +185,7 @@ npm run lint
 npm run build
 ```
 
-There is no dedicated frontend automated test suite yet. The current release tracker keeps frontend smoke automation in Sprint 7.
+There is no dedicated frontend automated test suite yet. The current release tracker defers frontend smoke automation until the redesigned UI is stable.
 
 ## Documentation
 
@@ -214,12 +214,11 @@ Key docs:
 - trust-package pages and in-product trust copy alignment
 - observability baseline for sync logs and duplicate-rate review
 
-Still pending for later sprints:
+Deferred or below the release cut line:
 
 - Playwright smoke coverage in CI
-- connector contract, replay, and idempotency hardening
-- pilot rollout notes, rollback plan, and go or no-go checklist
 - saved views and other below-the-line work
+- `v0.51` Fireflies auto-sync, which should not open until `v0.5` ships and completes its measurement gate
 
 ## License
 

@@ -7,7 +7,7 @@ Tests: plan limit definitions, limit calculations.
 import pytest
 
 from app.models import PlanType
-from app.api.billing import PLAN_LIMITS
+from app.services.billing_limits import PLAN_LIMITS
 
 
 class TestPlanLimits:
