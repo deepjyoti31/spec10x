@@ -14,6 +14,7 @@ from app.core.database import get_db
 from app.models import DataSource, SourceConnection, SourceConnectionStatus, SyncRun, SyncRunStatus, User
 from app.schemas import (
     DataSourceResponse,
+    ImportedDataDeleteResponse,
     SourceConnectionCreate,
     SourceConnectionDetailResponse,
     SourceConnectionResponse,
@@ -193,6 +194,60 @@ async def disconnect_connection(
     await db.commit()
     await db.refresh(connection)
     return connection
+
+
+@router.delete(
+    "/source-connections/{connection_id}/data",
+    response_model=ImportedDataDeleteResponse,
+)
+async def delete_imported_data(
+    connection_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete Spec10x's copies of data imported through this connection.
+
+    Removes materialized interviews (with their insights, chunks, and
+    signals), the connection's signals, and its source items. Upstream
+    provider records are never touched.
+    """
+    workspace = await _get_user_workspace(current_user, db)
+
+    stmt = (
+        select(SourceConnection)
+        .where(
+            SourceConnection.id == connection_id,
+            SourceConnection.workspace_id == workspace.id,
+        )
+        .options(selectinload(SourceConnection.data_source))
+    )
+    result = await db.execute(stmt)
+    connection = result.scalar_one_or_none()
+
+    if connection is None:
+        raise HTTPException(status_code=404, detail="Source connection not found")
+
+    from app.services.interview_materialization import delete_imported_connection_data
+    from app.services.signals import refresh_external_signal_theme_matches
+    from app.services.synthesis import synthesize_themes
+
+    interviews_deleted, signals_deleted = await delete_imported_connection_data(
+        db, connection=connection
+    )
+
+    if interviews_deleted:
+        # Deleted interviews change the theme landscape — re-synthesize.
+        await synthesize_themes(db, workspace.owner_user_id)
+        await refresh_external_signal_theme_matches(
+            db, user_id=workspace.owner_user_id
+        )
+
+    await db.commit()
+    return ImportedDataDeleteResponse(
+        connection_id=connection.id,
+        interviews_deleted=interviews_deleted,
+        signals_deleted=signals_deleted,
+    )
 
 
 @router.post(

@@ -135,7 +135,10 @@ async def _prepare_interview_reanalysis(
     )
 
     interview.status = InterviewStatus.queued
-    interview.transcript = None
+    if interview.storage_path:
+        # Synced interviews (no stored file) keep their materialized
+        # transcript — there is nothing to re-download and re-extract.
+        interview.transcript = None
     interview.error_message = None
     await db.flush()
 

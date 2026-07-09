@@ -58,6 +58,7 @@ PROVIDER_LABELS = {
     NATIVE_PROVIDER: "Interview Upload",
     "zendesk": "Zendesk",
     "csv_import": "Survey CSV Import",
+    "fireflies": "Fireflies",
 }
 
 SIGNAL_KIND_LABELS = {

@@ -52,6 +52,7 @@ class SyncResult:
     records_seen: int = 0
     records_created: int = 0
     records_updated: int = 0
+    records_unchanged: int = 0
     error_summary: str | None = None
 
     @property

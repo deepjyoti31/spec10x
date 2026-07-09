@@ -477,6 +477,12 @@ class SourceConnectionDetailResponse(SourceConnectionResponse):
     sync_runs: list[SyncRunResponse] = []
 
 
+class ImportedDataDeleteResponse(BaseModel):
+    connection_id: uuid.UUID
+    interviews_deleted: int
+    signals_deleted: int
+
+
 # --- Home Dashboard ---
 
 class HomeDashboardStatsResponse(BaseModel):

@@ -53,33 +53,46 @@ async def process_interview(interview_id: str) -> dict:
 
             user_id = str(interview.user_id)
 
-            # ── Step 1: Download file ──
-            logger.info(f"Step 1: Downloading file for interview {interview_id}")
-            await _update_status(
-                db, interview, InterviewStatus.transcribing,
-                user_id, "Downloading file..."
-            )
+            # ── Step 1+2: Obtain transcript ──
+            local_path = None
+            if interview.transcript and not interview.storage_path:
+                # Materialized by a connector sync (e.g. Fireflies) —
+                # transcript is already present, nothing to download.
+                logger.info(
+                    f"Steps 1-2: Using synced transcript for interview {interview_id}"
+                )
+                await _update_status(
+                    db, interview, InterviewStatus.transcribing,
+                    user_id, "Preparing synced transcript..."
+                )
+                transcript = interview.transcript
+            else:
+                logger.info(f"Step 1: Downloading file for interview {interview_id}")
+                await _update_status(
+                    db, interview, InterviewStatus.transcribing,
+                    user_id, "Downloading file..."
+                )
 
-            local_path = await _download_file(interview)
-            logger.info(f"✅ Downloaded to {local_path}")
+                local_path = await _download_file(interview)
+                logger.info(f"✅ Downloaded to {local_path}")
 
-            # ── Step 2: Extract text ──
-            logger.info(f"Step 2: Extracting text for interview {interview_id}")
-            await publish_status(
-                user_id, interview_id, "transcribing",
-                f"Extracting text from {interview.filename}..."
-            )
-            logger.info(f"📡 Published status: transcribing for interview {interview_id}")
-            logger.debug(f"Calling text extraction service for {interview.file_type} file.")
+                # ── Step 2: Extract text ──
+                logger.info(f"Step 2: Extracting text for interview {interview_id}")
+                await publish_status(
+                    user_id, interview_id, "transcribing",
+                    f"Extracting text from {interview.filename}..."
+                )
+                logger.info(f"📡 Published status: transcribing for interview {interview_id}")
+                logger.debug(f"Calling text extraction service for {interview.file_type} file.")
 
-            from app.services.extraction import extract_text
-            transcript = extract_text(local_path, interview.file_type)
-            logger.info(f"✅ Extracted {len(transcript)} characters")
-            logger.debug(f"Transcript extracted, length: {len(transcript)}")
+                from app.services.extraction import extract_text
+                transcript = extract_text(local_path, interview.file_type)
+                logger.info(f"✅ Extracted {len(transcript)} characters")
+                logger.debug(f"Transcript extracted, length: {len(transcript)}")
 
-            interview.transcript = transcript
-            await db.flush()
-            logger.debug("Transcript saved to interview object and flushed to DB.")
+                interview.transcript = transcript
+                await db.flush()
+                logger.debug("Transcript saved to interview object and flushed to DB.")
 
             # ── Step 3: AI Analysis ──
             logger.info(f"Step 3: AI Analysis for interview {interview_id}")
@@ -195,7 +208,8 @@ async def process_interview(interview_id: str) -> dict:
             await db.commit()
 
             # Clean up temp file
-            _cleanup(local_path)
+            if local_path:
+                _cleanup(local_path)
 
             logger.info(f"🚀 Processing pipeline FINISHED for interview {interview_id}")
 

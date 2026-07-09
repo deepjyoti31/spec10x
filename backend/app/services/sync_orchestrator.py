@@ -156,12 +156,19 @@ async def run_backfill(
             sync_run, cursor_in=cursor_in
         )
 
-        records_created, records_updated, records_unchanged = await _persist_signals(
-            db,
-            connection=connection,
-            data_source=data_source,
-            signals=result.signals,
-        )
+        if result.signals:
+            records_created, records_updated, records_unchanged = await _persist_signals(
+                db,
+                connection=connection,
+                data_source=data_source,
+                signals=result.signals,
+            )
+        else:
+            # Materializing connectors (e.g. Fireflies) persist their own
+            # records and report counts directly.
+            records_created = result.records_created
+            records_updated = result.records_updated
+            records_unchanged = result.records_unchanged
 
         complete_sync_run(
             sync_run,
@@ -271,12 +278,17 @@ async def run_incremental_sync(
             sync_run, cursor_in=cursor_in
         )
 
-        records_created, records_updated, records_unchanged = await _persist_signals(
-            db,
-            connection=connection,
-            data_source=data_source,
-            signals=result.signals,
-        )
+        if result.signals:
+            records_created, records_updated, records_unchanged = await _persist_signals(
+                db,
+                connection=connection,
+                data_source=data_source,
+                signals=result.signals,
+            )
+        else:
+            records_created = result.records_created
+            records_updated = result.records_updated
+            records_unchanged = result.records_unchanged
 
         complete_sync_run(
             sync_run,

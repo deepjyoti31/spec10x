@@ -44,6 +44,12 @@ DEFAULT_SOURCE_CATALOG = (
         "display_name": "Interview Uploads",
         "connection_method": ConnectionMethod.native_upload,
     },
+    {
+        "source_type": SourceType.interview,
+        "provider": "fireflies",
+        "display_name": "Fireflies",
+        "connection_method": ConnectionMethod.api_token,
+    },
 )
 
 

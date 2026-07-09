@@ -6,7 +6,14 @@
       "Bash(ls /c/Users/Deep/.gemini/antigravity/scratch/spec10x/frontend/src/app/\\\\\\(app\\\\\\)/interviews/)",
       "WebSearch",
       "Bash(grep -E \"\\\\.\\(tsx?|jsx?|py\\)$\")",
-      "Bash(grep -E \"\\\\.py$\")"
+      "Bash(grep -E \"\\\\.py$\")",
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/test_fireflies_validation.py tests/test_fireflies_sync.py -x -q)",
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/test_fireflies_validation.py tests/test_fireflies_sync.py -q)",
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/ -q)",
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/test_extraction.py -q)",
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/test_extraction.py::TestFileHash::test_hash_returns_string -q)",
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/test_extraction.py -q --basetemp=\"C:/Users/Deep/AppData/Local/Temp/claude/c--Users-Deep--gemini-antigravity-scratch-spec10x/17e167ae-efc1-4de7-b250-6a0572909c99/scratchpad/pytest-tmp\")",
+      "Bash(npm run *)"
     ]
   }
 }

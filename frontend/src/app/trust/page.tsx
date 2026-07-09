@@ -44,6 +44,7 @@ export default function TrustPage() {
                     <Section title="What we read">
                         <ul className="list-disc list-outside pl-5 space-y-2 text-[15px] text-[#B0B2BA]">
                             <li>Interview files and transcripts you upload for analysis.</li>
+                            <li>Meeting transcripts and metadata from connected recorders like Fireflies. We read transcript text only — never audio or video.</li>
                             <li>Support ticket content and metadata from connected systems like Zendesk.</li>
                             <li>Survey and NPS rows you import by CSV.</li>
                         </ul>
@@ -71,6 +72,7 @@ export default function TrustPage() {
                             </div>
                             {[
                                 ['Interview uploads', 'Files you upload directly'],
+                                ['Fireflies', 'Read-only transcript access via your API key — no audio or video'],
                                 ['Zendesk', 'Read-only ticket and metadata access where supported'],
                                 ['Survey CSV import', 'Files you choose to import'],
                             ].map(([source, access]) => (

@@ -60,7 +60,7 @@ const CATEGORIES = [
                 iconBg: 'rgba(83,64,255,0.2)',
                 iconColor: '#7B6FFF',
                 icon: 'mic',
-                available: false,
+                available: true,
             },
             {
                 id: 'otter',

@@ -21,6 +21,11 @@ export interface ZendeskCredentials {
   apiToken: string;
 }
 
+export interface ConnectSubmission {
+  secretRef: string;
+  config: Record<string, string>;
+}
+
 type ConnectModalStep = 'form' | 'validating' | 'success' | 'error';
 
 interface UseIntegrationsReturn {
@@ -41,7 +46,7 @@ interface UseIntegrationsReturn {
   openConnectModal: (dataSourceId: string) => void;
   closeConnectModal: () => void;
   validateCsvImport: (file: File) => Promise<SurveyImportValidationResponse>;
-  submitConnect: (credentials: ZendeskCredentials) => Promise<void>;
+  submitConnect: (submission: ConnectSubmission) => Promise<void>;
   submitCsvConnect: (file: File) => Promise<void>;
 }
 
@@ -186,7 +191,7 @@ export function useIntegrations(): UseIntegrationsReturn {
     return api.validateSurveyCSV(token, file);
   }, [token]);
 
-  const submitConnect = useCallback(async (credentials: ZendeskCredentials) => {
+  const submitConnect = useCallback(async (submission: ConnectSubmission) => {
     if (!token) throw new Error('Not authenticated');
     if (!connectModalDataSourceId) throw new Error('No data source selected');
 
@@ -204,21 +209,24 @@ export function useIntegrations(): UseIntegrationsReturn {
         }
       }
 
-      // Store only the raw API token — the connector builds the "email/token:token" format itself
-      const secretRef = credentials.apiToken;
-
       const newConnection = await api.createSourceConnection(token, {
         data_source_id: connectModalDataSourceId,
-        secret_ref: secretRef,
-        config_json: { subdomain: credentials.subdomain, email: credentials.email },
+        secret_ref: submission.secretRef,
+        config_json: submission.config,
       });
 
       setConnectModalStep('validating');
 
       await api.validateSourceConnection(token, newConnection.id);
 
-      // Kick off initial sync immediately after successful connection
-      await api.triggerSourceConnectionSync(token, newConnection.id);
+      // Kick off the first import immediately after successful connection.
+      // Interview sources start with a historical backfill; support sources
+      // keep the existing incremental-sync behavior.
+      if (targetSource?.provider === 'fireflies') {
+        await api.triggerSourceConnectionBackfill(token, newConnection.id);
+      } else {
+        await api.triggerSourceConnectionSync(token, newConnection.id);
+      }
 
       setConnectModalStep('success');
       await fetchAll();
