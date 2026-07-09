@@ -729,6 +729,24 @@ export interface ThemeImpactBreakdownResponse {
   source_diversity: number;
 }
 
+export interface ThemeTrendResponse {
+  direction: 'rising' | 'flat' | 'declining';
+  recent_count: number;
+  previous_count: number;
+  window_days: number;
+}
+
+export interface ThemeScoreChangeResponse {
+  delta: number;
+  previous_total: number;
+  frequency_delta: number;
+  negative_delta: number;
+  recency_delta: number;
+  source_diversity_delta: number;
+  window_days: number;
+  explanation: string;
+}
+
 export interface ThemeChipResponse {
   id: string;
   name: string;
@@ -781,12 +799,16 @@ export interface ThemeDetailResponse extends ThemeResponse {
   impact_breakdown?: ThemeImpactBreakdownResponse;
   source_breakdown: SourceBreakdownResponse[];
   supporting_evidence: SupportingEvidenceGroupResponse[];
+  trend?: ThemeTrendResponse | null;
+  score_change?: ThemeScoreChangeResponse | null;
 }
 
 export interface BoardThemeCardResponse extends ThemeResponse {
   impact_breakdown: ThemeImpactBreakdownResponse;
   source_breakdown: SourceBreakdownResponse[];
   evidence_preview: FeedSignalResponse[];
+  trend?: ThemeTrendResponse | null;
+  score_change?: ThemeScoreChangeResponse | null;
 }
 
 export type ThemeExplorerSort = 'urgency' | 'frequency' | 'sentiment' | 'recency';
@@ -825,6 +847,7 @@ export interface ThemeExplorerCard {
   };
   source_chips: ThemeExplorerSourceChip[];
   quote_previews: ThemeExplorerQuotePreview[];
+  trend?: ThemeTrendResponse | null;
 }
 
 export interface ThemeExplorerFilters {

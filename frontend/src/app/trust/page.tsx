@@ -34,7 +34,7 @@ export default function TrustPage() {
                 <div className="mb-12">
                     <p className="text-[12px] font-semibold text-[#afc6ff] uppercase tracking-widest mb-3">Trust</p>
                     <h1 className="text-[36px] font-bold text-[#F0F0F3] mb-4">Trust &amp; Security Overview</h1>
-                    <p className="text-[15px] text-[#8B8D97]">Last updated: April 26, 2026</p>
+                    <p className="text-[15px] text-[#8B8D97]">Last updated: July 9, 2026</p>
                     <p className="text-[15px] text-[#B0B2BA] leading-relaxed mt-5">
                         This page explains what Spec10x reads, what it stores, and what happens when you disconnect a source or ask us to delete copied data.
                     </p>
@@ -47,6 +47,7 @@ export default function TrustPage() {
                             <li>Meeting transcripts and metadata from connected recorders like Fireflies. We read transcript text only — never audio or video.</li>
                             <li>Support ticket content and metadata from connected systems like Zendesk.</li>
                             <li>Survey and NPS rows you import by CSV.</li>
+                            <li>Aggregated weekly event counts from connected analytics tools like PostHog. We read aggregate counts only — never raw events, user profiles, or session recordings.</li>
                         </ul>
                     </Section>
 
@@ -75,6 +76,7 @@ export default function TrustPage() {
                                 ['Fireflies', 'Read-only transcript access via your API key — no audio or video'],
                                 ['Zendesk', 'Read-only ticket and metadata access where supported'],
                                 ['Survey CSV import', 'Files you choose to import'],
+                                ['PostHog', 'Read-only aggregate event counts via your personal API key — no raw events or recordings'],
                             ].map(([source, access]) => (
                                 <div key={source} className="grid grid-cols-[1.1fr_1fr] text-[14px] text-[#B0B2BA] border-b border-[#1E2028] last:border-b-0">
                                     <div className="px-4 py-3">{source}</div>

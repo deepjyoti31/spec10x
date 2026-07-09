@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 
 import type {
   SourceType,
@@ -8,12 +9,14 @@ import type {
   ThemeExplorerCard,
   ThemeExplorerSentiment,
   ThemeExplorerSort,
+  ThemeTrendResponse,
 } from '@/lib/api';
 
 export const LIVE_SOURCE_OPTIONS: Array<{ value: SourceType; label: string }> = [
   { value: 'interview', label: 'Interview' },
   { value: 'support', label: 'Support' },
   { value: 'survey', label: 'Survey' },
+  { value: 'analytics', label: 'Analytics' },
 ];
 
 export const SORT_OPTIONS: Array<{ value: ThemeExplorerSort; label: string }> = [
@@ -80,6 +83,7 @@ function getDominantSentiment(theme: ThemeDetailResponse): string {
 function getSourceAccent(sourceType: string): string {
   if (sourceType === 'support') return '#ffb77b';
   if (sourceType === 'survey') return '#b2c6f8';
+  if (sourceType === 'analytics') return '#d9b8ff';
   return '#afc6ff';
 }
 
@@ -352,6 +356,7 @@ export function ThemeCard({ card, selected, onClick }: ThemeCardProps) {
           {card.name}
         </h3>
         <div className="flex items-center gap-2">
+          <ThemeTrendBadge trend={card.trend} />
           {card.is_new && (
             <span
               className="text-[10px] font-bold px-1.5 py-0.5 rounded"
@@ -443,7 +448,35 @@ interface ThemeDetailPanelProps {
   onAskTheme: () => void;
 }
 
+const TREND_DISPLAY: Record<
+  ThemeTrendResponse['direction'],
+  { icon: string; label: string; color: string; bg: string }
+> = {
+  rising: { icon: 'trending_up', label: 'Rising', color: '#ffb77b', bg: 'rgba(255,183,123,0.1)' },
+  flat: { icon: 'trending_flat', label: 'Flat', color: '#8B8D97', bg: 'rgba(139,141,151,0.1)' },
+  declining: { icon: 'trending_down', label: 'Declining', color: '#34D399', bg: 'rgba(52,211,153,0.1)' },
+};
+
+function ThemeTrendBadge({ trend }: { trend?: ThemeTrendResponse | null }) {
+  if (!trend) return null;
+  const display = TREND_DISPLAY[trend.direction] ?? TREND_DISPLAY.flat;
+
+  return (
+    <span
+      className="text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 uppercase tracking-wider"
+      style={{ backgroundColor: display.bg, color: display.color }}
+      title={`${trend.recent_count} signals in the last ${trend.window_days} days vs ${trend.previous_count} before — evidence volume, not proven impact`}
+    >
+      <span className="material-symbols-outlined" style={{ fontSize: 12 }}>
+        {display.icon}
+      </span>
+      {display.label}
+    </span>
+  );
+}
+
 export function ThemeDetailPanel({ theme, onAskTheme }: ThemeDetailPanelProps) {
+  const [evidenceFilter, setEvidenceFilter] = useState<SourceType | null>(null);
   const evidenceItems = theme.supporting_evidence
     .flatMap((group) =>
       group.items.map((item) => ({
@@ -456,7 +489,13 @@ export function ThemeDetailPanel({ theme, onAskTheme }: ThemeDetailPanelProps) {
       (left, right) =>
         new Date(right.occurred_at).getTime() - new Date(left.occurred_at).getTime()
     );
-  const topEvidence = evidenceItems.slice(0, 3);
+  const filteredEvidence = evidenceFilter
+    ? evidenceItems.filter((item) => item.source_group_type === evidenceFilter)
+    : evidenceItems;
+  const topEvidence = filteredEvidence.slice(0, 3);
+  const hasAnalyticsEvidence = filteredEvidence.some(
+    (item) => item.source_group_type === 'analytics'
+  );
   const evidenceDates = evidenceItems.map((item) => item.occurred_at);
   const totalSourceCount = theme.source_breakdown.reduce(
     (sum, source) => sum + source.count,
@@ -512,6 +551,7 @@ export function ThemeDetailPanel({ theme, onAskTheme }: ThemeDetailPanelProps) {
         <div className="text-[10px] text-[#5A5C66] uppercase font-semibold">
           Impact Score
         </div>
+        <ThemeTrendBadge trend={theme.trend} />
         <div className="ml-auto text-[10px] text-[#5A5C66] font-medium">
           {formatDateSpan(evidenceDates)}
         </div>
@@ -566,6 +606,11 @@ export function ThemeDetailPanel({ theme, onAskTheme }: ThemeDetailPanelProps) {
             Total {formatBreakdownPoints(theme.impact_breakdown?.total, 100)}
           </span>
         </div>
+        {theme.score_change && (
+          <p className="text-[11px] leading-relaxed mb-3" style={{ color: 'rgba(194,198,214,0.6)' }}>
+            {theme.score_change.explanation}
+          </p>
+        )}
         <div className="space-y-3">
           {breakdownItems.map((item) => (
             <div key={item.label}>
@@ -622,9 +667,47 @@ export function ThemeDetailPanel({ theme, onAskTheme }: ThemeDetailPanelProps) {
       </div>
 
       <div className="mb-8">
-        <h4 className="text-[11px] text-[#5A5C66] font-bold uppercase mb-3">
-          Top Evidence
-        </h4>
+        <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+          <h4 className="text-[11px] text-[#5A5C66] font-bold uppercase">
+            Top Evidence
+          </h4>
+          {theme.supporting_evidence.length > 1 && (
+            <div className="flex items-center gap-1 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setEvidenceFilter(null)}
+                className="text-[10px] px-2 py-0.5 rounded-full transition-colors"
+                style={{
+                  backgroundColor: evidenceFilter === null ? 'rgba(175,198,255,0.15)' : '#1e1f26',
+                  color: evidenceFilter === null ? '#afc6ff' : '#8B8D97',
+                  border: '1px solid rgba(66,71,83,0.2)',
+                }}
+              >
+                All
+              </button>
+              {theme.supporting_evidence.map((group) => (
+                <button
+                  key={group.source_type}
+                  type="button"
+                  onClick={() =>
+                    setEvidenceFilter(
+                      evidenceFilter === group.source_type ? null : group.source_type
+                    )
+                  }
+                  className="text-[10px] px-2 py-0.5 rounded-full transition-colors"
+                  style={{
+                    backgroundColor:
+                      evidenceFilter === group.source_type ? 'rgba(175,198,255,0.15)' : '#1e1f26',
+                    color: evidenceFilter === group.source_type ? '#afc6ff' : '#8B8D97',
+                    border: '1px solid rgba(66,71,83,0.2)',
+                  }}
+                >
+                  {group.label} ({group.count})
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         {topEvidence.length ? (
           <div className="space-y-3">
             {topEvidence.map((evidence) => {
@@ -663,8 +746,16 @@ export function ThemeDetailPanel({ theme, onAskTheme }: ThemeDetailPanelProps) {
           </div>
         ) : (
           <div className="rounded-lg border border-dashed border-white/6 px-4 py-4 text-[12px] text-[#5A5C66]">
-            Supporting evidence will appear here once the theme has linked signals.
+            {evidenceFilter
+              ? 'No evidence from this source yet. Try another filter.'
+              : 'Supporting evidence will appear here once the theme has linked signals.'}
           </div>
+        )}
+        {hasAnalyticsEvidence && (
+          <p className="text-[10px] leading-relaxed mt-3" style={{ color: 'rgba(194,198,214,0.5)' }}>
+            Analytics signals are related usage shifts from the same period — supporting
+            evidence, not a proven cause.
+          </p>
         )}
       </div>
 

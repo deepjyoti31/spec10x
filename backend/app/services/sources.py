@@ -50,6 +50,12 @@ DEFAULT_SOURCE_CATALOG = (
         "display_name": "Fireflies",
         "connection_method": ConnectionMethod.api_token,
     },
+    {
+        "source_type": SourceType.analytics,
+        "provider": "posthog",
+        "display_name": "PostHog",
+        "connection_method": ConnectionMethod.api_token,
+    },
 )
 
 

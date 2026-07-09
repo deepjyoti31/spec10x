@@ -1,0 +1,16 @@
+{
+  "columns": ["event", "week_start", "occurrences"],
+  "types": ["String", "DateTime", "UInt64"],
+  "results": [
+    ["search_performed", "2026-06-08T00:00:00Z", 1240],
+    ["search_performed", "2026-06-15T00:00:00Z", 1017],
+    ["search_performed", "2026-06-22T00:00:00Z", 1103],
+    ["dashboard_viewed", "2026-06-08T00:00:00Z", 880],
+    ["dashboard_viewed", "2026-06-15T00:00:00Z", 902],
+    ["dashboard_viewed", "2026-06-22T00:00:00Z", 951],
+    ["export_clicked", "2026-06-15T00:00:00Z", 64],
+    ["export_clicked", "2026-06-22T00:00:00Z", 71]
+  ],
+  "hogql": "SELECT event, toStartOfWeek(timestamp) AS week_start, count() AS occurrences FROM events WHERE timestamp >= toDateTime('2026-06-08 00:00:00') GROUP BY event, week_start ORDER BY week_start ASC",
+  "is_cached": false
+}

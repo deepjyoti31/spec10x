@@ -214,6 +214,24 @@ class ThemeImpactBreakdownResponse(BaseModel):
     source_diversity: float
 
 
+class ThemeTrendResponse(BaseModel):
+    direction: str  # "rising" | "flat" | "declining"
+    recent_count: int
+    previous_count: int
+    window_days: int
+
+
+class ThemeScoreChangeResponse(BaseModel):
+    delta: float
+    previous_total: float
+    frequency_delta: float
+    negative_delta: float
+    recency_delta: float
+    source_diversity_delta: float
+    window_days: int
+    explanation: str
+
+
 class ThemeChipResponse(BaseModel):
     id: str
     name: str
@@ -266,6 +284,8 @@ class ThemeDetailResponse(ThemeResponse):
     source_breakdown: list[SourceBreakdownResponse] = []
     supporting_evidence: list[SupportingEvidenceGroupResponse] = []
     impact_breakdown: Optional[ThemeImpactBreakdownResponse] = None
+    trend: Optional[ThemeTrendResponse] = None
+    score_change: Optional[ThemeScoreChangeResponse] = None
 
 
 class ThemeUpdate(BaseModel):
@@ -277,6 +297,8 @@ class BoardThemeCardResponse(ThemeResponse):
     impact_breakdown: ThemeImpactBreakdownResponse
     source_breakdown: list[SourceBreakdownResponse] = []
     evidence_preview: list[FeedSignalResponse] = []
+    trend: Optional[ThemeTrendResponse] = None
+    score_change: Optional[ThemeScoreChangeResponse] = None
 
 
 class ThemeExplorerSummaryResponse(BaseModel):
@@ -314,6 +336,7 @@ class ThemeExplorerCardResponse(BaseModel):
     sentiment: ThemeExplorerSentimentResponse
     source_chips: list[ThemeExplorerSourceChipResponse] = []
     quote_previews: list[ThemeExplorerQuotePreviewResponse] = []
+    trend: Optional[ThemeTrendResponse] = None
 
 
 class ThemeExplorerFiltersResponse(BaseModel):

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import delete, select
@@ -59,6 +59,7 @@ PROVIDER_LABELS = {
     "zendesk": "Zendesk",
     "csv_import": "Survey CSV Import",
     "fireflies": "Fireflies",
+    "posthog": "PostHog",
 }
 
 SIGNAL_KIND_LABELS = {
@@ -90,6 +91,26 @@ class ImpactScoreResult:
     negative: float
     recency: float
     source_diversity: float
+
+
+@dataclass(slots=True)
+class ThemeTrendResult:
+    direction: str  # "rising" | "flat" | "declining"
+    recent_count: int
+    previous_count: int
+    window_days: int
+
+
+@dataclass(slots=True)
+class ScoreChangeResult:
+    delta: float
+    previous_total: float
+    frequency_delta: float
+    negative_delta: float
+    recency_delta: float
+    source_diversity_delta: float
+    window_days: int
+    explanation: str
 
 
 async def _get_default_workspace_for_user_id(
@@ -606,14 +627,31 @@ def _source_type_count_key(signal: Signal) -> SourceType:
     return signal.source_type
 
 
-def _signal_recency_points(newest_occurred_at: datetime | None) -> float:
+def _ensure_aware(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
+def is_voice_signal(signal: Signal) -> bool:
+    """Customer-voice signals carry opinions; metric windows do not.
+
+    Score v2 guardrail (US-052-01-03): analytics volume must not inflate
+    frequency, sentiment, or recency — it only widens source diversity.
+    """
+    return signal.signal_kind != SignalKind.metric_window
+
+
+def _signal_recency_points(
+    newest_occurred_at: datetime | None,
+    *,
+    now: datetime | None = None,
+) -> float:
     if newest_occurred_at is None:
         return 0.0
 
-    now = datetime.now(timezone.utc)
-    if newest_occurred_at.tzinfo is None:
-        newest_occurred_at = newest_occurred_at.replace(tzinfo=timezone.utc)
-    days_old = (now - newest_occurred_at).days
+    now = now or datetime.now(timezone.utc)
+    days_old = (now - _ensure_aware(newest_occurred_at)).days
     if days_old <= 7:
         return 20.0
     if days_old <= 30:
@@ -627,24 +665,39 @@ def calculate_impact_score(
     *,
     theme_id: uuid.UUID,
     signals: list[Signal],
+    as_of: datetime | None = None,
 ) -> ImpactScoreResult:
+    """Impact Score v2.
+
+    Frequency, negative sentiment, and recency come from customer-voice
+    signals only; analytics metric windows contribute to source diversity.
+    ``as_of`` recomputes the score as it stood at a past moment (used for
+    score-change explanations) by ignoring newer signals.
+    """
+    now = as_of or datetime.now(timezone.utc)
     themed_signals = [
         signal
         for signal in signals
         if _parse_theme_match_id(signal.metadata_json) == theme_id
+        and (as_of is None or _ensure_aware(signal.occurred_at) <= as_of)
     ]
     if not themed_signals:
         return ImpactScoreResult(0.0, 0.0, 0.0, 0.0, 0.0)
 
-    themed_count = len(themed_signals)
-    frequency_score = min(themed_count, 10) / 10 * IMPACT_FREQUENCY_WEIGHT
+    voice_signals = [signal for signal in themed_signals if is_voice_signal(signal)]
 
-    negative_count = sum(1 for signal in themed_signals if signal.sentiment == "negative")
-    negative_ratio = negative_count / themed_count if themed_count else 0.0
+    voice_count = len(voice_signals)
+    frequency_score = min(voice_count, 10) / 10 * IMPACT_FREQUENCY_WEIGHT
+
+    negative_count = sum(1 for signal in voice_signals if signal.sentiment == "negative")
+    negative_ratio = negative_count / voice_count if voice_count else 0.0
     negative_score = negative_ratio * IMPACT_NEGATIVE_WEIGHT
 
-    newest_occurred_at = max(signal.occurred_at for signal in themed_signals)
-    recency_score = _signal_recency_points(newest_occurred_at)
+    if voice_signals:
+        newest_occurred_at = max(signal.occurred_at for signal in voice_signals)
+        recency_score = _signal_recency_points(newest_occurred_at, now=now)
+    else:
+        recency_score = 0.0
 
     distinct_source_types = len({signal.source_type for signal in themed_signals})
     source_diversity_score = distinct_source_types / 3 * IMPACT_SOURCE_DIVERSITY_WEIGHT
@@ -661,6 +714,128 @@ def calculate_impact_score(
         recency=round(recency_score, 1),
         source_diversity=round(source_diversity_score, 1),
     )
+
+
+TREND_WINDOW_DAYS = 14
+
+
+def calculate_theme_trend(
+    *,
+    theme_id: uuid.UUID,
+    signals: list[Signal],
+    now: datetime | None = None,
+) -> ThemeTrendResult:
+    """Compare customer-voice signal volume across the last two 14-day windows.
+
+    The trend reflects evidence volume, not proven product impact — copy in
+    the UI must keep that caution (US-052-03-04).
+    """
+    now = now or datetime.now(timezone.utc)
+    window = timedelta(days=TREND_WINDOW_DAYS)
+
+    recent_count = 0
+    previous_count = 0
+    for signal in signals:
+        if _parse_theme_match_id(signal.metadata_json) != theme_id:
+            continue
+        if not is_voice_signal(signal):
+            continue
+        occurred_at = _ensure_aware(signal.occurred_at)
+        if now - window < occurred_at <= now:
+            recent_count += 1
+        elif now - 2 * window < occurred_at <= now - window:
+            previous_count += 1
+
+    if recent_count > previous_count:
+        direction = "rising"
+    elif recent_count < previous_count:
+        direction = "declining"
+    else:
+        direction = "flat"
+
+    return ThemeTrendResult(
+        direction=direction,
+        recent_count=recent_count,
+        previous_count=previous_count,
+        window_days=TREND_WINDOW_DAYS,
+    )
+
+
+def calculate_score_change(
+    *,
+    theme_id: uuid.UUID,
+    signals: list[Signal],
+    now: datetime | None = None,
+) -> ScoreChangeResult:
+    """Explain how the score moved over the last trend window.
+
+    Deterministic: the previous score is the same formula recomputed as of
+    14 days ago, so every point of movement traces to real signals.
+    """
+    now = now or datetime.now(timezone.utc)
+    current = calculate_impact_score(theme_id=theme_id, signals=signals)
+    previous = calculate_impact_score(
+        theme_id=theme_id,
+        signals=signals,
+        as_of=now - timedelta(days=TREND_WINDOW_DAYS),
+    )
+
+    delta = round(current.total - previous.total, 1)
+    component_deltas = [
+        ("frequency", round(current.frequency - previous.frequency, 1)),
+        ("negative sentiment", round(current.negative - previous.negative, 1)),
+        ("recency", round(current.recency - previous.recency, 1)),
+        ("source diversity", round(current.source_diversity - previous.source_diversity, 1)),
+    ]
+
+    if abs(delta) < 0.05:
+        explanation = f"No score change in the last {TREND_WINDOW_DAYS} days."
+    else:
+        moved_parts = [
+            f"{label} {value:+.1f}"
+            for label, value in sorted(
+                component_deltas, key=lambda item: abs(item[1]), reverse=True
+            )
+            if abs(value) >= 0.05
+        ]
+        verb = "rose" if delta > 0 else "fell"
+        explanation = (
+            f"Score {verb} {abs(delta):.1f} over the last {TREND_WINDOW_DAYS} days"
+            + (f" — {', '.join(moved_parts)}." if moved_parts else ".")
+        )
+
+    return ScoreChangeResult(
+        delta=delta,
+        previous_total=previous.total,
+        frequency_delta=component_deltas[0][1],
+        negative_delta=component_deltas[1][1],
+        recency_delta=component_deltas[2][1],
+        source_diversity_delta=component_deltas[3][1],
+        window_days=TREND_WINDOW_DAYS,
+        explanation=explanation,
+    )
+
+
+def serialize_theme_trend(result: ThemeTrendResult) -> dict[str, Any]:
+    return {
+        "direction": result.direction,
+        "recent_count": result.recent_count,
+        "previous_count": result.previous_count,
+        "window_days": result.window_days,
+    }
+
+
+def serialize_score_change(result: ScoreChangeResult) -> dict[str, Any]:
+    return {
+        "delta": result.delta,
+        "previous_total": result.previous_total,
+        "frequency_delta": result.frequency_delta,
+        "negative_delta": result.negative_delta,
+        "recency_delta": result.recency_delta,
+        "source_diversity_delta": result.source_diversity_delta,
+        "window_days": result.window_days,
+        "explanation": result.explanation,
+    }
 
 
 def build_theme_score_map(
@@ -721,6 +896,13 @@ def build_signal_link(signal: Signal) -> dict[str, str] | None:
             "kind": "internal",
             "href": f"/feed?signal={signal.id}",
             "label": "View imported CSV evidence",
+        }
+
+    if signal.source_type == SourceType.analytics and signal.source_url:
+        return {
+            "kind": "external",
+            "href": signal.source_url,
+            "label": f"Open in {PROVIDER_LABELS.get(signal.provider, 'analytics source')}",
         }
 
     return None

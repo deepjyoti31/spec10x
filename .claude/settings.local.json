@@ -13,7 +13,10 @@
       "Bash(./.venv/Scripts/python.exe -m pytest tests/test_extraction.py -q)",
       "Bash(./.venv/Scripts/python.exe -m pytest tests/test_extraction.py::TestFileHash::test_hash_returns_string -q)",
       "Bash(./.venv/Scripts/python.exe -m pytest tests/test_extraction.py -q --basetemp=\"C:/Users/Deep/AppData/Local/Temp/claude/c--Users-Deep--gemini-antigravity-scratch-spec10x/17e167ae-efc1-4de7-b250-6a0572909c99/scratchpad/pytest-tmp\")",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/test_score_v2.py tests/test_posthog_validation.py tests/test_posthog_sync.py -x -q)",
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/test_score_v2.py tests/test_posthog_validation.py tests/test_posthog_sync.py -q)",
+      "Bash(./.venv/Scripts/python.exe -m pytest tests/test_extraction.py -q --basetemp=\"C:/Users/Deep/AppData/Local/Temp/claude/c--Users-Deep--gemini-antigravity-scratch-spec10x/9db974f1-e375-437e-96e5-7d0594540944/scratchpad/pytest-tmp\")"
     ]
   }
 }

@@ -42,6 +42,11 @@ const PROVIDER_DISPLAY: Record<string, { iconBg: string; icon: string; descripti
         icon: 'upload_file',
         description: 'Import survey responses and NPS scores from CSV',
     },
+    posthog: {
+        iconBg: 'rgba(243,104,57,0.3)',
+        icon: 'hub',
+        description: 'Weekly product usage trends from PostHog events',
+    },
 };
 
 // ---------------------------------------------------------------------------
@@ -140,11 +145,11 @@ const CATEGORIES = [
             {
                 id: 'posthog',
                 name: 'PostHog',
-                description: 'Open-source product analytics and session recording.',
+                description: 'Weekly product usage trends from PostHog events.',
                 iconBg: 'rgba(243,104,57,0.15)',
                 iconColor: '#F36839',
                 icon: 'hub',
-                available: false,
+                available: true,
             },
         ],
     },

@@ -142,7 +142,39 @@ function ImpactBreakdownStrip({
                     </span>
                 ))}
             </div>
+            {theme.score_change && (
+                <p className="text-[10px] leading-relaxed mt-2" style={{ color: 'rgba(194,198,214,0.55)' }}>
+                    {theme.score_change.explanation}
+                </p>
+            )}
         </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Trend badge — signal volume direction over the last two 14-day windows
+// ---------------------------------------------------------------------------
+
+const TREND_DISPLAY: Record<string, { icon: string; label: string; color: string; bg: string }> = {
+    rising:    { icon: 'trending_up',   label: 'Rising',    color: '#ffb77b', bg: 'rgba(255,183,123,0.1)' },
+    flat:      { icon: 'trending_flat', label: 'Flat',      color: '#8B8D97', bg: 'rgba(139,141,151,0.1)' },
+    declining: { icon: 'trending_down', label: 'Declining', color: '#34D399', bg: 'rgba(52,211,153,0.1)' },
+};
+
+function TrendBadge({ theme }: { theme: BoardThemeCardResponse }) {
+    const trend = theme.trend;
+    if (!trend) return null;
+    const display = TREND_DISPLAY[trend.direction] ?? TREND_DISPLAY.flat;
+
+    return (
+        <span
+            className="text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-1 uppercase tracking-wider"
+            style={{ backgroundColor: display.bg, color: display.color }}
+            title={`${trend.recent_count} signals in the last ${trend.window_days} days vs ${trend.previous_count} before — evidence volume, not proven impact`}
+        >
+            <span className="material-symbols-outlined" style={{ fontSize: 12 }}>{display.icon}</span>
+            {display.label}
+        </span>
     );
 }
 
@@ -249,7 +281,8 @@ function PinnedCardFull({
             {/* Top row: ring + badges */}
             <div className="flex justify-between items-start mb-4">
                 <ScoreRing score={score} size={48} strokeWidth={3} radius={20} />
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                    <TrendBadge theme={theme} />
                     <span
                         className="text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1"
                         style={{ backgroundColor: 'rgba(175,198,255,0.12)', color: '#afc6ff' }}
@@ -341,6 +374,7 @@ function PinnedCardSimple({
         >
             <div className="flex justify-between items-start mb-4">
                 <ScoreRing score={score} size={48} strokeWidth={3} radius={20} />
+                <TrendBadge theme={theme} />
             </div>
             <h3 className="text-base font-semibold text-[#F0F0F3] mb-3">{theme.name}</h3>
             <MetricsGrid theme={theme} />
@@ -382,7 +416,10 @@ function InvestigateCardRing({
         >
             <div className="flex justify-between items-start mb-4">
                 <ScoreRing score={score} size={48} strokeWidth={3} radius={20} />
-                <PinButton onClick={onPin} />
+                <div className="flex gap-2 items-center">
+                    <TrendBadge theme={theme} />
+                    <PinButton onClick={onPin} />
+                </div>
             </div>
             <h3 className="text-sm font-semibold text-[#F0F0F3] mb-3">{theme.name}</h3>
             {theme.source_breakdown.length > 0 && (
@@ -435,7 +472,10 @@ function CompactCard({
         >
             <div className="flex justify-between items-start mb-4">
                 <ScoreRing score={score} size={48} strokeWidth={3} radius={20} />
-                <PinButton onClick={onPin} />
+                <div className="flex gap-2 items-center">
+                    <TrendBadge theme={theme} />
+                    <PinButton onClick={onPin} />
+                </div>
             </div>
             <h3
                 className="text-sm font-semibold mb-3"

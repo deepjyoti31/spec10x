@@ -299,6 +299,164 @@ function FirefliesForm({
   );
 }
 
+function PostHogForm({
+  step,
+  error,
+  onSubmit,
+}: {
+  step: ConnectModalProps['step'];
+  error: string | null;
+  onSubmit: (submission: ConnectSubmission) => Promise<void>;
+}) {
+  const [host, setHost] = useState('https://us.posthog.com');
+  const [projectId, setProjectId] = useState('');
+  const [apiKey, setApiKey] = useState('');
+  const [showKey, setShowKey] = useState(false);
+  const firstInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (step === 'form') firstInputRef.current?.focus();
+  }, [step]);
+
+  const isBusy = step === 'validating';
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (isBusy || !projectId.trim() || !apiKey.trim()) return;
+    void onSubmit({
+      secretRef: apiKey.trim(),
+      config: { host: host.trim(), project_id: projectId.trim() },
+    });
+  };
+
+  return (
+    <>
+      <div className="flex items-center gap-3 mb-6">
+        <div
+          className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: 'rgba(243,104,57,0.2)' }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 22, color: '#F36839' }}>hub</span>
+        </div>
+        <div>
+          <h3 className="text-base font-bold text-white">Connect PostHog</h3>
+          <p className="text-[12px] text-[#5A5C66] mt-0.5">Weekly usage trends appear alongside your customer evidence</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <div>
+          <label style={labelStyle}>Host</label>
+          <input
+            type="url"
+            value={host}
+            onChange={e => setHost(e.target.value)}
+            placeholder="https://us.posthog.com"
+            disabled={isBusy}
+            required
+            style={inputStyle}
+            onFocus={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(175,198,255,0.4)')}
+            onBlur={e => (e.currentTarget.style.boxShadow = 'none')}
+          />
+          <p className="text-[11px] text-[#5A5C66] mt-1.5">
+            Use https://eu.posthog.com for EU Cloud, or your self-hosted URL
+          </p>
+        </div>
+
+        <div>
+          <label style={labelStyle}>Project ID</label>
+          <input
+            ref={firstInputRef}
+            type="text"
+            value={projectId}
+            onChange={e => setProjectId(e.target.value)}
+            placeholder="12345"
+            disabled={isBusy}
+            required
+            style={inputStyle}
+            onFocus={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(175,198,255,0.4)')}
+            onBlur={e => (e.currentTarget.style.boxShadow = 'none')}
+          />
+          <p className="text-[11px] text-[#5A5C66] mt-1.5">
+            Found in PostHog → Settings → Project → Project ID
+          </p>
+        </div>
+
+        <div>
+          <label style={labelStyle}>Personal API Key</label>
+          <div className="relative">
+            <input
+              type={showKey ? 'text' : 'password'}
+              value={apiKey}
+              onChange={e => setApiKey(e.target.value)}
+              placeholder="••••••••••••••••"
+              disabled={isBusy}
+              required
+              style={{ ...inputStyle, paddingRight: 40 }}
+              onFocus={e => (e.currentTarget.style.boxShadow = '0 0 0 1px rgba(175,198,255,0.4)')}
+              onBlur={e => (e.currentTarget.style.boxShadow = 'none')}
+            />
+            <button
+              type="button"
+              onClick={() => setShowKey(v => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5A5C66] transition-colors"
+              onMouseEnter={e => (e.currentTarget.style.color = '#8B8D97')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#5A5C66')}
+              tabIndex={-1}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>
+                {showKey ? 'visibility_off' : 'visibility'}
+              </span>
+            </button>
+          </div>
+          <p className="text-[11px] text-[#5A5C66] mt-1.5">
+            Found in PostHog → Settings → Personal API keys — read-only access is enough
+          </p>
+        </div>
+
+        <div
+          className="rounded-lg px-4 py-3 text-[12px] leading-relaxed"
+          style={{ backgroundColor: '#0c0e14', color: '#8B8D97', border: '1px solid rgba(66,71,83,0.2)' }}
+        >
+          Spec10x reads aggregated weekly event counts only — never raw events, user profiles, or
+          session recordings — and never writes back to PostHog. Your key is stored as a secret
+          reference. Disconnecting stops future syncs; you can also revoke the key in PostHog at
+          any time.
+        </div>
+
+        {step === 'error' && error && (
+          <div
+            className="rounded-lg px-4 py-3 text-xs"
+            style={{ backgroundColor: 'rgba(248,113,113,0.08)', color: '#F87171', border: '1px solid rgba(248,113,113,0.2)' }}
+          >
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isBusy || !projectId.trim() || !apiKey.trim()}
+          className="w-full py-2.5 rounded-lg text-sm font-semibold transition-all mt-1"
+          style={{
+            backgroundColor: isBusy ? 'rgba(175,198,255,0.15)' : '#afc6ff',
+            color: isBusy ? '#afc6ff' : '#002D6C',
+            cursor: isBusy ? 'default' : 'pointer',
+          }}
+        >
+          {isBusy ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="w-4 h-4 rounded-full border-2 border-current border-t-transparent animate-spin inline-block" />
+              Validating & starting import...
+            </span>
+          ) : (
+            'Connect PostHog'
+          )}
+        </button>
+      </form>
+    </>
+  );
+}
+
 function CsvImportForm({
   step,
   error,
@@ -638,6 +796,7 @@ export default function ConnectModal({
   const isSuccess = step === 'success';
   const isCsv = provider === 'csv_import';
   const isFireflies = provider === 'fireflies';
+  const isPostHog = provider === 'posthog';
 
   return (
     <div
@@ -680,7 +839,9 @@ export default function ConnectModal({
                 ? 'Your survey responses have been imported and are being processed.'
                 : isFireflies
                   ? 'Fireflies has been connected. Your meetings are being imported as interviews.'
-                  : 'Zendesk has been connected. Your tickets will start syncing shortly.'}
+                  : isPostHog
+                    ? 'PostHog has been connected. Weekly usage trends are being imported.'
+                    : 'Zendesk has been connected. Your tickets will start syncing shortly.'}
             </p>
           </div>
         )}
@@ -696,6 +857,8 @@ export default function ConnectModal({
             />
           ) : isFireflies ? (
             <FirefliesForm step={step} error={error} onSubmit={onSubmit} />
+          ) : isPostHog ? (
+            <PostHogForm step={step} error={error} onSubmit={onSubmit} />
           ) : (
             <ZendeskForm step={step} error={error} onSubmit={onSubmit} />
           )

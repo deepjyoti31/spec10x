@@ -62,6 +62,10 @@ def _auto_discover() -> None:
         import app.connectors.fireflies  # noqa: F401
     except ImportError:
         logger.debug("Fireflies connector not available")
+    try:
+        import app.connectors.posthog  # noqa: F401
+    except ImportError:
+        logger.debug("PostHog connector not available")
 
 
 _auto_discover()

@@ -220,9 +220,9 @@ export function useIntegrations(): UseIntegrationsReturn {
       await api.validateSourceConnection(token, newConnection.id);
 
       // Kick off the first import immediately after successful connection.
-      // Interview sources start with a historical backfill; support sources
-      // keep the existing incremental-sync behavior.
-      if (targetSource?.provider === 'fireflies') {
+      // Interview and analytics sources start with a historical backfill;
+      // support sources keep the existing incremental-sync behavior.
+      if (targetSource?.provider === 'fireflies' || targetSource?.provider === 'posthog') {
         await api.triggerSourceConnectionBackfill(token, newConnection.id);
       } else {
         await api.triggerSourceConnectionSync(token, newConnection.id);

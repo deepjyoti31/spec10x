@@ -31,11 +31,15 @@ from app.services.signals import (
     _parse_theme_match_id,
     build_source_breakdown,
     build_theme_score_map,
+    calculate_score_change,
+    calculate_theme_trend,
     ensure_signal_consistency,
     get_workspace_signals,
     refresh_external_signal_theme_matches,
     serialize_feed_signal,
     serialize_impact_breakdown,
+    serialize_score_change,
+    serialize_theme_trend,
 )
 
 router = APIRouter(prefix="/api/themes", tags=["Themes"])
@@ -234,6 +238,9 @@ def _serialize_theme_explorer_card(
             for source_chip in build_source_breakdown(theme_signals)
         ],
         quote_previews=_serialize_quote_previews(theme_signals=theme_signals),
+        trend=serialize_theme_trend(
+            calculate_theme_trend(theme_id=theme.id, signals=theme_signals)
+        ),
     )
 
 
@@ -329,6 +336,12 @@ async def get_theme_board(
         card_payload["impact_breakdown"] = serialize_impact_breakdown(score_map[theme.id])
         card_payload["source_breakdown"] = build_source_breakdown(theme_signals)
         card_payload["evidence_preview"] = evidence_preview
+        card_payload["trend"] = serialize_theme_trend(
+            calculate_theme_trend(theme_id=theme.id, signals=workspace_signals)
+        )
+        card_payload["score_change"] = serialize_score_change(
+            calculate_score_change(theme_id=theme.id, signals=workspace_signals)
+        )
         payload.append(card_payload)
 
     return payload
@@ -535,6 +548,12 @@ async def get_theme(
     payload["supporting_evidence"] = _serialize_supporting_evidence(
         theme=theme,
         theme_signals=theme_signals,
+    )
+    payload["trend"] = serialize_theme_trend(
+        calculate_theme_trend(theme_id=theme.id, signals=workspace_signals)
+    )
+    payload["score_change"] = serialize_score_change(
+        calculate_score_change(theme_id=theme.id, signals=workspace_signals)
     )
     return payload
 
