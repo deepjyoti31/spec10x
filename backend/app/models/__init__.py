@@ -106,6 +106,7 @@ class SourceConnectionStatus(str, enum.Enum):
     connected = "connected"
     syncing = "syncing"
     error = "error"
+    error_suspended = "error_suspended"
     disconnected = "disconnected"
 
 

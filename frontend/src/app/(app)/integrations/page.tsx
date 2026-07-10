@@ -22,6 +22,11 @@ const PROVIDER_DISPLAY: Record<string, { iconBg: string; icon: string; descripti
         icon: 'mic',
         description: 'Meeting recordings and AI transcriptions',
     },
+    otter: {
+        iconBg: 'rgba(0,145,235,0.15)',
+        icon: 'record_voice_over',
+        description: 'AI-powered meeting transcription and notes',
+    },
     intercom: {
         iconBg: 'rgba(80,114,231,0.3)',
         icon: 'forum',
@@ -74,7 +79,7 @@ const CATEGORIES = [
                 iconBg: 'rgba(0,145,235,0.15)',
                 iconColor: '#0091EB',
                 icon: 'record_voice_over',
-                available: false,
+                available: true,
             },
             {
                 id: 'grain',
@@ -266,15 +271,27 @@ interface ConnectedCardProps {
         lastSync: string;
         status: string;
         errorMessage?: string;
+        dataSourceId: string;
     };
     isSyncing: boolean;
     isDisconnecting: boolean;
     onSyncNow: () => void;
     onDisconnect: () => void;
+    onReenable: () => void;
+    onRotateCredentials: () => void;
 }
 
-function ConnectedCard({ integration, isSyncing, isDisconnecting, onSyncNow, onDisconnect }: ConnectedCardProps) {
-    const isError = integration.status === 'error';
+function ConnectedCard({
+    integration,
+    isSyncing,
+    isDisconnecting,
+    onSyncNow,
+    onDisconnect,
+    onReenable,
+    onRotateCredentials,
+}: ConnectedCardProps) {
+    const isSuspended = integration.status === 'error_suspended';
+    const isError = integration.status === 'error' || isSuspended;
 
     return (
         <div
@@ -294,7 +311,15 @@ function ConnectedCard({ integration, isSyncing, isDisconnecting, onSyncNow, onD
                         {integration.icon}
                     </span>
                 </div>
-                {isError ? (
+                {isSuspended ? (
+                    <span
+                        className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded tracking-widest uppercase"
+                        style={{ color: '#EF4444', backgroundColor: 'rgba(239,68,68,0.1)' }}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: 12 }}>motion_photos_paused</span>
+                        Suspended
+                    </span>
+                ) : isError ? (
                     <span
                         className="flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded tracking-widest uppercase"
                         style={{ color: '#F87171', backgroundColor: 'rgba(248,113,113,0.1)' }}
@@ -322,7 +347,7 @@ function ConnectedCard({ integration, isSyncing, isDisconnecting, onSyncNow, onD
                     className="rounded-lg p-3 mb-8 text-xs text-[#F87171]"
                     style={{ backgroundColor: 'rgba(248,113,113,0.07)' }}
                 >
-                    <span className="font-semibold">Sync failed: </span>
+                    <span className="font-semibold">{isSuspended ? 'Suspended: ' : 'Sync failed: '}</span>
                     {integration.errorMessage ?? 'An unexpected error occurred. Please retry or reconnect.'}
                 </div>
             ) : (
@@ -340,24 +365,34 @@ function ConnectedCard({ integration, isSyncing, isDisconnecting, onSyncNow, onD
             {/* Actions */}
             <div className="mt-auto flex items-center justify-between">
                 <div className="flex gap-4">
-                    <button
-                        disabled={isSyncing}
-                        onClick={onSyncNow}
-                        className="text-xs font-semibold text-white transition-colors disabled:opacity-60"
-                        onMouseEnter={e => { if (!isSyncing) e.currentTarget.style.color = '#afc6ff'; }}
-                        onMouseLeave={e => (e.currentTarget.style.color = 'white')}
-                    >
-                        {isSyncing ? 'Syncing…' : isError ? 'Retry Sync' : 'Sync Now'}
-                    </button>
-                    {!isError && (
+                    {isSuspended ? (
                         <button
+                            onClick={onReenable}
                             className="text-xs font-semibold text-white transition-colors"
-                            onMouseEnter={e => (e.currentTarget.style.color = '#afc6ff')}
+                            onMouseEnter={e => { e.currentTarget.style.color = '#34D399'; }}
+                            onMouseLeave={e => { e.currentTarget.style.color = 'white'; }}
+                        >
+                            Re-enable Sync
+                        </button>
+                    ) : (
+                        <button
+                            disabled={isSyncing}
+                            onClick={onSyncNow}
+                            className="text-xs font-semibold text-white transition-colors disabled:opacity-60"
+                            onMouseEnter={e => { if (!isSyncing) e.currentTarget.style.color = '#afc6ff'; }}
                             onMouseLeave={e => (e.currentTarget.style.color = 'white')}
                         >
-                            Configure
+                            {isSyncing ? 'Syncing…' : isError ? 'Retry Sync' : 'Sync Now'}
                         </button>
                     )}
+                    <button
+                        onClick={onRotateCredentials}
+                        className="text-xs font-semibold text-white transition-colors"
+                        onMouseEnter={e => (e.currentTarget.style.color = '#afc6ff')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'white')}
+                    >
+                        Update Credentials
+                    </button>
                 </div>
                 <button
                     disabled={isDisconnecting}
@@ -514,6 +549,7 @@ export default function IntegrationsPage() {
         validateCsvImport,
         submitConnect,
         submitCsvConnect,
+        reenableConnection,
     } = useIntegrations();
 
     const connectModalProvider = dataSources.find(d => d.id === connectModalDataSourceId)?.provider ?? null;
@@ -524,10 +560,10 @@ export default function IntegrationsPage() {
 
     // ── Derived data ──────────────────────────────────────────────────────────
 
-    // Deduplicate by provider — prefer 'connected' over 'error' so only one card
+    // Deduplicate by provider — prefer 'connected' over 'error' or 'error_suspended' so only one card
     // shows per provider. This also prevents the catalog from offering a second
     // "Connect" for a provider that already has an active or errored connection.
-    const STATUS_ORDER = ['connected', 'syncing', 'error'];
+    const STATUS_ORDER = ['connected', 'syncing', 'error', 'error_suspended'];
     const dedupedConnections = Object.values(
         connections.reduce((acc, conn) => {
             const key = conn.data_source.provider;
@@ -550,6 +586,7 @@ export default function IntegrationsPage() {
         return {
             id: conn.id,
             connectionId: conn.id,
+            dataSourceId: conn.data_source.id,
             name: conn.data_source.display_name,
             description: display.description,
             iconBg: display.iconBg,
@@ -581,6 +618,19 @@ export default function IntegrationsPage() {
         } catch (err) {
             showToast(err instanceof Error ? err.message : 'Disconnect failed', 'error');
         }
+    };
+
+    const handleReenable = async (connectionId: string) => {
+        try {
+            await reenableConnection(connectionId);
+            showToast('Integration re-enabled and sync resumed', 'success');
+        } catch (err) {
+            showToast(err instanceof Error ? err.message : 'Failed to re-enable integration', 'error');
+        }
+    };
+
+    const handleRotateCredentials = (dataSourceId: string) => {
+        openConnectModal(dataSourceId);
     };
 
     const handleConnect = (providerId: string, name: string) => {
@@ -646,6 +696,8 @@ export default function IntegrationsPage() {
                                     isDisconnecting={disconnectingIds.has(c.connectionId)}
                                     onSyncNow={() => handleSyncNow(c.connectionId)}
                                     onDisconnect={() => handleDisconnect(c.connectionId)}
+                                    onReenable={() => handleReenable(c.connectionId)}
+                                    onRotateCredentials={() => handleRotateCredentials(c.dataSourceId)}
                                 />
                             ))
                         ) : (

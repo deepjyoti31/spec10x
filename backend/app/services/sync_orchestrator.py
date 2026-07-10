@@ -32,9 +32,13 @@ from app.services.sources import (
     complete_sync_run,
     fail_sync_run,
     start_sync_run,
+    transition_source_connection,
 )
 
 logger = logging.getLogger(__name__)
+
+# After this many consecutive failed syncs, the connection is auto-suspended.
+CONSECUTIVE_FAILURE_THRESHOLD = 5
 
 
 async def _persist_signals(
@@ -101,6 +105,59 @@ def _log_sync_event(
         "error_summary": sync_run.error_summary,
     }
     logger.info(json.dumps(payload, default=str))
+
+
+async def _count_consecutive_failures(
+    db: AsyncSession,
+    connection: SourceConnection,
+) -> int:
+    """Count the number of consecutive failed sync runs for this connection.
+
+    Walks backward from the most recent run and stops at the first non-failed
+    run (or the end of history).
+    """
+    stmt = (
+        select(SyncRun.status)
+        .where(SyncRun.source_connection_id == connection.id)
+        .order_by(SyncRun.started_at.desc())
+        .limit(CONSECUTIVE_FAILURE_THRESHOLD + 1)
+    )
+    result = await db.execute(stmt)
+    count = 0
+    for (run_status,) in result:
+        if run_status == SyncRunStatus.failed:
+            count += 1
+        else:
+            break
+    return count
+
+
+async def _maybe_suspend_connection(
+    db: AsyncSession,
+    connection: SourceConnection,
+) -> bool:
+    """Suspend the connection if consecutive failures exceed the threshold.
+
+    Returns True if the connection was suspended.
+    """
+    await db.flush()
+    consecutive = await _count_consecutive_failures(db, connection)
+    if consecutive >= CONSECUTIVE_FAILURE_THRESHOLD:
+        transition_source_connection(
+            connection,
+            SourceConnectionStatus.error_suspended,
+            last_error_summary=(
+                f"Auto-suspended after {consecutive} consecutive sync failures. "
+                f"Last error: {connection.last_error_summary or 'unknown'}"
+            ),
+        )
+        logger.warning(
+            "Connection %s auto-suspended after %d consecutive failures",
+            connection.id,
+            consecutive,
+        )
+        return True
+    return False
 
 
 async def run_backfill(
@@ -205,6 +262,7 @@ async def run_backfill(
             duration_ms=_calculate_duration_ms(sync_run),
         )
         logger.error("Backfill failed for connection=%s: %s", connection.id, exc)
+        await _maybe_suspend_connection(db, connection)
 
     except Exception as exc:
         fail_sync_run(
@@ -221,6 +279,7 @@ async def run_backfill(
             duration_ms=_calculate_duration_ms(sync_run),
         )
         logger.exception("Unexpected backfill error for connection=%s", connection.id)
+        await _maybe_suspend_connection(db, connection)
 
     await db.flush()
     return sync_run
@@ -325,6 +384,7 @@ async def run_incremental_sync(
             duration_ms=_calculate_duration_ms(sync_run),
         )
         logger.error("Incremental sync failed for connection=%s: %s", connection.id, exc)
+        await _maybe_suspend_connection(db, connection)
 
     except Exception as exc:
         fail_sync_run(
@@ -343,6 +403,7 @@ async def run_incremental_sync(
         logger.exception(
             "Unexpected incremental sync error for connection=%s", connection.id
         )
+        await _maybe_suspend_connection(db, connection)
 
     await db.flush()
     return sync_run

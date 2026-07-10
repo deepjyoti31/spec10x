@@ -66,6 +66,10 @@ def _auto_discover() -> None:
         import app.connectors.posthog  # noqa: F401
     except ImportError:
         logger.debug("PostHog connector not available")
+    try:
+        import app.connectors.otter  # noqa: F401
+    except ImportError:
+        logger.debug("Otter connector not available")
 
 
 _auto_discover()

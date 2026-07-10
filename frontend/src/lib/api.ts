@@ -482,6 +482,27 @@ class ApiClient {
     );
   }
 
+  async rotateSourceConnectionCredentials(token: string, connectionId: string, data: SourceConnectionCreate) {
+    return this.request<SourceConnectionResponse>(
+      `/api/source-connections/${connectionId}/credentials`,
+      {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        token,
+      }
+    );
+  }
+
+  async reenableSourceConnection(token: string, connectionId: string) {
+    return this.request<SourceConnectionResponse>(
+      `/api/source-connections/${connectionId}/reenable`,
+      {
+        method: 'POST',
+        token,
+      }
+    );
+  }
+
   async validateSurveyCSV(token: string, file: File) {
     const formData = new FormData();
     formData.append('file', file);

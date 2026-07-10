@@ -39,7 +39,7 @@ async def scheduled_connector_sync(ctx: dict) -> dict:
     API-token source (Fireflies, Zendesk). Keeps synced libraries
     current without user action (US-051-03-01).
     """
-    from sqlalchemy import select
+    from sqlalchemy import func, select
     from sqlalchemy.orm import selectinload
 
     from app.core.database import get_session_factory
@@ -52,10 +52,14 @@ async def scheduled_connector_sync(ctx: dict) -> dict:
 
     synced = 0
     failed = 0
+    skipped = 0
     async with get_session_factory()() as db:
         stmt = (
             select(SourceConnection)
-            .where(SourceConnection.status == SourceConnectionStatus.connected)
+            .where(SourceConnection.status.in_([
+                SourceConnectionStatus.connected,
+                SourceConnectionStatus.error,
+            ]))
             .options(selectinload(SourceConnection.data_source))
         )
         result = await db.execute(stmt)
@@ -65,7 +69,19 @@ async def scheduled_connector_sync(ctx: dict) -> dict:
             if conn.data_source.connection_method == ConnectionMethod.api_token
         ]
 
-        logger.info(f"Scheduled sync: {len(connections)} connected API-token sources")
+        # Count suspended connections for logging
+        suspended_stmt = (
+            select(func.count())
+            .select_from(SourceConnection)
+            .where(SourceConnection.status == SourceConnectionStatus.error_suspended)
+        )
+        suspended_result = await db.execute(suspended_stmt)
+        suspended_count = suspended_result.scalar() or 0
+
+        logger.info(
+            f"Scheduled sync: {len(connections)} eligible API-token sources, "
+            f"{suspended_count} suspended (skipped)"
+        )
         for connection in connections:
             try:
                 sync_run = await run_incremental_sync(
@@ -85,8 +101,11 @@ async def scheduled_connector_sync(ctx: dict) -> dict:
                     f"Scheduled sync failed for connection {connection.id}"
                 )
 
-    logger.info(f"Scheduled sync complete: {synced} succeeded, {failed} failed")
-    return {"synced": synced, "failed": failed}
+    logger.info(
+        f"Scheduled sync complete: {synced} succeeded, {failed} failed, "
+        f"{suspended_count} suspended"
+    )
+    return {"synced": synced, "failed": failed, "suspended": suspended_count}
 
 
 class WorkerSettings:

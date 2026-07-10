@@ -452,3 +452,88 @@ async def trigger_sync(
     await db.refresh(sync_run)
     return sync_run
 
+
+@router.put(
+    "/source-connections/{connection_id}/credentials",
+    response_model=SourceConnectionResponse,
+)
+async def rotate_connection_credentials(
+    connection_id: uuid.UUID,
+    request: SourceConnectionCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update credentials for a connection without disconnecting.
+
+    Preserves sync history and source items. The connection moves to
+    ``configured`` and must be re-validated afterward.
+    """
+    workspace = await _get_user_workspace(current_user, db)
+
+    stmt = (
+        select(SourceConnection)
+        .where(
+            SourceConnection.id == connection_id,
+            SourceConnection.workspace_id == workspace.id,
+        )
+        .options(selectinload(SourceConnection.data_source))
+    )
+    result = await db.execute(stmt)
+    connection = result.scalar_one_or_none()
+
+    if connection is None:
+        raise HTTPException(status_code=404, detail="Source connection not found")
+
+    if not request.secret_ref:
+        raise HTTPException(status_code=400, detail="New credentials are required")
+
+    from app.services.sources import rotate_credentials
+
+    await rotate_credentials(
+        db, connection=connection, new_secret_ref=request.secret_ref
+    )
+    if request.config_json is not None:
+        connection.config_json = request.config_json
+
+    await db.commit()
+    await db.refresh(connection)
+    return connection
+
+
+@router.post(
+    "/source-connections/{connection_id}/reenable",
+    response_model=SourceConnectionResponse,
+)
+async def reenable_suspended_connection(
+    connection_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Re-enable a connection that was auto-suspended after consecutive failures."""
+    workspace = await _get_user_workspace(current_user, db)
+
+    stmt = (
+        select(SourceConnection)
+        .where(
+            SourceConnection.id == connection_id,
+            SourceConnection.workspace_id == workspace.id,
+        )
+        .options(selectinload(SourceConnection.data_source))
+    )
+    result = await db.execute(stmt)
+    connection = result.scalar_one_or_none()
+
+    if connection is None:
+        raise HTTPException(status_code=404, detail="Source connection not found")
+
+    from app.services.sources import reenable_connection
+
+    try:
+        reenable_connection(connection)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+    await db.commit()
+    await db.refresh(connection)
+    return connection
+

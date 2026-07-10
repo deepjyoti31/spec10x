@@ -44,7 +44,7 @@ export default function TrustPage() {
                     <Section title="What we read">
                         <ul className="list-disc list-outside pl-5 space-y-2 text-[15px] text-[#B0B2BA]">
                             <li>Interview files and transcripts you upload for analysis.</li>
-                            <li>Meeting transcripts and metadata from connected recorders like Fireflies. We read transcript text only — never audio or video.</li>
+                            <li>Meeting transcripts and metadata from connected recorders like Fireflies and Otter.ai. We read transcript text only — never audio or video.</li>
                             <li>Support ticket content and metadata from connected systems like Zendesk.</li>
                             <li>Survey and NPS rows you import by CSV.</li>
                             <li>Aggregated weekly event counts from connected analytics tools like PostHog. We read aggregate counts only — never raw events, user profiles, or session recordings.</li>
@@ -74,6 +74,7 @@ export default function TrustPage() {
                             {[
                                 ['Interview uploads', 'Files you upload directly'],
                                 ['Fireflies', 'Read-only transcript access via your API key — no audio or video'],
+                                ['Otter.ai', 'Read-only speech access via your API key — no audio or video'],
                                 ['Zendesk', 'Read-only ticket and metadata access where supported'],
                                 ['Survey CSV import', 'Files you choose to import'],
                                 ['PostHog', 'Read-only aggregate event counts via your personal API key — no raw events or recordings'],
@@ -89,7 +90,7 @@ export default function TrustPage() {
                     <Section title="Disconnect and copied-data deletion">
                         <div className="space-y-4 text-[15px] text-[#B0B2BA] leading-relaxed">
                             <p><strong className="text-[#F0F0F3]">Disconnect</strong> stops future syncs for that source. It does not delete records in the upstream provider.</p>
-                            <p><strong className="text-[#F0F0F3]">Copied-data deletion</strong> removes Spec10x's stored copy. It does not remove records from the original system you connected.</p>
+                            <p><strong className="text-[#F0F0F3]">Copied-data deletion</strong> removes Spec10x&apos;s stored copy. It does not remove records from the original system you connected.</p>
                             <p>Source-scoped copied-data deletion remains a support-handled path unless the product explicitly shows a self-serve control for it.</p>
                         </div>
                     </Section>

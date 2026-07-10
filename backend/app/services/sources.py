@@ -51,6 +51,12 @@ DEFAULT_SOURCE_CATALOG = (
         "connection_method": ConnectionMethod.api_token,
     },
     {
+        "source_type": SourceType.interview,
+        "provider": "otter",
+        "display_name": "Otter.ai",
+        "connection_method": ConnectionMethod.api_token,
+    },
+    {
         "source_type": SourceType.analytics,
         "provider": "posthog",
         "display_name": "PostHog",
@@ -84,6 +90,12 @@ ALLOWED_CONNECTION_TRANSITIONS: dict[
     SourceConnectionStatus.error: {
         SourceConnectionStatus.validating,
         SourceConnectionStatus.syncing,
+        SourceConnectionStatus.error_suspended,
+        SourceConnectionStatus.disconnected,
+    },
+    SourceConnectionStatus.error_suspended: {
+        SourceConnectionStatus.validating,
+        SourceConnectionStatus.connected,
         SourceConnectionStatus.disconnected,
     },
     SourceConnectionStatus.disconnected: {
@@ -189,7 +201,7 @@ def transition_source_connection(
     last_error_summary: str | None = None,
 ) -> SourceConnection:
     if connection.status == next_status:
-        if next_status == SourceConnectionStatus.error:
+        if next_status in {SourceConnectionStatus.error, SourceConnectionStatus.error_suspended}:
             connection.last_error_summary = last_error_summary
         return connection
 
@@ -201,7 +213,7 @@ def transition_source_connection(
         )
 
     connection.status = next_status
-    if next_status == SourceConnectionStatus.error:
+    if next_status in {SourceConnectionStatus.error, SourceConnectionStatus.error_suspended}:
         connection.last_error_summary = last_error_summary
     elif next_status == SourceConnectionStatus.connected:
         connection.last_error_summary = None
@@ -336,3 +348,50 @@ async def upsert_source_item(
     source_item.last_seen_at = now
     await db.flush()
     return source_item, False, is_unchanged
+
+
+async def rotate_credentials(
+    db: AsyncSession,
+    *,
+    connection: SourceConnection,
+    new_secret_ref: str,
+) -> SourceConnection:
+    """Update stored credentials without disconnecting.
+
+    Preserves sync history and source items.  After rotation the
+    connection is set to ``configured`` so it can be re-validated.
+    """
+    connection.secret_ref = new_secret_ref
+    connection.last_error_summary = None
+
+    # Move to configured so validate() can run next
+    if connection.status in {
+        SourceConnectionStatus.error,
+        SourceConnectionStatus.error_suspended,
+        SourceConnectionStatus.connected,
+    }:
+        # Direct assignment is safe for credential rotation because
+        # the goal is to reset the connection lifecycle.
+        connection.status = SourceConnectionStatus.configured
+    await db.flush()
+    return connection
+
+
+def reenable_connection(
+    connection: SourceConnection,
+) -> SourceConnection:
+    """Re-enable an ``error_suspended`` connection for syncing.
+
+    Caller must still re-validate after re-enabling.
+    """
+    if connection.status != SourceConnectionStatus.error_suspended:
+        raise InvalidSourceConnectionTransition(
+            f"Can only re-enable error_suspended connections, "
+            f"current status is {connection.status.value}"
+        )
+    transition_source_connection(
+        connection,
+        SourceConnectionStatus.connected,
+    )
+    connection.last_error_summary = None
+    return connection

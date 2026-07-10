@@ -48,6 +48,7 @@ interface UseIntegrationsReturn {
   validateCsvImport: (file: File) => Promise<SurveyImportValidationResponse>;
   submitConnect: (submission: ConnectSubmission) => Promise<void>;
   submitCsvConnect: (file: File) => Promise<void>;
+  reenableConnection: (connectionId: string) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -198,34 +199,42 @@ export function useIntegrations(): UseIntegrationsReturn {
     setConnectModalError(null);
 
     try {
-      // Guard: prevent creating a duplicate connection for the same provider
       const targetSource = dataSources.find(d => d.id === connectModalDataSourceId);
-      if (targetSource) {
-        const alreadyConnected = connections.some(
-          c => c.data_source.provider === targetSource.provider && c.status !== 'disconnected'
-        );
-        if (alreadyConnected) {
-          throw new Error(`${targetSource.display_name} is already connected. Disconnect it first to reconnect.`);
-        }
-      }
+      const existingConnection = targetSource
+        ? connections.find(c => c.data_source.provider === targetSource.provider && c.status !== 'disconnected')
+        : null;
 
-      const newConnection = await api.createSourceConnection(token, {
-        data_source_id: connectModalDataSourceId,
-        secret_ref: submission.secretRef,
-        config_json: submission.config,
-      });
+      let connectionId: string;
+
+      if (existingConnection) {
+        // Rotate credentials/update configuration
+        await api.rotateSourceConnectionCredentials(token, existingConnection.id, {
+          data_source_id: connectModalDataSourceId,
+          secret_ref: submission.secretRef,
+          config_json: submission.config,
+        });
+        connectionId = existingConnection.id;
+      } else {
+        // Create new connection
+        const newConnection = await api.createSourceConnection(token, {
+          data_source_id: connectModalDataSourceId,
+          secret_ref: submission.secretRef,
+          config_json: submission.config,
+        });
+        connectionId = newConnection.id;
+      }
 
       setConnectModalStep('validating');
 
-      await api.validateSourceConnection(token, newConnection.id);
+      await api.validateSourceConnection(token, connectionId);
 
       // Kick off the first import immediately after successful connection.
       // Interview and analytics sources start with a historical backfill;
       // support sources keep the existing incremental-sync behavior.
-      if (targetSource?.provider === 'fireflies' || targetSource?.provider === 'posthog') {
-        await api.triggerSourceConnectionBackfill(token, newConnection.id);
+      if (targetSource?.provider === 'fireflies' || targetSource?.provider === 'posthog' || targetSource?.provider === 'otter') {
+        await api.triggerSourceConnectionBackfill(token, connectionId);
       } else {
-        await api.triggerSourceConnectionSync(token, newConnection.id);
+        await api.triggerSourceConnectionSync(token, connectionId);
       }
 
       setConnectModalStep('success');
@@ -256,6 +265,12 @@ export function useIntegrations(): UseIntegrationsReturn {
     }
   }, [token, fetchAll]);
 
+  const reenableConnection = useCallback(async (connectionId: string) => {
+    if (!token) throw new Error('Not authenticated');
+    await api.reenableSourceConnection(token, connectionId);
+    await fetchAll();
+  }, [token, fetchAll]);
+
   return {
     connections,
     dataSources,
@@ -276,5 +291,6 @@ export function useIntegrations(): UseIntegrationsReturn {
     validateCsvImport,
     submitConnect,
     submitCsvConnect,
+    reenableConnection,
   };
 }
