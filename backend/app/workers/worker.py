@@ -52,7 +52,6 @@ async def scheduled_connector_sync(ctx: dict) -> dict:
 
     synced = 0
     failed = 0
-    skipped = 0
     async with get_session_factory()() as db:
         stmt = (
             select(SourceConnection)

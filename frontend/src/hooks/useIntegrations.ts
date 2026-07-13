@@ -267,8 +267,15 @@ export function useIntegrations(): UseIntegrationsReturn {
 
   const reenableConnection = useCallback(async (connectionId: string) => {
     if (!token) throw new Error('Not authenticated');
-    await api.reenableSourceConnection(token, connectionId);
-    await fetchAll();
+    try {
+      // Re-enable revalidates the stored key server-side; if the key is
+      // still bad the connection stays suspended and this throws.
+      await api.reenableSourceConnection(token, connectionId);
+      await api.triggerSourceConnectionSync(token, connectionId);
+    } finally {
+      // Refresh even on failure so the card shows the updated error summary.
+      await fetchAll();
+    }
   }, [token, fetchAll]);
 
   return {

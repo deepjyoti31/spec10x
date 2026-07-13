@@ -42,6 +42,14 @@ coverage/
 .coverage
 htmlcov/
 
+# === Local test scratch (never commit) ===
+backend/tmp/
+backend/err.txt
+backend/pytest_out.txt
+backend/test_results.txt
+backend/test_script.py
+backend/run_tests_wrapper.py
+
 
 # === Key files ===
 backend/firebase-service-account.json

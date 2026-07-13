@@ -509,7 +509,11 @@ async def reenable_suspended_connection(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Re-enable a connection that was auto-suspended after consecutive failures."""
+    """Re-enable a connection that was auto-suspended after consecutive failures.
+
+    Revalidates the stored credential immediately. If validation fails, the
+    connection stays ``error_suspended`` so scheduled syncs keep skipping it.
+    """
     workspace = await _get_user_workspace(current_user, db)
 
     stmt = (
@@ -526,12 +530,43 @@ async def reenable_suspended_connection(
     if connection is None:
         raise HTTPException(status_code=404, detail="Source connection not found")
 
-    from app.services.sources import reenable_connection
+    if connection.status != SourceConnectionStatus.error_suspended:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Can only re-enable error_suspended connections, "
+                f"current status is {connection.status.value}"
+            ),
+        )
 
-    try:
-        reenable_connection(connection)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+    from app.connectors import get_connector
+
+    connector_cls = get_connector(
+        connection.data_source.source_type.value,
+        connection.data_source.provider,
+    )
+    if connector_cls is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"No connector available for {connection.data_source.provider}",
+        )
+
+    connector = connector_cls(db=db, connection=connection)
+    await connector.validate()
+
+    if connection.status == SourceConnectionStatus.error:
+        transition_source_connection(
+            connection,
+            SourceConnectionStatus.error_suspended,
+            last_error_summary=(
+                f"Re-enable failed: {connection.last_error_summary or 'validation failed'}"
+            ),
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=400,
+            detail=connection.last_error_summary or "Validation failed",
+        )
 
     await db.commit()
     await db.refresh(connection)

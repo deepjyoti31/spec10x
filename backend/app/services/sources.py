@@ -375,23 +375,3 @@ async def rotate_credentials(
         connection.status = SourceConnectionStatus.configured
     await db.flush()
     return connection
-
-
-def reenable_connection(
-    connection: SourceConnection,
-) -> SourceConnection:
-    """Re-enable an ``error_suspended`` connection for syncing.
-
-    Caller must still re-validate after re-enabling.
-    """
-    if connection.status != SourceConnectionStatus.error_suspended:
-        raise InvalidSourceConnectionTransition(
-            f"Can only re-enable error_suspended connections, "
-            f"current status is {connection.status.value}"
-        )
-    transition_source_connection(
-        connection,
-        SourceConnectionStatus.connected,
-    )
-    connection.last_error_summary = None
-    return connection

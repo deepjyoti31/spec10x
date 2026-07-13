@@ -623,7 +623,7 @@ export default function IntegrationsPage() {
     const handleReenable = async (connectionId: string) => {
         try {
             await reenableConnection(connectionId);
-            showToast('Integration re-enabled and sync resumed', 'success');
+            showToast('Integration re-enabled and sync started', 'success');
         } catch (err) {
             showToast(err instanceof Error ? err.message : 'Failed to re-enable integration', 'error');
         }

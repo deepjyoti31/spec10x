@@ -61,7 +61,10 @@ async def test_auto_suspension_after_threshold_failures(db_session, test_user):
 
 @pytest.mark.asyncio
 async def test_re_enabling_suspended_connection(client, db_session, test_user):
-    """POST /api/source-connections/{id}/reenable moves connection to connected."""
+    """POST /api/source-connections/{id}/reenable revalidates the stored key
+    and moves the connection to connected."""
+    from app.connectors.fireflies import FirefliesConnector
+
     _, connection, _ = await _make_connection(db_session, test_user)
 
     # Force suspended status
@@ -69,11 +72,17 @@ async def test_re_enabling_suspended_connection(client, db_session, test_user):
     connection.last_error_summary = "Auto-suspended after consecutive failures"
     await db_session.commit()
 
-    # Re-enable via API
-    resp = await client.post(
-        f"/api/source-connections/{connection.id}/reenable",
-        headers=AUTH_HEADER,
-    )
+    # Re-enable via API — validation runs with the existing key
+    with patch.object(
+        FirefliesConnector,
+        "_graphql",
+        new_callable=AsyncMock,
+        return_value={"users": [{"user_id": "u1", "name": "Deep", "email": "d@x.com"}]},
+    ):
+        resp = await client.post(
+            f"/api/source-connections/{connection.id}/reenable",
+            headers=AUTH_HEADER,
+        )
     assert resp.status_code == 200
     assert resp.json()["status"] == "connected"
     assert resp.json()["last_error_summary"] is None
@@ -82,3 +91,49 @@ async def test_re_enabling_suspended_connection(client, db_session, test_user):
     await db_session.refresh(connection)
     assert connection.status == SourceConnectionStatus.connected
     assert connection.last_error_summary is None
+
+
+@pytest.mark.asyncio
+async def test_re_enable_with_bad_key_stays_suspended(client, db_session, test_user):
+    """If revalidation fails, the connection stays error_suspended so the
+    scheduled sync keeps skipping it."""
+    from app.connectors.fireflies import FirefliesConnector
+
+    _, connection, _ = await _make_connection(db_session, test_user)
+
+    connection.status = SourceConnectionStatus.error_suspended
+    connection.last_error_summary = "Auto-suspended after consecutive failures"
+    await db_session.commit()
+
+    with patch.object(
+        FirefliesConnector,
+        "_graphql",
+        new_callable=AsyncMock,
+        side_effect=ConnectorError("Fireflies rejected the API key"),
+    ):
+        resp = await client.post(
+            f"/api/source-connections/{connection.id}/reenable",
+            headers=AUTH_HEADER,
+        )
+    assert resp.status_code == 400
+    assert "Re-enable failed" in resp.json()["detail"]
+
+    await db_session.refresh(connection)
+    assert connection.status == SourceConnectionStatus.error_suspended
+    assert "Re-enable failed" in connection.last_error_summary
+
+
+@pytest.mark.asyncio
+async def test_re_enable_rejects_non_suspended_connection(client, db_session, test_user):
+    """Re-enable only applies to error_suspended connections."""
+    _, connection, _ = await _make_connection(db_session, test_user)
+
+    connection.status = SourceConnectionStatus.connected
+    await db_session.commit()
+
+    resp = await client.post(
+        f"/api/source-connections/{connection.id}/reenable",
+        headers=AUTH_HEADER,
+    )
+    assert resp.status_code == 400
+    assert "error_suspended" in resp.json()["detail"]
