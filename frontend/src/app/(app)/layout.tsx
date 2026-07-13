@@ -11,9 +11,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const [collapsed, setCollapsed] = useState(false);
 
-    // Restore collapse state from localStorage on mount
+    // Restore collapse state from localStorage on mount. Must run in an
+    // effect (not a state initializer) so server and client render the
+    // same expanded sidebar during hydration.
     useEffect(() => {
         const stored = localStorage.getItem('sidebar-collapsed');
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (stored === 'true') setCollapsed(true);
     }, []);
 

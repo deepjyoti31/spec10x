@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { loginWithEmail, loginWithGoogle } from '@/lib/auth';
 import { useAuth } from '@/hooks/useAuth';
@@ -55,14 +56,14 @@ export default function LoginPage() {
         <div className="w-full max-w-[400px]">
 
             {/* Logo */}
-            <a href="/" className="flex items-center justify-center gap-2 mb-6 hover:opacity-80 transition-opacity">
+            <Link href="/" className="flex items-center justify-center gap-2 mb-6 hover:opacity-80 transition-opacity">
                 <img
                     src="/assets/logos/spec10x_logo_transparent_1080.png"
                     alt="Spec10x"
                     className="w-7 h-7 object-contain"
                 />
                 <span className="text-[18px] font-bold text-[#F0F0F3]">Spec10x</span>
-            </a>
+            </Link>
 
             {/* Card */}
             <div className="bg-[#161820] border border-[#1E2028] rounded-xl p-8">

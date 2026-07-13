@@ -174,7 +174,6 @@ export function useBillingSettings() {
 
   useEffect(() => {
     if (!token) return;
-    setLoading(true);
     api
       .getLimits(token)
       .then(setLimits)

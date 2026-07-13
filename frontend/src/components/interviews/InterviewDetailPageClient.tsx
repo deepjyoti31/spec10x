@@ -335,7 +335,7 @@ export default function InterviewDetailPageClient() {
                         </div>
 
                         <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-[#D7D9E0]">
-                          "{insight.quote}"
+                          &ldquo;{insight.quote}&rdquo;
                         </p>
 
                         {/* Provenance banner */}

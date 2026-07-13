@@ -279,10 +279,10 @@ export default function LandingPage() {
                         <Eyebrow icon="warning" text="The Problem" />
                         <h2 className="text-[40px] font-bold leading-tight mb-4">
                             While your competitors ship,<br />
-                            you're still in spreadsheets.
+                            you&rsquo;re still in spreadsheets.
                         </h2>
                         <p className="text-[16px] text-[#8B8D97] max-w-xl mx-auto">
-                            Modern product teams are drowning in data they can't use, making
+                            Modern product teams are drowning in data they can&rsquo;t use, making
                             decisions based on vibes instead of evidence.
                         </p>
                     </div>

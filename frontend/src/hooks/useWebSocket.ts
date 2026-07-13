@@ -35,6 +35,9 @@ export function useWebSocket(enabled = true): UseWebSocketReturn {
     const [lastMessage, setLastMessage] = useState<ProcessingUpdate | null>(null);
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+    // Reconnects go through a ref so the onclose closure always calls the
+    // latest connect (with current token/enabled) instead of a stale one.
+    const connectRef = useRef<(() => void) | null>(null);
 
     const connect = useCallback(() => {
         if (!enabled || !token) return;
@@ -60,7 +63,7 @@ export function useWebSocket(enabled = true): UseWebSocketReturn {
                 setIsConnected(false);
                 // Auto-reconnect after 3 seconds
                 reconnectTimer.current = setTimeout(() => {
-                    connect();
+                    connectRef.current?.();
                 }, 3000);
             };
 
@@ -75,6 +78,7 @@ export function useWebSocket(enabled = true): UseWebSocketReturn {
     }, [enabled, token]);
 
     useEffect(() => {
+        connectRef.current = connect;
         connect();
         return () => {
             if (reconnectTimer.current) clearTimeout(reconnectTimer.current);

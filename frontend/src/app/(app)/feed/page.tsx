@@ -914,14 +914,14 @@ export default function FeedPage() {
       return;
     }
 
-    updateSearchParams((params) => {
-      if (selectedSignalId) {
-        params.set('signal', selectedSignalId);
-      } else {
-        params.delete('signal');
-      }
-    }, 'replace');
-  }, [requestedSignalId, selectedSignalId, updateSearchParams]);
+    const nextParams = new URLSearchParams(searchParamsKey);
+    if (selectedSignalId) {
+      nextParams.set('signal', selectedSignalId);
+    } else {
+      nextParams.delete('signal');
+    }
+    router.replace(buildHref(pathname, nextParams), { scroll: false });
+  }, [pathname, requestedSignalId, router, searchParamsKey, selectedSignalId]);
 
   const openDatePicker = useCallback((inputRef: React.RefObject<HTMLInputElement | null>) => {
     const input = inputRef.current as (HTMLInputElement & { showPicker?: () => void }) | null;
