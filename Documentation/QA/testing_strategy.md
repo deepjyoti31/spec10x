@@ -141,6 +141,8 @@ npm test
 
 **Tool:** Playwright (if automated) or manual checklist (for beta).
 
+> **Update (July 13, 2026):** automated Playwright smoke coverage now exists at `frontend/e2e/smoke/` (`US-05-06-01`, per decision `D-05-04`). Six Chromium tests cover the integrations shell, survey CSV import, unified feed, feed filters, priority board, and the home→feed→board nav path. Run locally with `npm run test:smoke`; in CI it is a ship-blocking step in `frontend/cloudbuild.frontend.yaml`. See `frontend/e2e/smoke/README.md` for the harness design (auth-bypass build flag + fixture-mocked API). The manual critical path below remains relevant for the v0.1 upload→ask→export flow, which the automated suite does not cover.
+
 **Critical Path:**
 
 1. Open `http://localhost:3000` → Login/Signup page renders

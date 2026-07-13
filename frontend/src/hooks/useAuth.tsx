@@ -27,6 +27,20 @@ const AuthContext = createContext<AuthContextType>({
     logout: async () => { },
 });
 
+// E2E smoke-test bypass — only active in builds made with
+// NEXT_PUBLIC_E2E_AUTH_BYPASS=1 (never the production build). The smoke
+// suite intercepts all /api/* calls, so this token is never sent to a
+// real backend.
+const E2E_AUTH_BYPASS = process.env.NEXT_PUBLIC_E2E_AUTH_BYPASS === '1';
+
+const E2E_USER: UserResponse = {
+    id: 'e2e-smoke-user',
+    email: 'smoke@spec10x.test',
+    name: 'Smoke Test',
+    plan: 'pro',
+    created_at: '2026-01-01T00:00:00Z',
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<UserResponse | null>(null);
     const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
@@ -34,6 +48,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Must stay inside the effect (not state initializers) so pages do
+        // not prerender with a signed-in user during `next build`.
+        if (E2E_AUTH_BYPASS) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setUser(E2E_USER);
+            setToken('e2e-smoke-token');
+            setLoading(false);
+            return;
+        }
+
         const unsubscribe = onAuthChange(async (fbUser) => {
             setFirebaseUser(fbUser);
 

@@ -1,4 +1,16 @@
 steps:
+# Ship-blocking Playwright smoke suite (US-05-06-01 / D-05-04).
+# Runs against a hermetic build (auth bypass + mocked API), Chromium only.
+# If this step fails, the image is never built or pushed.
+- name: 'mcr.microsoft.com/playwright:v1.61.1-noble'
+  entrypoint: 'bash'
+  args:
+    - '-c'
+    - |
+      npm ci
+      npm run test:smoke
+  env:
+    - 'CI=1'
 - name: 'gcr.io/cloud-builders/docker'
   args: [
     'build', 

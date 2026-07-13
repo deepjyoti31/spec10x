@@ -107,6 +107,9 @@ Run these commands from your local PowerShell in the project root:
     > [!IMPORTANT]
     > For the Frontend, Next.js "bakes in" all `NEXT_PUBLIC_` variables at build time. You **must** pass them during the build (not just in Cloud Run) for them to work.
 
+    > [!NOTE]
+    > The frontend Cloud Build config runs the Playwright smoke suite (`frontend/e2e/smoke/`, see its README) as a ship-blocking first step. If any smoke test fails, the Docker image is never built or pushed. Run it locally with `cd frontend; npm run test:smoke`.
+
 ---
 
 ## 4. Deploying to Cloud Run (GUI)
