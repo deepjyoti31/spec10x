@@ -27,6 +27,7 @@ from app.api import (
     survey_import,
     saved_views,
     collections,
+    specs,
 )
 
 settings = get_settings()
@@ -86,6 +87,7 @@ app.include_router(sources.router)
 app.include_router(survey_import.router)
 app.include_router(saved_views.router)
 app.include_router(collections.router)
+app.include_router(specs.router)
 
 
 @app.get("/health")

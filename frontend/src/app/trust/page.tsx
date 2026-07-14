@@ -99,6 +99,7 @@ export default function TrustPage() {
                         <div className="space-y-4 text-[15px] text-[#B0B2BA] leading-relaxed">
                             <p>Connection secrets should be handled as secrets in production. In the current product behavior, secrets are not returned in normal application responses.</p>
                             <p>Spec10x does not use your content to train Spec10x-owned generalized models.</p>
+                            <p><strong className="text-[#F0F0F3]">Spec generation</strong> sends the selected theme&apos;s evidence excerpts to the same Vertex AI processing used for interview analysis and Ask. Generated specs are AI drafts, labeled as such until you edit or approve them, and every generated claim carries citations back to your own evidence.</p>
                             <p>We keep our language conservative about model-provider retention and do not claim stronger guarantees than the deployed configuration verifies.</p>
                         </div>
                     </Section>

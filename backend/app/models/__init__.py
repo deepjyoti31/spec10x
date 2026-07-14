@@ -135,6 +135,21 @@ class SignalStatus(str, enum.Enum):
     error = "error"
 
 
+class SpecStatus(str, enum.Enum):
+    draft = "draft"
+    in_review = "in_review"
+    needs_changes = "needs_changes"
+    approved = "approved"
+    in_dev = "in_dev"
+    shipped = "shipped"
+
+
+class SpecGenerationStatus(str, enum.Enum):
+    generating = "generating"
+    ready = "ready"
+    error = "error"
+
+
 # ─── Models ──────────────────────────────────────────────
 
 class User(Base):
@@ -193,6 +208,9 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
     collections: Mapped[list["Collection"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    specs: Mapped[list["Spec"]] = relationship(
         back_populates="user", cascade="all, delete-orphan"
     )
 
@@ -852,6 +870,56 @@ class CollectionInterview(Base):
 
     __table_args__ = (
         Index("ix_collection_interviews_interview", "interview_id"),
+    )
+
+
+class Spec(Base):
+    __tablename__ = "specs"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")
+    )
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    # SET NULL so the spec (and its evidence snapshot) outlives theme merge/delete
+    theme_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("themes.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    theme_name_snapshot: Mapped[str] = mapped_column(String(512), default="")
+    title: Mapped[str] = mapped_column(String(512), default="")
+    status: Mapped[SpecStatus] = mapped_column(
+        Enum(SpecStatus, name="spec_status"), default=SpecStatus.draft
+    )
+    generation_status: Mapped[SpecGenerationStatus] = mapped_column(
+        Enum(SpecGenerationStatus, name="spec_generation_status"),
+        default=SpecGenerationStatus.generating,
+    )
+    generation_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    sections_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    evidence_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    impact_score_snapshot: Mapped[float | None] = mapped_column(Float, nullable=True)
+    model_used: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_edited: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    user: Mapped["User"] = relationship(back_populates="specs")
+    workspace: Mapped["Workspace | None"] = relationship()
+    theme: Mapped["Theme | None"] = relationship()
+
+    __table_args__ = (
+        Index("ix_specs_user_status", "user_id", "status"),
+        Index("ix_specs_theme_id", "theme_id"),
     )
 
 

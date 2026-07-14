@@ -4,7 +4,7 @@ Spec10x Backend - Themes API routes.
 
 from collections import defaultdict
 import uuid
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
@@ -27,9 +27,11 @@ from app.schemas import (
     ThemeMergeRequest,
     ThemeMergeResultResponse,
     ThemeResponse,
+    ThemeTrendsPageResponse,
     ThemeUpdate,
 )
 from app.services.signals import (
+    TREND_WINDOW_DAYS,
     _parse_theme_match_id,
     build_source_breakdown,
     build_theme_score_map,
@@ -37,6 +39,7 @@ from app.services.signals import (
     calculate_theme_trend,
     ensure_signal_consistency,
     get_workspace_signals,
+    is_voice_signal,
     refresh_external_signal_theme_matches,
     serialize_feed_signal,
     serialize_impact_breakdown,
@@ -496,6 +499,79 @@ async def get_theme_explorer(
         active_themes=serialized_active_themes,
         previous_themes=serialized_previous_themes,
         empty_reason=empty_reason,
+    )
+
+
+TRENDS_WEEKS = 8
+
+
+@router.get("/trends", response_model=ThemeTrendsPageResponse)
+async def get_theme_trends(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Weekly voice-signal volume per active theme for the /trends page (v0.8).
+
+    Reuses the v0.52 trend definition: direction comes from
+    `calculate_theme_trend`'s 14-day windows, and metric windows never count
+    toward volume (`is_voice_signal`).
+    """
+    workspace = await ensure_signal_consistency(db, user_id=current_user.id)
+    result = await db.execute(
+        select(Theme).where(
+            Theme.user_id == current_user.id,
+            Theme.status == ThemeStatus.active,
+        )
+    )
+    themes = list(result.scalars().all())
+    workspace_signals = await get_workspace_signals(db, workspace_id=workspace.id)
+
+    now = datetime.now(timezone.utc)
+    week = timedelta(days=7)
+    # Rolling 7-day buckets ending now; oldest first
+    bucket_starts = [now - week * (TRENDS_WEEKS - i) for i in range(TRENDS_WEEKS)]
+
+    voice_signals_by_theme: dict[uuid.UUID, list] = defaultdict(list)
+    for signal in workspace_signals:
+        theme_id = _parse_theme_match_id(signal.metadata_json)
+        if theme_id is not None and is_voice_signal(signal):
+            voice_signals_by_theme[theme_id].append(signal)
+
+    score_map = build_theme_score_map(themes=themes, signals=workspace_signals)
+
+    trend_themes = []
+    for theme in themes:
+        weekly_counts = [0] * TRENDS_WEEKS
+        for signal in voice_signals_by_theme.get(theme.id, []):
+            occurred_at = signal.occurred_at
+            if occurred_at.tzinfo is None:
+                occurred_at = occurred_at.replace(tzinfo=timezone.utc)
+            for index, bucket_start in enumerate(bucket_starts):
+                if bucket_start < occurred_at <= bucket_start + week:
+                    weekly_counts[index] += 1
+                    break
+
+        trend = calculate_theme_trend(theme_id=theme.id, signals=workspace_signals)
+        trend_themes.append(
+            {
+                "id": theme.id,
+                "name": theme.name,
+                "direction": trend.direction,
+                "recent_count": trend.recent_count,
+                "previous_count": trend.previous_count,
+                "impact_score": score_map[theme.id].total,
+                "priority_state": theme.priority_state,
+                "weekly_counts": weekly_counts,
+            }
+        )
+
+    trend_themes.sort(key=lambda item: item["impact_score"], reverse=True)
+
+    return ThemeTrendsPageResponse(
+        window_days=TREND_WINDOW_DAYS,
+        weeks=[bucket_start.date() for bucket_start in bucket_starts],
+        themes=trend_themes,
+        has_data=bool(themes and workspace_signals),
     )
 
 

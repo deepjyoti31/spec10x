@@ -42,13 +42,13 @@ const NAV_SECTIONS: NavSection[] = [
         items: [
             { label: 'Board',  icon: 'view_kanban',  href: '/board' },
             { label: 'Ask AI', icon: 'chat',         href: '/ask' },
-            { label: 'Trends', icon: 'trending_up',  href: '/trends', locked: true },
+            { label: 'Trends', icon: 'trending_up',  href: '/trends' },
         ],
     },
     {
         title: 'Specify',
         items: [
-            { label: 'Specs',      icon: 'description',        href: '/specs',      locked: true },
+            { label: 'Specs',      icon: 'description',        href: '/specs' },
             { label: 'Wireframes', icon: 'dashboard_customize', href: '/wireframes', locked: true },
         ],
     },

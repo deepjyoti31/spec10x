@@ -17,6 +17,8 @@ from app.models import (
     SourceType,
     SyncRunStatus,
     SyncRunType,
+    SpecGenerationStatus,
+    SpecStatus,
     ThemePriorityState,
     ThemeStatus,
     MessageRole,
@@ -623,3 +625,84 @@ class CollectionDetailResponse(CollectionResponse):
 
 class CollectionInterviewsRequest(BaseModel):
     interview_ids: list[uuid.UUID]
+
+
+# ─── Specs (v0.8 Specification Engine) ───────────────────
+
+class SpecSectionResponse(BaseModel):
+    key: str
+    title: str
+    content: str
+    citations: list[int] = []
+
+
+class SpecEvidenceItemResponse(BaseModel):
+    ref: int
+    signal_id: str
+    source_type: str
+    source_label: str
+    provider_label: str
+    signal_kind: str
+    signal_kind_label: str
+    excerpt: str
+    author_or_speaker: Optional[str] = None
+    sentiment: Optional[str] = None
+    occurred_at: datetime
+    link: Optional[SignalLinkResponse] = None
+
+
+class SpecCreate(BaseModel):
+    theme_id: uuid.UUID
+
+
+class SpecSectionUpdate(BaseModel):
+    key: str
+    content: str
+
+
+class SpecUpdate(BaseModel):
+    title: Optional[str] = None
+    status: Optional[SpecStatus] = None
+    sections: Optional[list[SpecSectionUpdate]] = None
+
+
+class SpecListItemResponse(BaseModel):
+    id: uuid.UUID
+    title: str
+    status: SpecStatus
+    generation_status: SpecGenerationStatus
+    theme_id: Optional[uuid.UUID] = None
+    theme_name_snapshot: str
+    impact_score_snapshot: Optional[float] = None
+    section_count: int
+    evidence_count: int
+    is_edited: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class SpecDetailResponse(SpecListItemResponse):
+    generation_error: Optional[str] = None
+    model_used: Optional[str] = None
+    sections: list[SpecSectionResponse] = []
+    evidence: list[SpecEvidenceItemResponse] = []
+
+
+# ─── Trends (v0.8) ───────────────────────────────────────
+
+class TrendThemeResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    direction: str  # "rising" | "flat" | "declining"
+    recent_count: int
+    previous_count: int
+    impact_score: float
+    priority_state: ThemePriorityState
+    weekly_counts: list[int]
+
+
+class ThemeTrendsPageResponse(BaseModel):
+    window_days: int
+    weeks: list[date]
+    themes: list[TrendThemeResponse] = []
+    has_data: bool

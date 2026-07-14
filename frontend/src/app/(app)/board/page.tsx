@@ -2,10 +2,12 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
+import { useAuth } from '@/hooks/useAuth';
 import { useBoard } from '@/hooks/useBoard';
 import { useToast } from '@/components/ui/Toast';
-import { BoardThemeCardResponse, ThemePriorityState } from '@/lib/api';
+import { api, BoardThemeCardResponse, ThemePriorityState } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -290,26 +292,42 @@ function MergeButton({
 }
 
 // ---------------------------------------------------------------------------
-// Generate Spec button — disabled, Coming Soon
+// Generate Spec button — drafts an evidence-cited brief and opens Spec Studio
 // ---------------------------------------------------------------------------
 
-function GenerateSpecBtn() {
+function GenerateSpecBtn({ themeId }: { themeId: string }) {
+    const router = useRouter();
+    const { token } = useAuth();
+    const { showToast } = useToast();
+    const [generating, setGenerating] = useState(false);
+
+    async function handleClick(e: React.MouseEvent) {
+        e.stopPropagation();
+        if (!token || generating) return;
+        setGenerating(true);
+        try {
+            const spec = await api.createSpec(token, themeId);
+            if (spec.generation_status === 'error') {
+                showToast('Spec created, but generation failed — you can retry from the spec page.', 'error');
+            }
+            router.push(`/specs/${spec.id}`);
+        } catch (err) {
+            showToast(err instanceof Error ? err.message : 'Failed to generate spec', 'error');
+            setGenerating(false);
+        }
+    }
+
     return (
         <div className="flex-1 relative">
             <button
-                disabled
-                className="w-full py-2 rounded text-xs font-bold flex items-center justify-center gap-1.5 cursor-not-allowed"
-                style={{ backgroundColor: '#1e2028', color: 'rgba(194,198,214,0.3)', border: '1px solid rgba(66,71,83,0.3)' }}
+                disabled={generating}
+                onClick={e => { void handleClick(e); }}
+                className="w-full py-2 rounded text-xs font-bold flex items-center justify-center gap-1.5 transition-colors disabled:cursor-wait"
+                style={{ backgroundColor: 'rgba(175,198,255,0.12)', color: '#afc6ff', border: '1px solid rgba(175,198,255,0.25)' }}
             >
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>auto_awesome</span>
-                Generate Spec
+                {generating ? 'Generating…' : 'Generate Spec'}
             </button>
-            <span
-                className="absolute -top-2 -right-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full"
-                style={{ backgroundColor: '#282a30', color: 'rgba(194,198,214,0.5)', border: '1px solid rgba(66,71,83,0.4)' }}
-            >
-                SOON
-            </span>
         </div>
     );
 }
@@ -403,7 +421,7 @@ function PinnedCardFull({
 
             {/* Generate Spec */}
             <div className="flex gap-2">
-                <GenerateSpecBtn />
+                <GenerateSpecBtn themeId={theme.id} />
             </div>
         </div>
     );
@@ -442,7 +460,7 @@ function PinnedCardSimple({
                 <ViewInInsightsLink themeId={theme.id} />
             </div>
             <div className="flex gap-2">
-                <GenerateSpecBtn />
+                <GenerateSpecBtn themeId={theme.id} />
             </div>
         </div>
     );

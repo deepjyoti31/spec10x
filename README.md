@@ -4,10 +4,8 @@ Spec10x is a customer intelligence app for turning raw interview, support, and s
 
 Current workspace status:
 
-- interview upload, analysis, theme synthesis, and Ask are working
-- Sprint 7 scope of the `v0.5` alpha is implemented, with the `G1` ship gate next
-- mixed-source feed, source-aware theme detail, Zendesk sync details, repeatable survey CSV import, and Impact Score v1 are in the codebase
-- the priority board, trust package, observability baseline, connector replay tests, and pilot rollout documentation are in the codebase; frontend smoke coverage remains deferred pending UI redesign
+- the full `v0.5x` release family (`v0.5` through `v0.54`) is shipped and founder-accepted: multi-source evidence, Zendesk/Fireflies/PostHog/Otter.ai connectors, Impact Score v2 with trends, priority board, saved views, collections, and theme merge
+- `v0.8` (Specification Engine MVP) is implemented and in founder review: evidence-cited spec generation, Spec Studio, review workflow, and the Trends page — see `Documentation/DevOps/v0.8_release_checklist.md`
 
 ## Current Product Surface
 
@@ -19,8 +17,11 @@ The repo currently supports:
 - a unified `/feed` surface for interview, Zendesk, and survey evidence
 - a dedicated `/board` surface for ranked theme triage with pin and monitor states
 - source-aware theme detail with supporting evidence grouped by source
-- integrations for Zendesk plus repeatable survey and NPS CSV import
-- Impact Score v1 for urgency sorting plus score-breakdown UI in theme detail and board cards
+- integrations for Zendesk, Fireflies, PostHog, and Otter.ai plus repeatable survey and NPS CSV import
+- Impact Score v2 for urgency sorting plus score-breakdown, trend, and score-change UI in theme detail and board cards
+- AI-generated, evidence-cited feature briefs (`/specs`) with a Draft → Approved → Shipped review workflow and a `Generate Spec` action on pinned board themes
+- a `/trends` page showing weekly theme signal velocity with rising/declining/stable grouping
+- saved feed views, interview collections, and theme merge
 - public `/trust`, `/privacy`, and `/terms` pages aligned to the current trust promises
 
 ## Stack
@@ -185,7 +186,12 @@ npm run lint
 npm run build
 ```
 
-There is no dedicated frontend automated test suite yet. The current release tracker defers frontend smoke automation until the redesigned UI is stable.
+The Playwright smoke suite lives in `frontend/e2e/smoke/` and runs with:
+
+```powershell
+cd frontend
+npm run test:smoke
+```
 
 ## Documentation
 
@@ -201,24 +207,21 @@ Key docs:
 
 ## Current Release Scope
 
-`v0.5` is the active release. The implemented state in this workspace covers:
+`v0.8` (Specification Engine MVP) is the active release, implemented per `PRD-08-01` and awaiting founder acceptance. It adds on top of the shipped `v0.5x` family:
 
-- source foundation
-- Zendesk validation, backfill, sync, and shared signal normalization
-- survey template, validation, confirm flow, history, and shared signal normalization
-- native interview signals for mixed-source feed and scoring
-- unified feed and source-aware theme detail
-- Impact Score v1
-- `/api/themes/board` and `/board`
-- persistent theme `priority_state` for `default`, `pinned`, and `monitoring`
-- trust-package pages and in-product trust copy alignment
-- observability baseline for sync logs and duplicate-rate review
+- a `specs` data model with workspace ownership, theme snapshots, and evidence snapshots
+- Gemini-based spec generation with a numbered-citation contract back to real signals
+- `/api/specs` CRUD, regeneration, and a validated Draft → In Review → Needs Changes → Approved → In Dev → Shipped workflow
+- the `/specs` Spec Studio (list + split-pane detail with inline editing and an evidence panel)
+- `GET /api/themes/trends` and the `/trends` page (weekly voice-signal velocity per theme)
+- a live `Generate Spec` action on pinned `/board` cards
 
-Deferred or below the release cut line:
+Deferred by `D-08-04` (documented in `PRD-08-01`):
 
-- Playwright smoke coverage in CI
-- saved views and other below-the-line work
-- `v0.51` Fireflies auto-sync, which should not open until `v0.5` ships and completes its measurement gate
+- wireframe suggestions and the `/wireframes` page
+- user flow diagrams and codebase awareness (repo connectors)
+- spec collaboration (comments, co-editing, team sign-offs)
+- agent-ready task export and PM tool sync (`v1.0` scope)
 
 ## License
 

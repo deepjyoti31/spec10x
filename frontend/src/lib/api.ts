@@ -297,6 +297,51 @@ class ApiClient {
     });
   }
 
+  async getThemeTrends(token: string) {
+    return this.request<ThemeTrendsPageResponse>('/api/themes/trends', { token });
+  }
+
+  // === Specs (v0.8 Specification Engine) ===
+
+  async listSpecs(token: string, status?: SpecStatus) {
+    const qs = status ? `?status=${status}` : '';
+    return this.request<SpecListItemResponse[]>(`/api/specs${qs}`, { token });
+  }
+
+  async createSpec(token: string, themeId: string) {
+    return this.request<SpecDetailResponse>('/api/specs', {
+      method: 'POST',
+      body: JSON.stringify({ theme_id: themeId }),
+      token,
+    });
+  }
+
+  async getSpec(token: string, id: string) {
+    return this.request<SpecDetailResponse>(`/api/specs/${id}`, { token });
+  }
+
+  async updateSpec(token: string, id: string, data: SpecUpdateRequest) {
+    return this.request<SpecDetailResponse>(`/api/specs/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+      token,
+    });
+  }
+
+  async regenerateSpec(token: string, id: string) {
+    return this.request<SpecDetailResponse>(`/api/specs/${id}/regenerate`, {
+      method: 'POST',
+      token,
+    });
+  }
+
+  async deleteSpec(token: string, id: string) {
+    return this.request<void>(`/api/specs/${id}`, {
+      method: 'DELETE',
+      token,
+    });
+  }
+
   // === Saved Views ===
 
   async listSavedViews(token: string) {
@@ -1316,6 +1361,88 @@ export interface CollectionCreateRequest {
 export interface CollectionUpdateRequest {
   name?: string;
   description?: string;
+}
+
+// === Specs (v0.8 Specification Engine) ===
+
+export type SpecStatus =
+  | 'draft'
+  | 'in_review'
+  | 'needs_changes'
+  | 'approved'
+  | 'in_dev'
+  | 'shipped';
+
+export type SpecGenerationStatus = 'generating' | 'ready' | 'error';
+
+export interface SpecSection {
+  key: string;
+  title: string;
+  content: string;
+  citations: number[];
+}
+
+export interface SpecEvidenceItem {
+  ref: number;
+  signal_id: string;
+  source_type: string;
+  source_label: string;
+  provider_label: string;
+  signal_kind: string;
+  signal_kind_label: string;
+  excerpt: string;
+  author_or_speaker?: string | null;
+  sentiment?: string | null;
+  occurred_at: string;
+  link?: { kind: string; href: string; label: string } | null;
+}
+
+export interface SpecListItemResponse {
+  id: string;
+  title: string;
+  status: SpecStatus;
+  generation_status: SpecGenerationStatus;
+  theme_id?: string | null;
+  theme_name_snapshot: string;
+  impact_score_snapshot?: number | null;
+  section_count: number;
+  evidence_count: number;
+  is_edited: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SpecDetailResponse extends SpecListItemResponse {
+  generation_error?: string | null;
+  model_used?: string | null;
+  sections: SpecSection[];
+  evidence: SpecEvidenceItem[];
+}
+
+export interface SpecUpdateRequest {
+  title?: string;
+  status?: SpecStatus;
+  sections?: Array<{ key: string; content: string }>;
+}
+
+// === Trends (v0.8) ===
+
+export interface TrendThemeResponse {
+  id: string;
+  name: string;
+  direction: 'rising' | 'flat' | 'declining';
+  recent_count: number;
+  previous_count: number;
+  impact_score: number;
+  priority_state: string;
+  weekly_counts: number[];
+}
+
+export interface ThemeTrendsPageResponse {
+  window_days: number;
+  weeks: string[];
+  themes: TrendThemeResponse[];
+  has_data: boolean;
 }
 
 // === Singleton export ===
