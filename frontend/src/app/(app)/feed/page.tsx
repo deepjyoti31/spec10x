@@ -12,6 +12,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { useToast } from '@/components/ui/Toast';
 import { useFeed } from '@/hooks/useFeed';
+import { useSavedViews } from '@/hooks/useSavedViews';
 import type {
   FeedFilters,
   FeedSignalDetailResponse,
@@ -21,7 +22,7 @@ import type {
 } from '@/lib/api';
 
 type SentimentType = 'negative' | 'neutral' | 'positive';
-type FilterMenu = 'source' | 'sentiment' | null;
+type FilterMenu = 'source' | 'sentiment' | 'views' | null;
 
 interface FilterOptionValue<TValue> {
   value: TValue;
@@ -432,6 +433,97 @@ function FilterOption({
         </span>
       ) : null}
     </button>
+  );
+}
+
+function ViewsDropdown({
+  open,
+  onToggle,
+  savedViews,
+  onApply,
+  onDelete,
+  onSaveCurrent,
+  hasActiveFilters,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  savedViews: Array<{ id: string; name: string; filters: FeedFilters }>;
+  onApply: (filters: FeedFilters) => void;
+  onDelete: (id: string) => void;
+  onSaveCurrent: (name: string) => void;
+  hasActiveFilters: boolean;
+}) {
+  const [draftName, setDraftName] = useState('');
+
+  return (
+    <FilterDropdown label="Views" open={open} onToggle={onToggle}>
+      {savedViews.length === 0 ? (
+        <div className="px-4 py-2 text-xs text-[#5A5C66]">No saved views yet</div>
+      ) : (
+        savedViews.map((view) => (
+          <div
+            key={view.id}
+            className="flex items-center justify-between gap-2 px-4 py-2 text-xs text-[#c8cad6] transition-colors hover:bg-[#1E2028]"
+          >
+            <button
+              type="button"
+              className="flex-1 text-left"
+              onClick={() => onApply(view.filters)}
+            >
+              {view.name}
+            </button>
+            <button
+              type="button"
+              className="text-[#5A5C66] transition-colors hover:text-[#ffb4ab]"
+              onClick={() => onDelete(view.id)}
+              aria-label={`Delete saved view ${view.name}`}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                close
+              </span>
+            </button>
+          </div>
+        ))
+      )}
+
+      {hasActiveFilters ? (
+        <div
+          className="flex items-center gap-2 border-t px-3 py-2"
+          style={{ borderColor: '#1E2028' }}
+        >
+          <input
+            type="text"
+            value={draftName}
+            onChange={(event) => setDraftName(event.target.value)}
+            placeholder="Save current filters as..."
+            className="min-w-0 flex-1 rounded bg-transparent px-2 py-1 text-xs text-[#e2e2eb] outline-none"
+            style={{ border: '1px solid #1E2028' }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && draftName.trim()) {
+                onSaveCurrent(draftName.trim());
+                setDraftName('');
+              }
+            }}
+          />
+          <button
+            type="button"
+            className="rounded px-2 py-1 text-[10px] font-bold uppercase text-[#afc6ff] disabled:opacity-40"
+            disabled={!draftName.trim()}
+            onClick={() => {
+              if (!draftName.trim()) return;
+              onSaveCurrent(draftName.trim());
+              setDraftName('');
+            }}
+          >
+            Save
+          </button>
+        </div>
+      ) : (
+        <div className="border-t px-4 py-2 text-[10px] text-[#5A5C66]" style={{ borderColor: '#1E2028' }}>
+          Apply a filter to save it as a view
+        </div>
+      )}
+    </FilterDropdown>
   );
 }
 
@@ -854,6 +946,43 @@ export default function FeedPage() {
     exportFeed,
   } = useFeed(filters, requestedSignalId);
 
+  const { savedViews, saveView, deleteView } = useSavedViews();
+  const hasActiveFilters = Boolean(source || sentiment || dateFrom || dateTo);
+
+  const applySavedView = useCallback(
+    (viewFilters: FeedFilters) => {
+      updateSearchParams((params) => {
+        params.delete('source');
+        params.delete('sentiment');
+        params.delete('date_from');
+        params.delete('date_to');
+        if (viewFilters.source) params.set('source', viewFilters.source);
+        if (viewFilters.sentiment) params.set('sentiment', viewFilters.sentiment);
+        if (viewFilters.date_from) params.set('date_from', viewFilters.date_from);
+        if (viewFilters.date_to) params.set('date_to', viewFilters.date_to);
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pathname, router, searchParamsKey]
+  );
+
+  async function handleSaveCurrentView(name: string) {
+    try {
+      await saveView(name, filters);
+      showToast(`Saved view "${name}"`, 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to save view', 'error');
+    }
+  }
+
+  async function handleDeleteSavedView(id: string) {
+    try {
+      await deleteView(id);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to delete saved view', 'error');
+    }
+  }
+
   const stats = useMemo(() => {
     const rows = signals ?? [];
 
@@ -1169,6 +1298,20 @@ export default function FeedPage() {
             label={formatDateButtonLabel(dateTo, 'Date To')}
             onClick={() => openDatePicker(dateToInputRef)}
             onClear={() => clearDateFilter('date_to')}
+          />
+
+          <ViewsDropdown
+            open={openMenu === 'views'}
+            onToggle={() => setOpenMenu((current) => (current === 'views' ? null : 'views'))}
+            savedViews={savedViews}
+            onApply={applySavedView}
+            onDelete={(id) => {
+              void handleDeleteSavedView(id);
+            }}
+            onSaveCurrent={(name) => {
+              void handleSaveCurrentView(name);
+            }}
+            hasActiveFilters={hasActiveFilters}
           />
 
           <div className="flex-1" />

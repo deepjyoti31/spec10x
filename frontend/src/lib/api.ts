@@ -190,6 +190,14 @@ class ApiClient {
     );
   }
 
+  async updateInterview(token: string, id: string, data: InterviewUpdateRequest) {
+    return this.request<InterviewResponse>(`/api/interviews/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+      token,
+    });
+  }
+
   async updateSpeaker(token: string, interviewId: string, speakerId: string, data: SpeakerUpdate) {
     return this.request<SpeakerResponse>(
       `/api/interviews/${interviewId}/speakers/${speakerId}`,
@@ -279,6 +287,83 @@ class ApiClient {
 
   async renameTheme(token: string, id: string, name: string) {
     return this.updateTheme(token, id, { name });
+  }
+
+  async mergeTheme(token: string, targetThemeId: string, sourceThemeId: string) {
+    return this.request<ThemeMergeResultResponse>(`/api/themes/${targetThemeId}/merge`, {
+      method: 'POST',
+      body: JSON.stringify({ source_theme_id: sourceThemeId }),
+      token,
+    });
+  }
+
+  // === Saved Views ===
+
+  async listSavedViews(token: string) {
+    return this.request<SavedViewResponse[]>('/api/saved-views', { token });
+  }
+
+  async createSavedView(token: string, data: SavedViewCreateRequest) {
+    return this.request<SavedViewResponse>('/api/saved-views', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      token,
+    });
+  }
+
+  async deleteSavedView(token: string, id: string) {
+    return this.request<void>(`/api/saved-views/${id}`, {
+      method: 'DELETE',
+      token,
+    });
+  }
+
+  // === Collections ===
+
+  async listCollections(token: string) {
+    return this.request<CollectionResponse[]>('/api/collections', { token });
+  }
+
+  async createCollection(token: string, data: CollectionCreateRequest) {
+    return this.request<CollectionResponse>('/api/collections', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      token,
+    });
+  }
+
+  async getCollection(token: string, id: string) {
+    return this.request<CollectionDetailResponse>(`/api/collections/${id}`, { token });
+  }
+
+  async updateCollection(token: string, id: string, data: CollectionUpdateRequest) {
+    return this.request<CollectionResponse>(`/api/collections/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+      token,
+    });
+  }
+
+  async deleteCollection(token: string, id: string) {
+    return this.request<void>(`/api/collections/${id}`, {
+      method: 'DELETE',
+      token,
+    });
+  }
+
+  async addCollectionInterviews(token: string, id: string, interviewIds: string[]) {
+    return this.request<CollectionDetailResponse>(`/api/collections/${id}/interviews`, {
+      method: 'POST',
+      body: JSON.stringify({ interview_ids: interviewIds }),
+      token,
+    });
+  }
+
+  async removeCollectionInterview(token: string, id: string, interviewId: string) {
+    return this.request<void>(`/api/collections/${id}/interviews/${interviewId}`, {
+      method: 'DELETE',
+      token,
+    });
   }
 
   // === Feed ===
@@ -629,8 +714,13 @@ export interface InterviewResponse {
   status: string;
   duration_seconds?: number;
   error_message?: string;
+  comment?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface InterviewUpdateRequest {
+  comment?: string;
 }
 
 export type InterviewLibrarySort = 'recent' | 'oldest' | 'name' | 'insights' | 'themes';
@@ -729,6 +819,7 @@ export interface ThemeResponse {
   id: string;
   name: string;
   description?: string;
+  comment?: string;
   mention_count: number;
   sentiment_positive: number;
   sentiment_neutral: number;
@@ -902,6 +993,17 @@ export interface ThemeExplorerQuery {
 export interface ThemeUpdateRequest {
   name?: string;
   priority_state?: ThemePriorityState;
+  comment?: string;
+}
+
+export interface ThemeMergeRequest {
+  source_theme_id: string;
+}
+
+export interface ThemeMergeResultResponse {
+  target_theme: ThemeResponse;
+  merged_insight_count: number;
+  merged_sub_theme_count: number;
 }
 
 export interface InsightResponse {
@@ -1175,6 +1277,45 @@ export interface FeedFilters {
   sentiment?: 'positive' | 'neutral' | 'negative';
   date_from?: string;
   date_to?: string;
+}
+
+// === Saved Views ===
+
+export interface SavedViewResponse {
+  id: string;
+  name: string;
+  filters: FeedFilters;
+  created_at: string;
+}
+
+export interface SavedViewCreateRequest {
+  name: string;
+  filters: FeedFilters;
+}
+
+// === Collections ===
+
+export interface CollectionResponse {
+  id: string;
+  name: string;
+  description?: string;
+  interview_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CollectionDetailResponse extends CollectionResponse {
+  interviews: InterviewResponse[];
+}
+
+export interface CollectionCreateRequest {
+  name: string;
+  description?: string;
+}
+
+export interface CollectionUpdateRequest {
+  name?: string;
+  description?: string;
 }
 
 // === Singleton export ===

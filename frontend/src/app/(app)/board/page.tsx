@@ -231,6 +231,65 @@ function PinButton({ onClick }: { onClick: () => void }) {
 }
 
 // ---------------------------------------------------------------------------
+// Merge button — folds this theme into another one, picked from a dropdown
+// ---------------------------------------------------------------------------
+
+function MergeButton({
+    theme,
+    otherThemes,
+    onMerge,
+}: {
+    theme: BoardThemeCardResponse;
+    otherThemes: BoardThemeCardResponse[];
+    onMerge: (targetThemeId: string) => void;
+}) {
+    const [open, setOpen] = useState(false);
+
+    if (otherThemes.length === 0) return null;
+
+    return (
+        <div className="relative">
+            <button
+                onClick={e => { e.stopPropagation(); setOpen(v => !v); }}
+                className="transition-colors"
+                style={{ color: 'rgba(194,198,214,0.4)' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#afc6ff')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(194,198,214,0.4)')}
+                title="Merge this theme into another"
+            >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>call_merge</span>
+            </button>
+            {open && (
+                <div
+                    className="absolute right-0 top-full z-30 mt-1 min-w-[200px] overflow-hidden rounded"
+                    style={{ backgroundColor: '#161820', border: '1px solid #1E2028', boxShadow: '0 18px 45px rgba(0,0,0,0.35)' }}
+                    onMouseLeave={() => setOpen(false)}
+                >
+                    <div className="px-3 py-2 text-[9px] font-bold uppercase tracking-widest" style={{ color: '#5A5C66' }}>
+                        Merge &ldquo;{theme.name}&rdquo; into
+                    </div>
+                    {otherThemes.map(other => (
+                        <button
+                            key={other.id}
+                            className="block w-full px-3 py-2 text-left text-xs text-[#c8cad6] transition-colors hover:bg-[#1E2028]"
+                            onClick={e => {
+                                e.stopPropagation();
+                                setOpen(false);
+                                if (window.confirm(`Merge "${theme.name}" into "${other.name}"? All evidence and insights move to "${other.name}".`)) {
+                                    onMerge(other.id);
+                                }
+                            }}
+                        >
+                            {other.name}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
 // Generate Spec button — disabled, Coming Soon
 // ---------------------------------------------------------------------------
 
@@ -395,11 +454,15 @@ function PinnedCardSimple({
 
 function InvestigateCardRing({
     theme,
+    otherThemes,
     onPin,
+    onMerge,
     onDragStart,
 }: {
     theme: BoardThemeCardResponse;
+    otherThemes: BoardThemeCardResponse[];
     onPin: () => void;
+    onMerge: (targetThemeId: string) => void;
     onDragStart: (e: React.DragEvent) => void;
 }) {
     const score = theme.impact_score ?? 0;
@@ -418,6 +481,7 @@ function InvestigateCardRing({
                 <ScoreRing score={score} size={48} strokeWidth={3} radius={20} />
                 <div className="flex gap-2 items-center">
                     <TrendBadge theme={theme} />
+                    <MergeButton theme={theme} otherThemes={otherThemes} onMerge={onMerge} />
                     <PinButton onClick={onPin} />
                 </div>
             </div>
@@ -450,13 +514,17 @@ function InvestigateCardRing({
 
 function CompactCard({
     theme,
+    otherThemes,
     muted,
     onPin,
+    onMerge,
     onDragStart,
 }: {
     theme: BoardThemeCardResponse;
+    otherThemes: BoardThemeCardResponse[];
     muted?: boolean;
     onPin: () => void;
+    onMerge: (targetThemeId: string) => void;
     onDragStart: (e: React.DragEvent) => void;
 }) {
     const score = theme.impact_score ?? 0;
@@ -474,6 +542,7 @@ function CompactCard({
                 <ScoreRing score={score} size={48} strokeWidth={3} radius={20} />
                 <div className="flex gap-2 items-center">
                     <TrendBadge theme={theme} />
+                    <MergeButton theme={theme} otherThemes={otherThemes} onMerge={onMerge} />
                     <PinButton onClick={onPin} />
                 </div>
             </div>
@@ -615,7 +684,7 @@ function DroppableColumn({
 
 export default function BoardPage() {
     const { showToast } = useToast();
-    const { pinned, investigate, monitoring, loading, error, moveTheme } = useBoard();
+    const { allThemes, pinned, investigate, monitoring, loading, error, moveTheme, mergeThemes } = useBoard();
     const dragThemeId = useRef<string | null>(null);
     const dragSourceColumn = useRef<ThemePriorityState | null>(null);
 
@@ -646,6 +715,15 @@ export default function BoardPage() {
     const handlePin = async (id: string) => {
         try { await moveTheme(id, 'pinned'); }
         catch (err) { showToast(err instanceof Error ? err.message : 'Failed to pin theme', 'error'); }
+    };
+
+    const handleMerge = async (sourceThemeId: string, targetThemeId: string) => {
+        try {
+            await mergeThemes(sourceThemeId, targetThemeId);
+            showToast('Themes merged', 'success');
+        } catch (err) {
+            showToast(err instanceof Error ? err.message : 'Failed to merge themes', 'error');
+        }
     };
 
     const pinnedBadge      = loading ? '—' : `${pinned.length} THEME${pinned.length === 1 ? '' : 'S'}`;
@@ -719,13 +797,17 @@ export default function BoardPage() {
                                     ? <InvestigateCardRing
                                         key={theme.id}
                                         theme={theme}
+                                        otherThemes={allThemes.filter(t => t.id !== theme.id)}
                                         onPin={() => handlePin(theme.id)}
+                                        onMerge={(targetId) => handleMerge(theme.id, targetId)}
                                         onDragStart={handleDragStart(theme.id, 'default')}
                                       />
                                     : <CompactCard
                                         key={theme.id}
                                         theme={theme}
+                                        otherThemes={allThemes.filter(t => t.id !== theme.id)}
                                         onPin={() => handlePin(theme.id)}
+                                        onMerge={(targetId) => handleMerge(theme.id, targetId)}
                                         onDragStart={handleDragStart(theme.id, 'default')}
                                       />
                             )
@@ -757,8 +839,10 @@ export default function BoardPage() {
                                 <CompactCard
                                     key={theme.id}
                                     theme={theme}
+                                    otherThemes={allThemes.filter(t => t.id !== theme.id)}
                                     muted
                                     onPin={() => handlePin(theme.id)}
+                                    onMerge={(targetId) => handleMerge(theme.id, targetId)}
                                     onDragStart={handleDragStart(theme.id, 'monitoring')}
                                 />
                             ))

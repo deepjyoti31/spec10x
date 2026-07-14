@@ -24,6 +24,8 @@ from app.schemas import (
     ThemeExplorerSentimentResponse,
     ThemeExplorerSourceChipResponse,
     ThemeExplorerSummaryResponse,
+    ThemeMergeRequest,
+    ThemeMergeResultResponse,
     ThemeResponse,
     ThemeUpdate,
 )
@@ -590,6 +592,9 @@ async def update_theme(
     if update.priority_state is not None:
         theme.priority_state = update.priority_state
 
+    if update.comment is not None:
+        theme.comment = update.comment
+
     await db.flush()
     if needs_match_refresh:
         await refresh_external_signal_theme_matches(
@@ -597,3 +602,101 @@ async def update_theme(
             user_id=current_user.id,
         )
     return theme
+
+
+@router.post("/{theme_id}/merge", response_model=ThemeMergeResultResponse)
+async def merge_theme(
+    theme_id: uuid.UUID,
+    body: ThemeMergeRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Merge `source_theme_id` into `theme_id`, preserving all evidence and insight history."""
+    if theme_id == body.source_theme_id:
+        raise HTTPException(status_code=422, detail="Cannot merge a theme into itself")
+
+    stmt = (
+        select(Theme)
+        .where(
+            Theme.id.in_([theme_id, body.source_theme_id]),
+            Theme.user_id == current_user.id,
+        )
+        .options(
+            selectinload(Theme.insights),
+            selectinload(Theme.sub_themes),
+        )
+    )
+    result = await db.execute(stmt)
+    themes_by_id = {theme.id: theme for theme in result.scalars().all()}
+
+    target_theme = themes_by_id.get(theme_id)
+    source_theme = themes_by_id.get(body.source_theme_id)
+    if target_theme is None or source_theme is None:
+        raise HTTPException(status_code=404, detail="Theme not found")
+
+    merged_insight_count = len(source_theme.insights)
+    merged_sub_theme_count = len(source_theme.sub_themes)
+
+    for insight in list(source_theme.insights):
+        insight.theme = target_theme
+        insight.theme_suggestion = target_theme.name
+
+    for sub_theme in list(source_theme.sub_themes):
+        sub_theme.theme = target_theme
+
+    target_theme.mention_count = target_theme.mention_count + source_theme.mention_count
+    target_theme.is_new = target_theme.is_new or source_theme.is_new
+    if source_theme.last_new_activity and (
+        target_theme.last_new_activity is None
+        or source_theme.last_new_activity > target_theme.last_new_activity
+    ):
+        target_theme.last_new_activity = source_theme.last_new_activity
+
+    await db.flush()
+    await db.delete(source_theme)
+    await db.flush()
+    await db.refresh(
+        target_theme,
+        attribute_names=[
+            "mention_count",
+            "is_new",
+            "last_new_activity",
+            "updated_at",
+            "insights",
+            "sub_themes",
+        ],
+    )
+
+    await refresh_external_signal_theme_matches(db, user_id=current_user.id)
+
+    workspace = await ensure_signal_consistency(db, user_id=current_user.id)
+    workspace_signals = await get_workspace_signals(db, workspace_id=workspace.id)
+    theme_signals = _get_theme_signals(theme=target_theme, workspace_signals=workspace_signals)
+    score_result = build_theme_score_map(
+        themes=[target_theme],
+        signals=workspace_signals,
+    )[target_theme.id]
+
+    payload = ThemeDetailResponse.model_validate(
+        target_theme,
+        from_attributes=True,
+    ).model_dump()
+    payload["impact_score"] = score_result.total
+    payload["impact_breakdown"] = serialize_impact_breakdown(score_result)
+    payload["source_breakdown"] = build_source_breakdown(theme_signals)
+    payload["supporting_evidence"] = _serialize_supporting_evidence(
+        theme=target_theme,
+        theme_signals=theme_signals,
+    )
+    payload["trend"] = serialize_theme_trend(
+        calculate_theme_trend(theme_id=target_theme.id, signals=workspace_signals)
+    )
+    payload["score_change"] = serialize_score_change(
+        calculate_score_change(theme_id=target_theme.id, signals=workspace_signals)
+    )
+
+    return ThemeMergeResultResponse(
+        target_theme=payload,
+        merged_insight_count=merged_insight_count,
+        merged_sub_theme_count=merged_sub_theme_count,
+    )

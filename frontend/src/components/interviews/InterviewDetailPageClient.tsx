@@ -56,6 +56,69 @@ function SectionHeader({
   );
 }
 
+function InterviewNoteCard({
+  interviewId,
+  initialComment,
+  token,
+  onSaved,
+}: {
+  interviewId: string;
+  initialComment?: string;
+  token: string | null;
+  onSaved: (comment: string) => void;
+}) {
+  const { showToast } = useToast();
+  const [draft, setDraft] = useState(initialComment ?? '');
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (!token) return;
+    setSaving(true);
+    try {
+      const updated = await api.updateInterview(token, interviewId, { comment: draft });
+      onSaved(updated.comment ?? '');
+      showToast('Note saved', 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to save note', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const isDirty = draft !== (initialComment ?? '');
+
+  return (
+    <section className={`${interviewSurfaceCardClassName} p-6`}>
+      <SectionHeader
+        eyebrow="Private Note"
+        title="Your note"
+        description="A quick note for yourself on this interview. Not shared with other users."
+      />
+      <textarea
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        placeholder="e.g. Follow up with the account owner before renewal."
+        rows={3}
+        className="mt-4 w-full rounded-lg bg-[#161820] px-3 py-2 text-sm text-[#D7D9E0] outline-none"
+        style={{ border: '1px solid #1E2028' }}
+      />
+      <div className="mt-3 flex justify-end">
+        <button
+          type="button"
+          disabled={!isDirty || saving}
+          onClick={() => {
+            void handleSave();
+          }}
+          className={interviewPrimaryButtonClassName}
+          style={{ opacity: !isDirty || saving ? 0.5 : 1 }}
+        >
+          {saving ? 'Saving...' : 'Save note'}
+        </button>
+      </div>
+    </section>
+  );
+}
+
 function LoadingState() {
   return (
     <div className="relative flex-1 overflow-y-auto bg-[#0F1117] p-8">
@@ -293,6 +356,13 @@ export default function InterviewDetailPageClient() {
                 />
               )}
             </section>
+
+            <InterviewNoteCard
+              interviewId={interview.id}
+              initialComment={interview.comment}
+              token={token}
+              onSaved={(comment) => setInterview((prev) => (prev ? { ...prev, comment } : prev))}
+            />
 
             <section className={`${interviewSurfaceCardClassName} p-6`}>
               <SectionHeader

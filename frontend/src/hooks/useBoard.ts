@@ -6,6 +6,7 @@ import { useAuth } from './useAuth';
 import { api, BoardThemeCardResponse, ThemePriorityState } from '@/lib/api';
 
 interface UseBoardReturn {
+  allThemes: BoardThemeCardResponse[];
   pinned: BoardThemeCardResponse[];
   investigate: BoardThemeCardResponse[];
   monitoring: BoardThemeCardResponse[];
@@ -15,6 +16,7 @@ interface UseBoardReturn {
   pinTheme: (id: string) => Promise<void>;
   unpinTheme: (id: string) => Promise<void>;
   moveTheme: (id: string, state: ThemePriorityState) => Promise<void>;
+  mergeThemes: (sourceThemeId: string, targetThemeId: string) => Promise<void>;
 }
 
 export function useBoard(): UseBoardReturn {
@@ -74,9 +76,15 @@ export function useBoard(): UseBoardReturn {
     await fetchBoard();
   }, [token, fetchBoard]);
 
+  const mergeThemes = useCallback(async (sourceThemeId: string, targetThemeId: string) => {
+    if (!token) throw new Error('Not authenticated');
+    await api.mergeTheme(token, targetThemeId, sourceThemeId);
+    await fetchBoard();
+  }, [token, fetchBoard]);
+
   const pinned = allThemes.filter(t => t.priority_state === 'pinned');
   const investigate = allThemes.filter(t => t.priority_state === 'default');
   const monitoring = allThemes.filter(t => t.priority_state === 'monitoring');
 
-  return { pinned, investigate, monitoring, loading, error, refetch, pinTheme, unpinTheme, moveTheme };
+  return { allThemes, pinned, investigate, monitoring, loading, error, refetch, pinTheme, unpinTheme, moveTheme, mergeThemes };
 }

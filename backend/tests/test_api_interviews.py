@@ -308,3 +308,30 @@ class TestReanalyzeInterview:
             select(Speaker).where(Speaker.interview_id == interview.id)
         )
         assert speaker_result.scalars().all() == []
+
+
+class TestUpdateInterviewComment:
+    """Test PATCH /api/interviews/{id} (v0.54 ownership polish, US-054-03-02)"""
+
+    @pytest.mark.asyncio
+    async def test_sets_comment(self, client):
+        interview = await create_test_interview(client, filename="comment.txt")
+
+        response = await client.patch(
+            f"/api/interviews/{interview['id']}",
+            headers=AUTH_HEADER,
+            json={"comment": "Follow up with the account owner before renewal."},
+        )
+        assert response.status_code == 200
+        assert response.json()["comment"] == "Follow up with the account owner before renewal."
+
+        get_response = await client.get(f"/api/interviews/{interview['id']}", headers=AUTH_HEADER)
+        assert get_response.json()["comment"] == "Follow up with the account owner before renewal."
+
+    @pytest.mark.asyncio
+    async def test_404_for_nonexistent(self, client):
+        fake_id = str(uuid.uuid4())
+        response = await client.patch(
+            f"/api/interviews/{fake_id}", headers=AUTH_HEADER, json={"comment": "note"}
+        )
+        assert response.status_code == 404

@@ -32,6 +32,7 @@ const NAV_SECTIONS: NavSection[] = [
         items: [
             { label: 'Insights',     icon: 'lightbulb',   href: '/insights' },
             { label: 'Interviews',   icon: 'folder_open', href: '/interviews' },
+            { label: 'Collections',  icon: 'collections_bookmark', href: '/collections' },
             { label: 'Feed',         icon: 'inbox',       href: '/feed' },
             { label: 'Integrations', icon: 'cable',       href: '/integrations' },
         ],

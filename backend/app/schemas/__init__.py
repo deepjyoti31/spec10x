@@ -92,6 +92,7 @@ class InterviewResponse(BaseModel):
     status: InterviewStatus
     duration_seconds: Optional[int] = None
     error_message: Optional[str] = None
+    comment: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -103,6 +104,10 @@ class InterviewDetailResponse(InterviewResponse):
     metadata_json: Optional[dict] = None
     speakers: list["SpeakerResponse"] = []
     insights: list["InsightResponse"] = []
+
+
+class InterviewUpdate(BaseModel):
+    comment: Optional[str] = None
 
 
 class InterviewThemeChipResponse(BaseModel):
@@ -193,6 +198,7 @@ class ThemeResponse(BaseModel):
     id: uuid.UUID
     name: str
     description: Optional[str] = None
+    comment: Optional[str] = None
     mention_count: int
     sentiment_positive: float
     sentiment_neutral: float
@@ -291,6 +297,17 @@ class ThemeDetailResponse(ThemeResponse):
 class ThemeUpdate(BaseModel):
     name: Optional[str] = None
     priority_state: Optional[ThemePriorityState] = None
+    comment: Optional[str] = None
+
+
+class ThemeMergeRequest(BaseModel):
+    source_theme_id: uuid.UUID
+
+
+class ThemeMergeResultResponse(BaseModel):
+    target_theme: ThemeDetailResponse
+    merged_insight_count: int
+    merged_sub_theme_count: int
 
 
 class BoardThemeCardResponse(ThemeResponse):
@@ -552,3 +569,57 @@ class HomeDashboardResponse(BaseModel):
     active_priorities: list[HomeDashboardPriorityResponse]
     recent_activity: list[HomeDashboardActivityResponse]
     emerging_trends: list[HomeDashboardTrendResponse]
+
+
+# ─── Saved Views ─────────────────────────────────────────
+
+class SavedViewFilters(BaseModel):
+    source: Optional[SourceType] = None
+    sentiment: Optional[str] = None
+    date_from: Optional[date] = None
+    date_to: Optional[date] = None
+
+
+class SavedViewCreate(BaseModel):
+    name: str
+    filters: SavedViewFilters = SavedViewFilters()
+
+
+class SavedViewResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    filters: SavedViewFilters
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ─── Collections ─────────────────────────────────────────
+
+class CollectionCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+
+
+class CollectionUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
+
+class CollectionResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    description: Optional[str] = None
+    interview_count: int
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class CollectionDetailResponse(CollectionResponse):
+    interviews: list["InterviewResponse"] = []
+
+
+class CollectionInterviewsRequest(BaseModel):
+    interview_ids: list[uuid.UUID]

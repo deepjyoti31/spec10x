@@ -25,6 +25,8 @@ from app.api import (
     feed,
     sources,
     survey_import,
+    saved_views,
+    collections,
 )
 
 settings = get_settings()
@@ -82,6 +84,8 @@ app.include_router(notifications.router)
 app.include_router(feed.router)
 app.include_router(sources.router)
 app.include_router(survey_import.router)
+app.include_router(saved_views.router)
+app.include_router(collections.router)
 
 
 @app.get("/health")

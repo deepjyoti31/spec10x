@@ -34,6 +34,7 @@ from app.schemas import (
     InterviewLibraryResponse,
     InterviewBulkRequest,
     InterviewBulkResultResponse,
+    InterviewUpdate,
     SpeakerUpdate,
     SpeakerResponse,
 )
@@ -385,6 +386,32 @@ async def get_interview(
     if not interview:
         raise HTTPException(status_code=404, detail="Interview not found")
 
+    return interview
+
+
+@router.patch("/{interview_id}", response_model=InterviewResponse)
+async def update_interview(
+    interview_id: uuid.UUID,
+    body: InterviewUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update a lightweight interview note. Currently supports the private `comment` field only."""
+    stmt = select(Interview).where(
+        Interview.id == interview_id,
+        Interview.user_id == current_user.id,
+    )
+    result = await db.execute(stmt)
+    interview = result.scalar_one_or_none()
+
+    if not interview:
+        raise HTTPException(status_code=404, detail="Interview not found")
+
+    if body.comment is not None:
+        interview.comment = body.comment
+
+    await db.flush()
+    await db.refresh(interview)
     return interview
 
 

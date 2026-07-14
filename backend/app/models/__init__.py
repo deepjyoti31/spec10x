@@ -189,6 +189,12 @@ class User(Base):
     created_source_connections: Mapped[list["SourceConnection"]] = relationship(
         back_populates="created_by_user"
     )
+    saved_views: Mapped[list["SavedView"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
+    collections: Mapped[list["Collection"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan"
+    )
 
 
 class Workspace(Base):
@@ -476,6 +482,10 @@ class Interview(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")
     )
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     filename: Mapped[str] = mapped_column(String(512))
     file_type: Mapped[FileType] = mapped_column(Enum(FileType, name="file_type"))
     file_size_bytes: Mapped[int] = mapped_column(BigInteger, default=0)
@@ -491,6 +501,7 @@ class Interview(Base):
         "metadata", JSON, nullable=True
     )
     file_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -500,6 +511,7 @@ class Interview(Base):
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="interviews")
+    workspace: Mapped["Workspace | None"] = relationship()
     speakers: Mapped[list["Speaker"]] = relationship(
         back_populates="interview", cascade="all, delete-orphan"
     )
@@ -507,6 +519,9 @@ class Interview(Base):
         back_populates="interview", cascade="all, delete-orphan"
     )
     transcript_chunks: Mapped[list["TranscriptChunk"]] = relationship(
+        back_populates="interview", cascade="all, delete-orphan"
+    )
+    collection_links: Mapped[list["CollectionInterview"]] = relationship(
         back_populates="interview", cascade="all, delete-orphan"
     )
 
@@ -550,8 +565,13 @@ class Theme(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")
     )
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     name: Mapped[str] = mapped_column(String(512))
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
     mention_count: Mapped[int] = mapped_column(Integer, default=0)
     sentiment_positive: Mapped[float] = mapped_column(Float, default=0.0)
     sentiment_neutral: Mapped[float] = mapped_column(Float, default=0.0)
@@ -576,6 +596,7 @@ class Theme(Base):
 
     # Relationships
     user: Mapped["User"] = relationship(back_populates="themes")
+    workspace: Mapped["Workspace | None"] = relationship()
     sub_themes: Mapped[list["SubTheme"]] = relationship(
         back_populates="theme", cascade="all, delete-orphan"
     )
@@ -750,6 +771,87 @@ class Usage(Base):
 
     __table_args__ = (
         Index("ix_usage_user_month", "user_id", "month", unique=True),
+    )
+
+
+class SavedView(Base):
+    __tablename__ = "saved_views"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE")
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")
+    )
+    name: Mapped[str] = mapped_column(String(255))
+    filters_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    workspace: Mapped["Workspace"] = relationship()
+    user: Mapped["User"] = relationship(back_populates="saved_views")
+
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "name", name="uq_saved_views_workspace_name"),
+        Index("ix_saved_views_workspace_user", "workspace_id", "user_id"),
+    )
+
+
+class Collection(Base):
+    __tablename__ = "collections"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE")
+    )
+    name: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    user: Mapped["User"] = relationship(back_populates="collections")
+    interview_links: Mapped[list["CollectionInterview"]] = relationship(
+        back_populates="collection", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        Index("ix_collections_user_id", "user_id"),
+    )
+
+
+class CollectionInterview(Base):
+    __tablename__ = "collection_interviews"
+
+    collection_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("collections.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    interview_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("interviews.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    added_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    collection: Mapped["Collection"] = relationship(back_populates="interview_links")
+    interview: Mapped["Interview"] = relationship(back_populates="collection_links")
+
+    __table_args__ = (
+        Index("ix_collection_interviews_interview", "interview_id"),
     )
 
 
