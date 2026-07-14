@@ -55,14 +55,14 @@ const NAV_SECTIONS: NavSection[] = [
     {
         title: 'Deliver',
         items: [
-            { label: 'Tasks',   icon: 'task_alt', href: '/tasks',   locked: true },
-            { label: 'Roadmap', icon: 'map',      href: '/roadmap', locked: true },
+            { label: 'Tasks',   icon: 'task_alt', href: '/tasks' },
+            { label: 'Roadmap', icon: 'map',      href: '/roadmap' },
         ],
     },
     {
         title: 'Learn',
         items: [
-            { label: 'Outcomes', icon: 'monitoring', href: '/outcomes', locked: true },
+            { label: 'Outcomes', icon: 'monitoring', href: '/outcomes' },
         ],
     },
 ];

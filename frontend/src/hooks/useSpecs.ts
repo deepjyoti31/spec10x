@@ -88,6 +88,7 @@ interface UseSpecReturn {
   refetch: () => Promise<void>;
   updateSpec: (data: SpecUpdateRequest) => Promise<SpecDetailResponse>;
   regenerate: () => Promise<SpecDetailResponse>;
+  generateTasks: () => Promise<SpecDetailResponse>;
 }
 
 export function useSpec(id: string | null): UseSpecReturn {
@@ -146,5 +147,12 @@ export function useSpec(id: string | null): UseSpecReturn {
     return updated;
   }, [token, id]);
 
-  return { spec, loading, error, refetch, updateSpec, regenerate };
+  const generateTasks = useCallback(async () => {
+    if (!token || !id) throw new Error('Not authenticated');
+    const updated = await api.generateSpecTasks(token, id);
+    setSpec(updated);
+    return updated;
+  }, [token, id]);
+
+  return { spec, loading, error, refetch, updateSpec, regenerate, generateTasks };
 }

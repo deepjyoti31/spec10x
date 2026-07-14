@@ -906,6 +906,14 @@ class Spec(Base):
     impact_score_snapshot: Mapped[float | None] = mapped_column(Float, nullable=True)
     model_used: Mapped[str | None] = mapped_column(String(255), nullable=True)
     is_edited: Mapped[bool] = mapped_column(Boolean, default=False)
+    # v1.0 Full Loop: agent-ready task breakdown (D-10-01) and first-ship stamp (D-10-06)
+    tasks_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    tasks_generated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    shipped_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

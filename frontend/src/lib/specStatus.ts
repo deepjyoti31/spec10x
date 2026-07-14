@@ -24,3 +24,16 @@ export const SPEC_REGENERATABLE_STATUSES: SpecStatus[] = [
   'in_review',
   'needs_changes',
 ];
+
+// Mirrors TASK_READY_STATUSES in backend/app/api/specs.py (D-10-02)
+export const SPEC_TASK_READY_STATUSES: SpecStatus[] = [
+  'approved',
+  'in_dev',
+  'shipped',
+];
+
+export const SPEC_COMPLEXITY_META: Record<string, { label: string; color: string }> = {
+  S: { label: 'S', color: '#a8e6b0' },
+  M: { label: 'M', color: '#afc6ff' },
+  L: { label: 'L', color: '#ffd8a8' },
+};

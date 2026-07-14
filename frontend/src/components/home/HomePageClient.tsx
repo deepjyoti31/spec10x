@@ -14,6 +14,19 @@ import {
     StatCard,
 } from './HomeDashboardWidgets';
 
+const SPEC_PIPELINE_STAGES: Array<{
+    key: 'draft' | 'in_review' | 'needs_changes' | 'approved' | 'in_dev' | 'shipped';
+    label: string;
+    color: string;
+}> = [
+    { key: 'draft', label: 'Draft', color: '#8c909f' },
+    { key: 'in_review', label: 'In Review', color: '#afc6ff' },
+    { key: 'needs_changes', label: 'Changes', color: '#ffd8a8' },
+    { key: 'approved', label: 'Approved', color: '#a8e6b0' },
+    { key: 'in_dev', label: 'In Dev', color: '#d8b4fe' },
+    { key: 'shipped', label: 'Shipped', color: '#7dd3c0' },
+];
+
 function formatRelativeTime(timestamp: string): string {
     const now = new Date();
     const then = new Date(timestamp);
@@ -247,32 +260,51 @@ export default function HomePageClient() {
                     )}
                 </section>
 
-                <section className="bg-[#161820] border border-[#1E2028] rounded-lg p-6 flex flex-col items-center justify-center text-center relative overflow-hidden">
-                    <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at center, rgba(175,198,255,0.06) 0%, transparent 70%)' }} />
-                    <div className="relative z-10 flex flex-col items-center py-4">
-                        <div className="w-16 h-16 rounded-full bg-[#1C1E28] flex items-center justify-center mb-4 border border-white/5">
-                            <span className="material-symbols-outlined text-[#5A5C66]" style={{ fontSize: 40 }}>lock</span>
-                        </div>
-                        <h3 className="text-[20px] font-bold text-[#F0F0F3] mb-1">Spec Pipeline</h3>
-                        <span className="px-2 py-0.5 rounded-sm bg-[#afc6ff]/20 text-[#afc6ff] text-[10px] font-bold uppercase tracking-widest mb-3 inline-block">Coming Soon</span>
-                        <p className="text-[14px] text-[#5A5C66] max-w-xs">Automate the creation of PRDs and product specs directly from validated themes and user insights.</p>
+                <section className="bg-[#161820] border border-[#1E2028] rounded-lg overflow-hidden">
+                    <div className="flex justify-between items-center px-6 py-5 border-b border-[#1E2028]">
+                        <h2 className="text-[#F0F0F3] font-semibold tracking-tight">Spec Pipeline</h2>
+                        <Link href="/roadmap" className="text-[#afc6ff] text-[13px] font-medium hover:underline flex items-center gap-1">
+                            View Roadmap
+                            <span className="material-symbols-outlined" style={{ fontSize: 16 }}>arrow_forward</span>
+                        </Link>
                     </div>
+                    {dashboard.spec_pipeline.total > 0 ? (
+                        <div className="p-6">
+                            <div className="grid grid-cols-3 gap-3">
+                                {SPEC_PIPELINE_STAGES.map((stage) => (
+                                    <Link
+                                        key={stage.key}
+                                        href={`/specs?status=${stage.key}`}
+                                        className="rounded-lg bg-[#191b22] border border-white/5 px-3 py-3 text-center transition-colors hover:border-[#afc6ff]/40"
+                                    >
+                                        <p className="text-[20px] font-bold text-[#F0F0F3]">
+                                            {dashboard.spec_pipeline[stage.key]}
+                                        </p>
+                                        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider" style={{ color: stage.color }}>
+                                            {stage.label}
+                                        </p>
+                                    </Link>
+                                ))}
+                            </div>
+                            <p className="mt-4 text-[12px] text-[#8B8D97]">
+                                {dashboard.spec_pipeline.total} spec{dashboard.spec_pipeline.total === 1 ? '' : 's'} in the loop —{' '}
+                                {dashboard.spec_pipeline.shipped > 0 ? (
+                                    <Link href="/outcomes" className="text-[#afc6ff] font-medium hover:underline">
+                                        {dashboard.spec_pipeline.shipped} shipped, see outcomes
+                                    </Link>
+                                ) : (
+                                    'nothing shipped yet'
+                                )}
+                            </p>
+                        </div>
+                    ) : (
+                        <SectionEmptyState
+                            title="No specs yet"
+                            body="Generate a spec from a pinned theme on the board — the pipeline from draft to shipped will show here."
+                        />
+                    )}
                 </section>
             </div>
-
-            <section className="bg-[#161820] border border-[#1E2028] rounded-lg p-10 flex flex-col items-center justify-center text-center relative overflow-hidden">
-                <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at center, rgba(175,198,255,0.04) 0%, transparent 60%)' }} />
-                <div className="relative z-10 flex flex-col items-center">
-                    <div className="w-20 h-20 rounded-full bg-[#1C1E28] flex items-center justify-center mb-6 border border-white/5">
-                        <span className="material-symbols-outlined text-[#5A5C66]" style={{ fontSize: 48 }}>lock</span>
-                    </div>
-                    <h3 className="text-[24px] font-bold text-[#F0F0F3] mb-2 tracking-tight">Post-Launch Impact</h3>
-                    <span className="px-3 py-1 rounded-sm bg-[#afc6ff]/20 text-[#afc6ff] text-[11px] font-bold uppercase tracking-widest mb-4 inline-block">Coming Soon</span>
-                    <p className="text-[15px] text-[#5A5C66] max-w-lg leading-relaxed">
-                        Closing the feedback loop. Connect your post-launch metrics to historical themes and insights to measure the true ROI of your product decisions and iterate with precision.
-                    </p>
-                </div>
-            </section>
         </div>
     );
 }

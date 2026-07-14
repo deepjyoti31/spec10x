@@ -20,6 +20,7 @@ from app.models import (
     InterviewStatus,
     Signal,
     SourceConnection,
+    Spec,
     SyncRun,
     SyncRunStatus,
     Theme,
@@ -406,6 +407,13 @@ async def get_home_dashboard(
         item.pop("_sort_key", None)
     emerging_trends = emerging_trends[:3]
 
+    specs_result = await db.execute(select(Spec).where(Spec.user_id == current_user.id))
+    specs = list(specs_result.scalars().all())
+    spec_pipeline = {"total": len(specs)}
+    for spec in specs:
+        key = spec.status.value
+        spec_pipeline[key] = spec_pipeline.get(key, 0) + 1
+
     has_data = bool(interviews_total or signals_total or active_themes)
     return {
         "has_data": has_data,
@@ -422,4 +430,5 @@ async def get_home_dashboard(
         "active_priorities": active_priorities,
         "recent_activity": recent_activity,
         "emerging_trends": emerging_trends,
+        "spec_pipeline": spec_pipeline,
     }

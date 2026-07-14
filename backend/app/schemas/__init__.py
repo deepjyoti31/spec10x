@@ -565,12 +565,23 @@ class HomeDashboardTrendResponse(BaseModel):
     href: str
 
 
+class HomeDashboardSpecPipelineResponse(BaseModel):
+    draft: int = 0
+    in_review: int = 0
+    needs_changes: int = 0
+    approved: int = 0
+    in_dev: int = 0
+    shipped: int = 0
+    total: int = 0
+
+
 class HomeDashboardResponse(BaseModel):
     has_data: bool
     stats: HomeDashboardStatsResponse
     active_priorities: list[HomeDashboardPriorityResponse]
     recent_activity: list[HomeDashboardActivityResponse]
     emerging_trends: list[HomeDashboardTrendResponse]
+    spec_pipeline: HomeDashboardSpecPipelineResponse
 
 
 # ─── Saved Views ─────────────────────────────────────────
@@ -666,6 +677,15 @@ class SpecUpdate(BaseModel):
     sections: Optional[list[SpecSectionUpdate]] = None
 
 
+class SpecTaskResponse(BaseModel):
+    number: int
+    title: str
+    summary: str
+    complexity: str  # "S" | "M" | "L"
+    depends_on: list[int] = []
+    citations: list[int] = []
+
+
 class SpecListItemResponse(BaseModel):
     id: uuid.UUID
     title: str
@@ -676,7 +696,9 @@ class SpecListItemResponse(BaseModel):
     impact_score_snapshot: Optional[float] = None
     section_count: int
     evidence_count: int
+    task_count: int
     is_edited: bool
+    shipped_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
@@ -686,6 +708,29 @@ class SpecDetailResponse(SpecListItemResponse):
     model_used: Optional[str] = None
     sections: list[SpecSectionResponse] = []
     evidence: list[SpecEvidenceItemResponse] = []
+    tasks: list[SpecTaskResponse] = []
+    tasks_generated_at: Optional[datetime] = None
+
+
+# ─── Outcomes (v1.0 Full Loop) ───────────────────────────
+
+class SpecOutcomeResponse(BaseModel):
+    spec_id: uuid.UUID
+    title: str
+    theme_id: Optional[uuid.UUID] = None
+    theme_name: str
+    shipped_at: datetime
+    state: str  # "improving" | "worsening" | "flat" | "too_early" | "unavailable"
+    pre_counts: list[int] = []   # weekly voice-signal volume, 4 weeks before ship (oldest first)
+    post_counts: list[int] = []  # weekly voice-signal volume, elapsed weeks after ship (oldest first)
+    pre_weekly_avg: Optional[float] = None
+    post_weekly_avg: Optional[float] = None
+
+
+class SpecOutcomesPageResponse(BaseModel):
+    window_weeks: int
+    specs: list[SpecOutcomeResponse] = []
+    has_data: bool
 
 
 # ─── Trends (v0.8) ───────────────────────────────────────

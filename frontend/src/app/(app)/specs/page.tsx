@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { useToast } from '@/components/ui/Toast';
 import { useSpecs } from '@/hooks/useSpecs';
@@ -83,7 +83,14 @@ export default function SpecsPage() {
   const { specs, loading, error, createSpec } = useSpecs();
   const { activeThemes, loading: themesLoading } = useThemes();
 
-  const [tab, setTab] = useState<SpecStatus | 'all'>('all');
+  const searchParams = useSearchParams();
+  // Deep links like /specs?status=approved (home pipeline, tasks page) land on the right tab
+  const [tab, setTab] = useState<SpecStatus | 'all'>(() => {
+    const requested = searchParams?.get('status');
+    return requested && STATUS_TABS.some((entry) => entry.key === requested)
+      ? (requested as SpecStatus)
+      : 'all';
+  });
   const [showPicker, setShowPicker] = useState(false);
   const [generatingThemeId, setGeneratingThemeId] = useState<string | null>(null);
 

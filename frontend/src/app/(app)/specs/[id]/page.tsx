@@ -7,11 +7,13 @@ import ReactMarkdown from 'react-markdown';
 
 import { useToast } from '@/components/ui/Toast';
 import { useSpec } from '@/hooks/useSpecs';
-import { api, SpecEvidenceItem, SpecSection, SpecStatus } from '@/lib/api';
+import { api, SpecEvidenceItem, SpecSection, SpecStatus, SpecTask } from '@/lib/api';
 import {
   SPEC_ALLOWED_TRANSITIONS,
+  SPEC_COMPLEXITY_META,
   SPEC_REGENERATABLE_STATUSES,
   SPEC_STATUS_META,
+  SPEC_TASK_READY_STATUSES,
 } from '@/lib/specStatus';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -133,6 +135,65 @@ function SectionCard({
   );
 }
 
+function TaskCard({
+  task,
+  onFocusEvidence,
+}: {
+  task: SpecTask;
+  onFocusEvidence: (ref: number) => void;
+}) {
+  const complexityMeta = SPEC_COMPLEXITY_META[task.complexity] ?? SPEC_COMPLEXITY_META.M;
+  return (
+    <div
+      className="rounded-lg p-3"
+      style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(66,71,83,0.15)' }}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-sm font-bold text-[#e2e2eb]">
+          <span style={{ color: '#8c909f' }}>#{task.number}</span> {task.title}
+        </p>
+        <span
+          className="flex-shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold"
+          title={`Complexity ${task.complexity}`}
+          style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: complexityMeta.color }}
+        >
+          {complexityMeta.label}
+        </span>
+      </div>
+      {task.summary ? (
+        <p className="mt-1.5 text-xs leading-relaxed" style={{ color: '#c2c6d6' }}>
+          {task.summary}
+        </p>
+      ) : null}
+      {(task.depends_on.length > 0 || task.citations.length > 0) && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {task.depends_on.map((number) => (
+            <span
+              key={`dep-${number}`}
+              className="rounded px-1.5 py-0.5 text-[10px] font-bold"
+              style={{ backgroundColor: 'rgba(255,255,255,0.04)', color: '#8c909f' }}
+            >
+              after #{number}
+            </span>
+          ))}
+          {task.citations.map((ref) => (
+            <button
+              key={`cite-${ref}`}
+              type="button"
+              className="rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors hover:bg-[rgba(175,198,255,0.25)]"
+              style={{ backgroundColor: 'rgba(175,198,255,0.12)', color: '#afc6ff' }}
+              onClick={() => onFocusEvidence(ref)}
+              title={`Jump to evidence [${ref}]`}
+            >
+              [{ref}]
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function EvidenceCard({
   item,
   highlighted,
@@ -193,13 +254,15 @@ export default function SpecDetailPage() {
   const router = useRouter();
   const { token } = useAuth();
   const { showToast } = useToast();
-  const { spec, loading, error, updateSpec, regenerate } = useSpec(params?.id ?? null);
+  const { spec, loading, error, updateSpec, regenerate, generateTasks } = useSpec(params?.id ?? null);
 
   const [savingSection, setSavingSection] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState('');
   const [focusedRef, setFocusedRef] = useState<number | null>(null);
+  const [generatingTasks, setGeneratingTasks] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   if (loading) {
     return (
@@ -225,6 +288,8 @@ export default function SpecDetailPage() {
   const allowedNext = SPEC_ALLOWED_TRANSITIONS[spec.status] ?? [];
   const canRegenerate =
     SPEC_REGENERATABLE_STATUSES.includes(spec.status) && spec.theme_id != null;
+  const tasksReady = SPEC_TASK_READY_STATUSES.includes(spec.status);
+  const canExport = spec.generation_status === 'ready';
 
   async function handleStatusChange(next: SpecStatus) {
     try {
@@ -287,6 +352,56 @@ export default function SpecDetailPage() {
   function focusEvidence(ref: number) {
     setFocusedRef(ref);
     document.getElementById(`evidence-${ref}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function handleGenerateTasks() {
+    if (
+      spec!.tasks.length > 0 &&
+      !window.confirm('Regenerate the task breakdown? The AI will replace the current tasks.')
+    ) {
+      return;
+    }
+    setGeneratingTasks(true);
+    try {
+      await generateTasks();
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Task breakdown failed — try again.', 'error');
+    } finally {
+      setGeneratingTasks(false);
+    }
+  }
+
+  async function handleCopyExport() {
+    if (!token) return;
+    setExporting(true);
+    try {
+      const bundle = await api.getSpecExport(token, spec!.id);
+      await navigator.clipboard.writeText(bundle);
+      showToast('Agent-ready bundle copied to clipboard', 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to copy export', 'error');
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleDownloadExport() {
+    if (!token) return;
+    setExporting(true);
+    try {
+      const bundle = await api.getSpecExport(token, spec!.id);
+      const blob = new Blob([bundle], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `${spec!.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.md`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to download export', 'error');
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (
@@ -391,6 +506,40 @@ export default function SpecDetailPage() {
                   {regenerating ? 'Regenerating…' : 'Regenerate'}
                 </button>
               ) : null}
+              {canExport ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={exporting}
+                    className="flex items-center gap-1 rounded px-2.5 py-1 text-[11px] font-bold transition-colors hover:bg-white/[0.08] disabled:opacity-50"
+                    style={{ border: '1px solid rgba(66,71,83,0.3)', color: '#c2c6d6' }}
+                    title="Copy the brief + tasks + evidence as a markdown bundle for a coding agent"
+                    onClick={() => {
+                      void handleCopyExport();
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+                      content_copy
+                    </span>
+                    Copy for agent
+                  </button>
+                  <button
+                    type="button"
+                    disabled={exporting}
+                    className="flex items-center gap-1 rounded px-2.5 py-1 text-[11px] font-bold transition-colors hover:bg-white/[0.08] disabled:opacity-50"
+                    style={{ border: '1px solid rgba(66,71,83,0.3)', color: '#c2c6d6' }}
+                    title="Download the markdown bundle"
+                    onClick={() => {
+                      void handleDownloadExport();
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+                      download
+                    </span>
+                    .md
+                  </button>
+                </>
+              ) : null}
               <button
                 type="button"
                 className="flex items-center gap-1 rounded px-2.5 py-1 text-[11px] font-bold transition-colors hover:bg-[#ffb4ab]/[0.08]"
@@ -447,6 +596,53 @@ export default function SpecDetailPage() {
                 onFocusEvidence={focusEvidence}
               />
             ))}
+
+            {/* ── Task breakdown (v1.0 Full Loop) ── */}
+            {spec.generation_status === 'ready' ? (
+              <section className="rounded-xl p-5" style={CARD_STYLE}>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-bold text-[#e2e2eb]">
+                      Task Breakdown{spec.tasks.length > 0 ? ` (${spec.tasks.length})` : ''}
+                    </h2>
+                    <p className="mt-0.5 text-[10px]" style={{ color: '#5A5C66' }}>
+                      {spec.tasks.length > 0
+                        ? 'AI plan draft — hand it to a coding agent with Copy for agent.'
+                        : tasksReady
+                          ? 'Break the approved brief into atomic, agent-ready tasks.'
+                          : 'Available once the spec is approved.'}
+                    </p>
+                  </div>
+                  {tasksReady ? (
+                    <button
+                      type="button"
+                      disabled={generatingTasks}
+                      className="flex flex-shrink-0 items-center gap-1 rounded px-3 py-1.5 text-xs font-bold disabled:opacity-50"
+                      style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
+                      onClick={() => {
+                        void handleGenerateTasks();
+                      }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                        {spec.tasks.length > 0 ? 'refresh' : 'account_tree'}
+                      </span>
+                      {generatingTasks
+                        ? 'Breaking down…'
+                        : spec.tasks.length > 0
+                          ? 'Regenerate tasks'
+                          : 'Break into tasks'}
+                    </button>
+                  ) : null}
+                </div>
+                {spec.tasks.length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    {spec.tasks.map((task) => (
+                      <TaskCard key={task.number} task={task} onFocusEvidence={focusEvidence} />
+                    ))}
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
           </div>
 
           <div className="lg:col-span-2">

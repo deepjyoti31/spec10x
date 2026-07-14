@@ -328,6 +328,21 @@ class ApiClient {
     });
   }
 
+  async generateSpecTasks(token: string, id: string) {
+    return this.request<SpecDetailResponse>(`/api/specs/${id}/tasks`, {
+      method: 'POST',
+      token,
+    });
+  }
+
+  async getSpecExport(token: string, id: string) {
+    return this.requestText(`/api/specs/${id}/export`, { token });
+  }
+
+  async getSpecOutcomes(token: string) {
+    return this.request<SpecOutcomesPageResponse>('/api/specs/outcomes', { token });
+  }
+
   async regenerateSpec(token: string, id: string) {
     return this.request<SpecDetailResponse>(`/api/specs/${id}/regenerate`, {
       method: 'POST',
@@ -1208,12 +1223,23 @@ export interface HomeDashboardTrendResponse {
   href: string;
 }
 
+export interface HomeDashboardSpecPipelineResponse {
+  draft: number;
+  in_review: number;
+  needs_changes: number;
+  approved: number;
+  in_dev: number;
+  shipped: number;
+  total: number;
+}
+
 export interface HomeDashboardResponse {
   has_data: boolean;
   stats: HomeDashboardStatsResponse;
   active_priorities: HomeDashboardPriorityResponse[];
   recent_activity: HomeDashboardActivityResponse[];
   emerging_trends: HomeDashboardTrendResponse[];
+  spec_pipeline: HomeDashboardSpecPipelineResponse;
 }
 
 // --- Sources & Integrations ---
@@ -1397,6 +1423,15 @@ export interface SpecEvidenceItem {
   link?: { kind: string; href: string; label: string } | null;
 }
 
+export interface SpecTask {
+  number: number;
+  title: string;
+  summary: string;
+  complexity: 'S' | 'M' | 'L' | string;
+  depends_on: number[];
+  citations: number[];
+}
+
 export interface SpecListItemResponse {
   id: string;
   title: string;
@@ -1407,7 +1442,9 @@ export interface SpecListItemResponse {
   impact_score_snapshot?: number | null;
   section_count: number;
   evidence_count: number;
+  task_count: number;
   is_edited: boolean;
+  shipped_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -1417,12 +1454,42 @@ export interface SpecDetailResponse extends SpecListItemResponse {
   model_used?: string | null;
   sections: SpecSection[];
   evidence: SpecEvidenceItem[];
+  tasks: SpecTask[];
+  tasks_generated_at?: string | null;
 }
 
 export interface SpecUpdateRequest {
   title?: string;
   status?: SpecStatus;
   sections?: Array<{ key: string; content: string }>;
+}
+
+// === Outcomes (v1.0 Full Loop) ===
+
+export type SpecOutcomeState =
+  | 'improving'
+  | 'worsening'
+  | 'flat'
+  | 'too_early'
+  | 'unavailable';
+
+export interface SpecOutcomeResponse {
+  spec_id: string;
+  title: string;
+  theme_id?: string | null;
+  theme_name: string;
+  shipped_at: string;
+  state: SpecOutcomeState;
+  pre_counts: number[];
+  post_counts: number[];
+  pre_weekly_avg?: number | null;
+  post_weekly_avg?: number | null;
+}
+
+export interface SpecOutcomesPageResponse {
+  window_weeks: number;
+  specs: SpecOutcomeResponse[];
+  has_data: boolean;
 }
 
 // === Trends (v0.8) ===
