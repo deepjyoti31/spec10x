@@ -2,7 +2,7 @@
 
 > Date: July 14, 2026
 > Release: `v0.54`
-> Owner: Founder acting as Product Manager
+> Owner: Project maintainers
 > Epics: `EPIC-054-01`, `EPIC-054-02`, `EPIC-054-03`
 
 ## Problem
@@ -13,7 +13,7 @@
 - **Collections & theme merge** (`US-05-05-05`) — user-created interview groupings and the ability to merge two related themes into one. Deferred at the Sprint 6 cut line in `PRD-05-05`.
 - **Ownership and collaboration polish** (`EPIC-053-03`) — `Interview` and `Theme` rows are still purely `user_id`-scoped even though `source_connections`/`source_items`/`signals` moved to workspace ownership in `v0.5`. This mismatch would eventually force a rewrite if collaboration ships later.
 
-None of this blocks the core product. All of it is now debt that should be cleared before starting new capability (`v0.8` groundwork or a fourth connector), per founder decision on July 14, 2026.
+None of this blocks the core product. All of it is now debt that should be cleared before starting new capability (`v0.8` groundwork or a fourth connector), per the decision on July 14, 2026.
 
 ## Solution
 

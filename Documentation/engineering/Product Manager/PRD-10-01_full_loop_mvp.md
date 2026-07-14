@@ -2,7 +2,7 @@
 
 > Date: July 14, 2026
 > Release: `v1.0`
-> Owner: Founder acting as Product Manager
+> Owner: Project maintainers
 > Epics: `EPIC-10-01`, `EPIC-10-02`, `EPIC-10-03`, `EPIC-10-04`
 
 ## Problem
@@ -27,7 +27,7 @@ Ship the Full Loop core as a Must-only cut:
 
 ## Why This Cut
 
-The full `v1.0` vision also names two-way PM tool sync, public API and webhooks, competitive intelligence, and custom report builders. Those are all *distribution* of the loop; this cut is the loop itself. The wedge hypothesis `v1.0` must test first: **does an evidence-cited brief that breaks itself into agent-ready tasks, and then reports back on the pain it addressed, keep the PM inside Spec10x for the whole cycle?** For the solo-founder-plus-AI-agents audience, a markdown context bundle is the universal integration — it works with every coding agent today, with zero connector maintenance (the v0.5 lesson: too many connectors too early turns the roadmap into connector maintenance).
+The full `v1.0` vision also names two-way PM tool sync, public API and webhooks, competitive intelligence, and custom report builders. Those are all *distribution* of the loop; this cut is the loop itself. The wedge hypothesis `v1.0` must test first: **does an evidence-cited brief that breaks itself into agent-ready tasks, and then reports back on the pain it addressed, keep the PM inside Spec10x for the whole cycle?** For a small maintainer team working with AI coding agents, a markdown context bundle is the universal integration — it works with every coding agent today, with zero connector maintenance (the v0.5 lesson: too many connectors too early turns the roadmap into connector maintenance).
 
 ## Success Metrics
 

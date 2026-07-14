@@ -3,7 +3,7 @@
 > Date: March 16, 2026
 > Status: Accepted for Sprint 4 and Sprint 5 scope
 > Release: `v0.5`
-> Owner: Founder acting as Product Manager
+> Owner: Project maintainers
 > Epic: `EPIC-05-02`
 
 ## Problem

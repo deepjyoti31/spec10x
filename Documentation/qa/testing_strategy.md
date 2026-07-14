@@ -1,6 +1,6 @@
 # Spec10x v0.1 — Testing Strategy
 
-> **Owner:** CTO  
+> **Owner:** Project maintainers  
 > **Last Updated:** Feb 26, 2026  
 > **Status:** Day 4 complete, Day 5 pending (Sprint: Feb 23–28)
 
@@ -8,7 +8,7 @@
 
 ## Philosophy
 
-We follow a **testing pyramid** approach: a strong base of unit tests, a middle layer of integration tests, and lightweight E2E smoke tests at the top. Given our solo-founder + AI-agents model, automated tests are critical — they're our safety net against regressions when iterating fast.
+We follow a **testing pyramid** approach: a strong base of unit tests, a middle layer of integration tests, and lightweight E2E smoke tests at the top. Given this project's small-maintainer-team + AI-agents development model, automated tests are critical — they're our safety net against regressions when iterating fast.
 
 ```
        ╱    E2E     ╲          ← Few: browser smoke tests

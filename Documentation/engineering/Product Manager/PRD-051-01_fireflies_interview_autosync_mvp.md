@@ -3,7 +3,7 @@
 > Date: July 9, 2026
 > Status: Draft — opened for the `v0.51` build window
 > Release: `v0.51`
-> Owner: Founder acting as Product Manager
+> Owner: Project maintainers
 > Epics: `EPIC-051-01`, `EPIC-051-02`, `EPIC-051-03`, `EPIC-051-04`
 
 ## Problem

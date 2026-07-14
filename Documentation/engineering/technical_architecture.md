@@ -156,10 +156,10 @@ spec10x/
 │   └── init-db.sql              # PostgreSQL init (pgvector extension)
 │
 ├── Documentation/               # Project documentation
-│   ├── CEO/                     # Vision and business docs
-│   ├── CTO/                     # Technical docs, specs, tracker, planning
-│   ├── DevOps/                  # Deployment guides and troubleshooting
-│   └── QA/                      # Testing strategy
+│   ├── product/                 # Vision and roadmap docs
+│   ├── engineering/              # Technical docs, specs, tracker, planning
+│   ├── releases/                 # Release checklists and rollout notes
+│   └── qa/                       # Testing strategy
 │
 └── docker-compose.yml           # Local dev infra (PostgreSQL, Redis, MinIO)
 ```

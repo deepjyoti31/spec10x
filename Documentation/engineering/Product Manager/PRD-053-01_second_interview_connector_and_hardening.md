@@ -2,7 +2,7 @@
 
 > Date: July 10, 2026
 > Release: `v0.53`
-> Owner: Founder acting as Product Manager
+> Owner: Project maintainers
 > Epics: `EPIC-053-01`, `EPIC-053-02`
 
 ## Problem

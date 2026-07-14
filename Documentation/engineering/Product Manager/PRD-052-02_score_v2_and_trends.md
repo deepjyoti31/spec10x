@@ -2,9 +2,9 @@
 
 > Release: `v0.52`
 > Status: Drafted July 9, 2026 — implementation landed in the same pass
-> Owner: Founder acting as Product Manager
-> Parent plan: `Documentation/CTO/v0.5_planning.md` § 5.3
-> Tracker: `Documentation/CTO/Product Manager/v0.5_project_tracker.md`
+> Owner: Project maintainers
+> Parent plan: `Documentation/engineering/v0.5_planning.md` § 5.3
+> Tracker: `Documentation/engineering/Product Manager/v0.5_project_tracker.md`
 > Covers: `EPIC-052-03` (score v2, trends, and evidence UX)
 
 ---

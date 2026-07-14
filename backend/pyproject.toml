@@ -3,7 +3,7 @@ name = "spec10x-backend"
 version = "0.1.0"
 description = "Spec10x Backend API — Interview Intelligence Platform"
 requires-python = ">=3.12"
-license = { text = "Proprietary" }
+license = { text = "MIT" }
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

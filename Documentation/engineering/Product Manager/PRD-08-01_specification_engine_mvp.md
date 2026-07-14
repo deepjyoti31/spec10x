@@ -2,7 +2,7 @@
 
 > Date: July 14, 2026
 > Release: `v0.8`
-> Owner: Founder acting as Product Manager
+> Owner: Project maintainers
 > Epics: `EPIC-08-01`, `EPIC-08-02`, `EPIC-08-03`, `EPIC-08-04`
 
 ## Problem

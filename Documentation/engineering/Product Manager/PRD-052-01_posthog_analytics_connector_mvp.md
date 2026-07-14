@@ -2,9 +2,9 @@
 
 > Release: `v0.52`
 > Status: Drafted July 9, 2026 — implementation landed in the same pass
-> Owner: Founder acting as Product Manager
-> Parent plan: `Documentation/CTO/v0.5_planning.md` § 5.3
-> Tracker: `Documentation/CTO/Product Manager/v0.5_project_tracker.md`
+> Owner: Project maintainers
+> Parent plan: `Documentation/engineering/v0.5_planning.md` § 5.3
+> Tracker: `Documentation/engineering/Product Manager/v0.5_project_tracker.md`
 > Covers: `EPIC-052-01` (analytics source extension) and `EPIC-052-02` (first analytics connector)
 
 ---
@@ -17,7 +17,7 @@ Spec10x can already combine interviews, support tickets, and survey responses, b
 
 ## 2. Provider Decision
 
-Founder decision, July 9, 2026: **PostHog is the first analytics connector.**
+Decision, July 9, 2026: **PostHog is the first analytics connector.**
 
 Decision rule (same rule that chose Zendesk and Fireflies): pick the provider with the lowest-friction, fully self-serve public API path.
 
@@ -128,4 +128,4 @@ These are product rules, not just copy:
 - `backend/tests/test_posthog_validation.py` — 8 validation tests including endpoint integration
 - `backend/tests/test_posthog_sync.py` — 9 tests: window building, top-events cap, adjacency, change math, normalization semantics, fixture replay (`backend/tests/fixtures/posthog_query_weekly.json`), retryable rate limit, backfill via API, idempotent re-backfill, cursor-resumed incremental sync
 - `frontend/src/app/(app)/integrations/page.tsx`, `ConnectModal.tsx` (`PostHogForm`), `useIntegrations.ts`
-- `Documentation/DevOps/v0.5_sync_observability_runbook.md` § 8 — PostHog operational notes
+- `Documentation/releases/v0.5_sync_observability_runbook.md` § 8 — PostHog operational notes

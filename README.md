@@ -4,8 +4,9 @@ Spec10x is a customer intelligence app for turning raw interview, support, and s
 
 Current workspace status:
 
-- the full `v0.5x` release family (`v0.5` through `v0.54`) is shipped and founder-accepted: multi-source evidence, Zendesk/Fireflies/PostHog/Otter.ai connectors, Impact Score v2 with trends, priority board, saved views, collections, and theme merge
-- `v0.8` (Specification Engine MVP) is implemented and in founder review: evidence-cited spec generation, Spec Studio, review workflow, and the Trends page — see `Documentation/DevOps/v0.8_release_checklist.md`
+- the full `v0.5x` release family (`v0.5` through `v0.54`) is shipped and accepted: multi-source evidence, Zendesk/Fireflies/PostHog/Otter.ai connectors, Impact Score v2 with trends, priority board, saved views, collections, and theme merge
+- `v0.8` (Specification Engine MVP) is shipped and accepted: evidence-cited spec generation, Spec Studio, review workflow, and the Trends page — see `Documentation/releases/v0.8_release_checklist.md`
+- `v1.0` (Full Loop MVP) is implemented: task breakdown, agent-ready markdown export, ship & outcomes tracking, and the roadmap/Command Center views — see `Documentation/releases/v1.0_release_checklist.md`
 
 ## Current Product Surface
 
@@ -19,9 +20,13 @@ The repo currently supports:
 - source-aware theme detail with supporting evidence grouped by source
 - integrations for Zendesk, Fireflies, PostHog, and Otter.ai plus repeatable survey and NPS CSV import
 - Impact Score v2 for urgency sorting plus score-breakdown, trend, and score-change UI in theme detail and board cards
-- AI-generated, evidence-cited feature briefs (`/specs`) with a Draft → Approved → Shipped review workflow and a `Generate Spec` action on pinned board themes
+- AI-generated, evidence-cited feature briefs (`/specs`) with a Draft → In Review → Needs Changes → Approved → In Dev → Shipped review workflow and a `Generate Spec` action on pinned board themes
 - a `/trends` page showing weekly theme signal velocity with rising/declining/stable grouping
 - saved feed views, interview collections, and theme merge
+- AI task breakdown for approved specs plus a self-contained agent-ready markdown export, surfaced in the Spec Studio task panel and the `/tasks` delivery workbench
+- a `/roadmap` Now/Next/Later/Shipped view derived from spec statuses
+- an `/outcomes` page tracking post-ship voice-signal movement (improving/worsening/flat/too early/unavailable) against the original pain points
+- a home-page Spec Pipeline replacing the earlier placeholder cards, plus unlocked `Tasks`, `Roadmap`, and `Outcomes` sidebar entries
 - public `/trust`, `/privacy`, and `/terms` pages aligned to the current trust promises
 
 ## Stack
@@ -53,7 +58,7 @@ spec10x/
 |  |- app/schemas/           # Pydantic schemas
 |  |- alembic/               # Migrations
 |  `- tests/                 # Backend tests
-|- Documentation/            # CEO, CTO, QA, and DevOps docs
+|- Documentation/            # product, engineering, qa, and release docs
 |- infra/                    # Local database bootstrap
 |- docker-compose.yml        # PostgreSQL, Redis, MinIO
 `- .env.example              # Shared env template
@@ -195,34 +200,40 @@ npm run test:smoke
 
 ## Documentation
 
-The current source of truth for roadmap and implementation state is in `Documentation/CTO/`.
+The current source of truth for roadmap and implementation state is in `Documentation/engineering/`.
 
 Key docs:
 
-- release tracker: `Documentation/CTO/Product Manager/v0.5_project_tracker.md`
-- planning: `Documentation/CTO/v0.5_planning.md`
-- architecture: `Documentation/CTO/technical_architecture.md`
-- trust promises: `Documentation/CTO/Product Manager/v0.5_trust_promises.md`
-- QA strategy: `Documentation/QA/testing_strategy.md`
+- release tracker: `Documentation/engineering/Product Manager/v0.5_project_tracker.md`
+- planning: `Documentation/engineering/v0.5_planning.md`
+- architecture: `Documentation/engineering/technical_architecture.md`
+- trust promises: `Documentation/engineering/Product Manager/v0.5_trust_promises.md`
+- QA strategy: `Documentation/qa/testing_strategy.md`
+- v1.0 PRD: `Documentation/engineering/Product Manager/PRD-10-01_full_loop_mvp.md`
+- v1.0 release checklist: `Documentation/releases/v1.0_release_checklist.md`
 
 ## Current Release Scope
 
-`v0.8` (Specification Engine MVP) is the active release, implemented per `PRD-08-01` and awaiting founder acceptance. It adds on top of the shipped `v0.5x` family:
+`v1.0` (Full Loop MVP) is the active release, implemented per `PRD-10-01` — see `Documentation/releases/v1.0_release_checklist.md`. It adds on top of the accepted `v0.5x` and `v0.8` families:
 
-- a `specs` data model with workspace ownership, theme snapshots, and evidence snapshots
-- Gemini-based spec generation with a numbered-citation contract back to real signals
-- `/api/specs` CRUD, regeneration, and a validated Draft → In Review → Needs Changes → Approved → In Dev → Shipped workflow
-- the `/specs` Spec Studio (list + split-pane detail with inline editing and an evidence panel)
-- `GET /api/themes/trends` and the `/trends` page (weekly voice-signal velocity per theme)
-- a live `Generate Spec` action on pinned `/board` cards
+- task breakdown for approved specs (`tasks_json` / `tasks_generated_at` / `shipped_at` on `specs`) via `POST /api/specs/{id}/tasks`, gated on approval
+- a self-contained agent-ready export bundle via `GET /api/specs/{id}/export` (brief + tasks + numbered evidence appendix)
+- the Spec Studio task panel (`Break into tasks`, complexity/dependency/citation chips, `Copy for agent` and `.md` download) and the `/tasks` delivery workbench
+- ship tracking (`shipped_at` stamped on first transition to Shipped) and `GET /api/specs/outcomes` — weekly voice-signal buckets before/after ship with correlational framing
+- the `/outcomes` page and the `/roadmap` Now/Next/Later/Shipped view, both derived from spec statuses
+- a home-page Spec Pipeline replacing the earlier "Coming Soon" placeholders
 
-Deferred by `D-08-04` (documented in `PRD-08-01`):
+Deferred per `PRD-10-01` (below the cut line, not dropped):
 
-- wireframe suggestions and the `/wireframes` page
-- user flow diagrams and codebase awareness (repo connectors)
-- spec collaboration (comments, co-editing, team sign-offs)
-- agent-ready task export and PM tool sync (`v1.0` scope)
+- two-way PM tool sync (Linear/Jira/GitHub/Asana) and a public API/webhooks
+- competitive intelligence and custom dashboards/reports
+- auto-close loop notifications and task editing/reordering
+- wireframe suggestions, user flow diagrams, codebase awareness, and spec collaboration (still deferred from `v0.8` per `D-08-04`, gated on spec-trust measurement)
+
+## Contributing
+
+Spec10x is open source. Issues and pull requests are welcome — see `Documentation/` for the product vision, architecture, and release history before proposing larger changes.
 
 ## License
 
-Proprietary. All rights reserved.
+MIT — see [LICENSE](LICENSE).
