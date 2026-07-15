@@ -16,7 +16,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.database import get_db
-from app.models import User
+from app.models import (
+    User,
+    Workspace,
+    WorkspaceMember,
+    WorkspaceMemberStatus,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -163,4 +168,60 @@ async def get_current_user(
                 logger.info(f"Race condition resolved — found existing user: {email}")
 
     return user
+
+
+async def resolve_data_owner(db: AsyncSession, current_user: User) -> User:
+    """
+    v1.1 multi-user (D-11-01): resolve whose data pool the requester works in.
+
+    If the user has switched into a shared workspace (active_workspace_id set)
+    and still has access to it (owner, or an active membership), the pool is
+    the workspace owner's data. In every other case — no active workspace, a
+    revoked membership, a deleted workspace — fall back to the user's own data.
+    This function never mutates state; stale active_workspace_id values are
+    cleaned up by the workspace API, not here.
+    """
+    if current_user.active_workspace_id is None:
+        return current_user
+
+    result = await db.execute(
+        select(Workspace).where(Workspace.id == current_user.active_workspace_id)
+    )
+    workspace = result.scalar_one_or_none()
+    if workspace is None:
+        return current_user
+
+    if workspace.owner_user_id == current_user.id:
+        return current_user
+
+    membership_result = await db.execute(
+        select(WorkspaceMember).where(
+            WorkspaceMember.workspace_id == workspace.id,
+            WorkspaceMember.user_id == current_user.id,
+            WorkspaceMember.status == WorkspaceMemberStatus.active,
+        )
+    )
+    if membership_result.scalar_one_or_none() is None:
+        return current_user
+
+    owner_result = await db.execute(
+        select(User).where(User.id == workspace.owner_user_id)
+    )
+    owner = owner_result.scalar_one_or_none()
+    return owner if owner is not None else current_user
+
+
+async def get_scoped_user(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """
+    FastAPI dependency for workspace-scoped data routes (v1.1, D-11-01).
+
+    Returns the User whose data pool the request operates on: the owner of
+    the requester's active workspace, or the requester themselves when they
+    work in their own workspace. Identity routes (profile, notifications,
+    billing, account deletion) must keep using get_current_user.
+    """
+    return await resolve_data_owner(db, current_user)
 

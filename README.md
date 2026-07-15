@@ -1,33 +1,105 @@
 # Spec10x
 
-Spec10x is a customer intelligence app for turning raw interview, support, and survey evidence into a shared product signal layer.
+**Customer evidence in → evidence-cited specs and agent-ready tasks out → and
+a readout on whether the pain went quiet after you shipped.**
 
-Current workspace status:
+Spec10x is an open-source (MIT) customer-intelligence platform for product
+teams. It ingests interviews, support tickets, surveys, and product analytics
+into one signal layer; clusters them into ranked themes; generates
+evidence-cited feature briefs from those themes; breaks approved briefs into
+agent-ready tasks; hands the whole bundle to your coding agent (clipboard,
+GitHub Issues, or MCP); and closes the loop by tracking whether customer voice
+on the underlying pain actually fell after ship.
 
-- the full `v0.5x` release family (`v0.5` through `v0.54`) is shipped and accepted: multi-source evidence, Zendesk/Fireflies/PostHog/Otter.ai connectors, Impact Score v2 with trends, priority board, saved views, collections, and theme merge
-- `v0.8` (Specification Engine MVP) is shipped and accepted: evidence-cited spec generation, Spec Studio, review workflow, and the Trends page — see `Documentation/releases/v0.8_release_checklist.md`
-- `v1.0` (Full Loop MVP) is implemented: task breakdown, agent-ready markdown export, ship & outcomes tracking, and the roadmap/Command Center views — see `Documentation/releases/v1.0_release_checklist.md`
+## Quick start
 
-## Current Product Surface
+Prerequisites: Docker Desktop (or compatible engine).
 
-The repo currently supports:
+```bash
+git clone <this-repo> && cd spec10x
+cp .env.example backend/.env
+cp .env.example frontend/.env.local
+docker compose --profile app up -d --build
+```
 
-- interview upload for text, document, audio, and video files
-- AI extraction of insights, themes, sentiment, and cited evidence
-- Ask over interview data with grounded citations
-- a unified `/feed` surface for interview, Zendesk, and survey evidence
-- a dedicated `/board` surface for ranked theme triage with pin and monitor states
-- source-aware theme detail with supporting evidence grouped by source
-- integrations for Zendesk, Fireflies, PostHog, and Otter.ai plus repeatable survey and NPS CSV import
-- Impact Score v2 for urgency sorting plus score-breakdown, trend, and score-change UI in theme detail and board cards
-- AI-generated, evidence-cited feature briefs (`/specs`) with a Draft → In Review → Needs Changes → Approved → In Dev → Shipped review workflow and a `Generate Spec` action on pinned board themes
-- a `/trends` page showing weekly theme signal velocity with rising/declining/stable grouping
-- saved feed views, interview collections, and theme merge
-- AI task breakdown for approved specs plus a self-contained agent-ready markdown export, surfaced in the Spec Studio task panel and the `/tasks` delivery workbench
-- a `/roadmap` Now/Next/Later/Shipped view derived from spec statuses
-- an `/outcomes` page tracking post-ship voice-signal movement (improving/worsening/flat/too early/unavailable) against the original pain points
-- a home-page Spec Pipeline replacing the earlier placeholder cards, plus unlocked `Tasks`, `Roadmap`, and `Outcomes` sidebar entries
-- public `/trust`, `/privacy`, and `/terms` pages aligned to the current trust promises
+- **App:** http://localhost:3000
+- **API docs (Swagger):** http://localhost:8000/docs
+- MinIO console: http://localhost:9001 (`minioadmin` / `minioadmin`)
+
+In development mode auth runs with a local mock user — no Firebase project
+needed to try it out.
+
+### AI features need Vertex AI
+
+Spec10x runs without any AI credentials — every surface loads, and imported
+data (Zendesk, CSV, PostHog) flows through feed, themes, and the board. These
+flows additionally need Google Cloud **Vertex AI** access (Gemini):
+
+| Needs Vertex AI | Works without it |
+|---|---|
+| interview transcription & insight extraction | connector sync & CSV import |
+| Ask (grounded Q&A over interviews) | feed, themes, board, trends |
+| spec generation & task breakdown | review workflow, roadmap, outcomes |
+| product-context fingerprinting | team workspaces, GitHub Issues export, MCP reads |
+
+To enable them: set `GCP_PROJECT_ID`/`GCP_LOCATION` in `backend/.env` and
+authenticate (`gcloud auth application-default login` locally, or a service
+account in deployment).
+
+## The loop
+
+1. **Collect** — upload interviews (text/doc/audio/video) or connect Zendesk,
+   Fireflies, Otter.ai, PostHog, and survey/NPS CSV imports
+2. **Understand** — AI extraction into insights and themes with sentiment,
+   citations, and Impact Score v2 ranking (`/feed`, `/insights`, `/board`,
+   `/trends`)
+3. **Specify** — generate an evidence-cited brief from a theme; review it
+   through Draft → In Review → Approved in Spec Studio (`/specs`)
+4. **Deliver** — break the approved brief into agent-ready tasks; hand off via
+   `Copy for agent`, `.md` download, one-way **GitHub Issues export**, or the
+   **MCP server** (`/tasks`, `/roadmap`)
+5. **Learn** — the first ship stamps the outcome window; `/outcomes` compares
+   customer-voice volume before vs. after, honestly labeled as correlational,
+   and notifies you when the readout becomes readable
+
+## Multi-user workspaces
+
+Invite teammates by email from the **Team** page. Members join your existing
+workspace after an explicit accept and share its evidence, themes, specs,
+tasks, and outcomes. Owner/member roles; members can switch between the shared
+workspace and their own personal one at any time. In-app invites only — no
+email delivery dependency.
+
+## MCP server (agent handoff without copy-paste)
+
+Any MCP client (Claude Code, for example) can pull a spec's self-contained
+context bundle and report the ship back:
+
+```bash
+cd backend
+SPEC10X_MCP_USER_EMAIL=you@example.com python -m app.mcp
+```
+
+Claude Code configuration (`.mcp.json` in your project):
+
+```json
+{
+  "mcpServers": {
+    "spec10x": {
+      "command": "python",
+      "args": ["-m", "app.mcp"],
+      "cwd": "/path/to/spec10x/backend",
+      "env": { "SPEC10X_MCP_USER_EMAIL": "you@example.com" }
+    }
+  }
+}
+```
+
+Tools: `list_specs`, `get_spec_bundle` (byte-identical to the app's
+`Copy for agent` export), `get_spec_outcome`, and `mark_spec_shipped` (the
+only mutation — it stamps the same first-ship timestamp the UI does and
+starts the outcome window). Access equals the configured user's own access;
+the configuration lives in your environment, never in the database.
 
 ## Stack
 
@@ -40,9 +112,10 @@ The repo currently supports:
 | Storage | MinIO locally, Google Cloud Storage in deployed environments |
 | Auth | Firebase Authentication with local dev fallback |
 | AI | Vertex AI: Gemini, Chirp 3, `gemini-embedding-001` |
-| Deployment | Cloud Run |
+| Agent handoff | Markdown bundle, GitHub Issues export, MCP (stdio) |
+| Deployment | Cloud Run (guides in `Documentation/releases/`) |
 
-## Repo Layout
+## Repo layout
 
 ```text
 spec10x/
@@ -50,189 +123,100 @@ spec10x/
 |  |- src/app/               # App Router pages
 |  |- src/components/        # UI and product surfaces
 |  |- src/lib/               # API client and auth helpers
-|  `- package.json
+|  `- e2e/smoke/             # Playwright smoke suite (fully mocked)
 |- backend/                   # FastAPI app
 |  |- app/api/               # Route modules
 |  |- app/services/          # Processing, sync, signal, and synthesis logic
 |  |- app/models/            # SQLAlchemy models
-|  |- app/schemas/           # Pydantic schemas
+|  |- app/mcp/               # MCP server (python -m app.mcp)
 |  |- alembic/               # Migrations
-|  `- tests/                 # Backend tests
+|  `- tests/                 # Backend integration tests
 |- Documentation/            # product, engineering, qa, and release docs
+|- .github/workflows/ci.yml  # CI: backend on fresh Postgres, frontend, smoke
 |- infra/                    # Local database bootstrap
-|- docker-compose.yml        # PostgreSQL, Redis, MinIO
+|- docker-compose.yml        # infra by default; --profile app runs everything
 `- .env.example              # Shared env template
 ```
 
-## Local Setup
+## Local setup (from source)
 
-### Prerequisites
+Prefer the [quick start](#quick-start) unless you're changing code.
 
-- Python 3.12+
-- Node.js 20+
-- Docker Desktop
+Prerequisites: Python 3.12+, Node.js 20+, Docker Desktop.
 
-### 1. Start local infrastructure
-
-```powershell
-docker compose up -d
-docker compose ps
+```bash
+docker compose up -d          # infra only: postgres, redis, minio
+cp .env.example backend/.env
+cp .env.example frontend/.env.local
 ```
 
-Expected services:
+Backend (terminal 1):
 
-- `spec10x-postgres` on `localhost:5432`
-- `spec10x-redis` on `localhost:6379`
-- `spec10x-minio` on `localhost:9000`
-- MinIO console on `http://localhost:9001`
-
-### 2. Configure environment files
-
-From the repo root:
-
-```powershell
-copy .env.example backend\.env
-copy .env.example frontend\.env.local
-```
-
-Important notes:
-
-- local auth can run without Firebase, but real auth needs Firebase values
-- interview processing, Ask, and other AI-backed flows need valid Vertex AI access
-- for local GCP auth, use `gcloud auth application-default login`
-
-### 3. Start the backend
-
-```powershell
+```bash
 cd backend
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+python -m venv .venv && source .venv/bin/activate   # Windows: .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 alembic upgrade head
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Backend docs:
+Worker (terminal 2) — without it, uploads and scheduled syncs stay queued:
 
-- Swagger: `http://localhost:8000/docs`
-
-### 4. Start the background worker
-
-Open a second terminal:
-
-```powershell
-cd backend
-.\.venv\Scripts\Activate.ps1
+```bash
+cd backend && source .venv/bin/activate
 python -m arq app.workers.worker.WorkerSettings
 ```
 
-Without the worker, uploads and background processing stay queued.
+Frontend (terminal 3):
 
-### 5. Start the frontend
-
-Open a third terminal:
-
-```powershell
+```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Frontend app:
-
-- `http://localhost:3000`
-
-## Daily Startup
-
-After the initial setup, the normal local workflow is:
-
-```powershell
-docker compose up -d
-```
-
-Terminal 1:
-
-```powershell
-cd backend
-.\.venv\Scripts\Activate.ps1
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-Terminal 2:
-
-```powershell
-cd backend
-.\.venv\Scripts\Activate.ps1
-python -m arq app.workers.worker.WorkerSettings
-```
-
-Terminal 3:
-
-```powershell
-cd frontend
-npm run dev
-```
-
 ## Testing
 
-Backend:
+```bash
+# backend — ALWAYS against a fresh database (see CONTRIBUTING.md for why)
+cd backend && pytest tests/ -q
 
-```powershell
-cd backend
-.\.venv\Scripts\Activate.ps1
-pytest tests/ -v
-```
-
-Frontend:
-
-```powershell
+# frontend
 cd frontend
 npm run lint
 npm run build
+npm run test:smoke        # Playwright smoke suite, fully mocked
 ```
 
-The Playwright smoke suite lives in `frontend/e2e/smoke/` and runs with:
-
-```powershell
-cd frontend
-npm run test:smoke
-```
+CI runs all three on every PR against a fresh pgvector Postgres
+(`.github/workflows/ci.yml`).
 
 ## Documentation
 
-The current source of truth for roadmap and implementation state is in `Documentation/engineering/`.
-
-Key docs:
-
-- release tracker: `Documentation/engineering/Product Manager/v0.5_project_tracker.md`
-- planning: `Documentation/engineering/v0.5_planning.md`
+- product vision: `Documentation/product/product_vision.md`
+- release tracker (single source of truth for scope and acceptance):
+  `Documentation/engineering/Product Manager/v0.5_project_tracker.md`
 - architecture: `Documentation/engineering/technical_architecture.md`
 - trust promises: `Documentation/engineering/Product Manager/v0.5_trust_promises.md`
-- QA strategy: `Documentation/qa/testing_strategy.md`
-- v1.0 PRD: `Documentation/engineering/Product Manager/PRD-10-01_full_loop_mvp.md`
-- v1.0 release checklist: `Documentation/releases/v1.0_release_checklist.md`
+- current release: `PRD-11-01` (`Documentation/engineering/Product Manager/`)
+  and `Documentation/releases/`
 
-## Current Release Scope
+## Release status
 
-`v1.0` (Full Loop MVP) is the active release, implemented per `PRD-10-01` — see `Documentation/releases/v1.0_release_checklist.md`. It adds on top of the accepted `v0.5x` and `v0.8` families:
-
-- task breakdown for approved specs (`tasks_json` / `tasks_generated_at` / `shipped_at` on `specs`) via `POST /api/specs/{id}/tasks`, gated on approval
-- a self-contained agent-ready export bundle via `GET /api/specs/{id}/export` (brief + tasks + numbered evidence appendix)
-- the Spec Studio task panel (`Break into tasks`, complexity/dependency/citation chips, `Copy for agent` and `.md` download) and the `/tasks` delivery workbench
-- ship tracking (`shipped_at` stamped on first transition to Shipped) and `GET /api/specs/outcomes` — weekly voice-signal buckets before/after ship with correlational framing
-- the `/outcomes` page and the `/roadmap` Now/Next/Later/Shipped view, both derived from spec statuses
-- a home-page Spec Pipeline replacing the earlier "Coming Soon" placeholders
-
-Deferred per `PRD-10-01` (below the cut line, not dropped):
-
-- two-way PM tool sync (Linear/Jira/GitHub/Asana) and a public API/webhooks
-- competitive intelligence and custom dashboards/reports
-- auto-close loop notifications and task editing/reordering
-- wireframe suggestions, user flow diagrams, codebase awareness, and spec collaboration (still deferred from `v0.8` per `D-08-04`, gated on spec-trust measurement)
+- `v0.5x`, `v0.8` (Specification Engine), and `v1.0` (Full Loop) are shipped
+  and accepted — the product loop is feature-complete end to end
+- `v1.1` (this release): open-source onboarding (this quickstart + CI),
+  multi-user workspaces, the MCP server, GitHub Issues export, auto-close
+  outcome notifications, and full-loop smoke coverage
+- deferred deliberately: two-way PM tool sync, public REST API/webhooks, roles
+  beyond owner/member, competitive intel, custom dashboards — see `PRD-11-01`
+  "Out of Scope" for the reasoning
 
 ## Contributing
 
-Spec10x is open source. Issues and pull requests are welcome — see `Documentation/` for the product vision, architecture, and release history before proposing larger changes.
+See [CONTRIBUTING.md](CONTRIBUTING.md) — quick start, test conventions (fresh
+database!), the release-train doc pattern, and the product principles PRs are
+reviewed against.
 
 ## License
 

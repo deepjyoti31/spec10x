@@ -14,7 +14,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
-from app.core.auth import get_current_user
+from app.core.auth import get_scoped_user
 from app.core.database import get_db
 from app.models import (
     User,
@@ -746,7 +746,7 @@ SAMPLE_SURVEYS = [
 
 @router.post("/load-sample-data")
 async def load_sample_data(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """

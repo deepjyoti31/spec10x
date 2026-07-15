@@ -1,400 +1,466 @@
 'use client';
 
-import React from 'react';
+/**
+ * Team — real workspace membership (v1.1 multi-user, PRD-11-01).
+ *
+ * Members join the owner's existing workspace (D-11-01): inviting someone
+ * shares the workspace's evidence, themes, specs, tasks, and outcomes.
+ * Invites require an explicit accept (D-11-02). Owner/member only; deeper
+ * roles and audit logs stay honestly "Coming Soon".
+ */
 
-// ---------------------------------------------------------------------------
-// Static demo data
-// ---------------------------------------------------------------------------
+import React, { useCallback, useEffect, useState } from 'react';
 
-const MEMBERS = [
-    {
-        initials: 'DJ',
-        avatarBg: '#354873',
-        avatarColor: '#b2c6f8',
-        name: 'Deep Jyoti',
-        isYou: true,
-        email: 'deep@spec10x.ai',
-        role: 'Owner',
-        lastActive: 'Now',
-    },
-    {
-        initials: 'AS',
-        avatarBg: '#d87802',
-        avatarColor: '#ffffff',
-        name: 'Anya Sharma',
-        isYou: false,
-        email: 'anya.s@acme.com',
-        role: 'Editor',
-        lastActive: '2h ago',
-    },
-    {
-        initials: 'MR',
-        avatarBg: '#33343b',
-        avatarColor: '#8c909f',
-        name: 'Mike Rodriguez',
-        isYou: false,
-        email: 'mike.r@globex.io',
-        role: 'Editor',
-        lastActive: 'Yesterday',
-    },
+import { useAuth } from '@/hooks/useAuth';
+import {
+  api,
+  ApiError,
+  WorkspaceInviteResponse,
+  WorkspaceMemberResponse,
+  WorkspaceResponse,
+} from '@/lib/api';
+
+const CARD_STYLE: React.CSSProperties = {
+  backgroundColor: '#191b22',
+  border: '1px solid rgba(66,71,83,0.1)',
+};
+
+const AVATAR_COLORS = [
+  { bg: '#354873', fg: '#b2c6f8' },
+  { bg: '#2e5245', fg: '#a8e6b0' },
+  { bg: '#5a4a2e', fg: '#ffd8a8' },
+  { bg: '#53303c', fg: '#ffb4c0' },
+  { bg: '#33343b', fg: '#8c909f' },
 ];
 
-// ---------------------------------------------------------------------------
-// Stat card
-// ---------------------------------------------------------------------------
-
-function StatCard({
-    label,
-    value,
-    sub,
-    proBadge,
-    progress,
-}: {
-    label: string;
-    value: string | number;
-    sub: string;
-    proBadge?: boolean;
-    progress?: number;
-}) {
-    return (
-        <div
-            className="p-5 rounded-xl relative overflow-hidden"
-            style={{ backgroundColor: '#1e1f26', border: '1px solid rgba(66,71,83,0.05)' }}
-        >
-            {proBadge && (
-                <div className="absolute top-0 right-0 p-2">
-                    <span
-                        className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ backgroundColor: 'rgba(175,198,255,0.1)', color: '#afc6ff' }}
-                    >
-                        PRO
-                    </span>
-                </div>
-            )}
-            <p className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: '#8c909f' }}>
-                {label}
-            </p>
-            <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-[#e2e2eb]">{value}</span>
-                <span className="text-xs" style={{ color: '#8c909f' }}>{sub}</span>
-            </div>
-            {progress !== undefined && (
-                <div
-                    className="mt-3 w-full h-1 rounded-full overflow-hidden"
-                    style={{ backgroundColor: '#33343b' }}
-                >
-                    <div
-                        className="h-full rounded-full"
-                        style={{ backgroundColor: '#afc6ff', width: `${progress}%` }}
-                    />
-                </div>
-            )}
-        </div>
-    );
+function initialsOf(name: string, email: string): string {
+  const source = name.trim() || email;
+  const parts = source.split(/[\s._@-]+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? '?') + (parts[1]?.[0] ?? '')).toUpperCase();
 }
 
-// ---------------------------------------------------------------------------
-// Member table row
-// ---------------------------------------------------------------------------
+function StatCard({ label, value, sub }: { label: string; value: string | number; sub: string }) {
+  return (
+    <div className="rounded-xl p-5" style={{ backgroundColor: '#1e1f26', border: '1px solid rgba(66,71,83,0.05)' }}>
+      <p className="mb-1 text-xs font-medium uppercase tracking-wider" style={{ color: '#8c909f' }}>
+        {label}
+      </p>
+      <div className="flex items-baseline gap-2">
+        <span className="text-3xl font-bold text-[#e2e2eb]">{value}</span>
+        <span className="text-xs" style={{ color: '#8c909f' }}>{sub}</span>
+      </div>
+    </div>
+  );
+}
 
 function MemberRow({
-    member,
-    isLast,
+  member,
+  index,
+  isLast,
+  canManage,
+  busy,
+  onRemove,
 }: {
-    member: typeof MEMBERS[0];
-    isLast: boolean;
+  member: WorkspaceMemberResponse;
+  index: number;
+  isLast: boolean;
+  canManage: boolean;
+  busy: boolean;
+  onRemove: (member: WorkspaceMemberResponse) => void;
 }) {
-    return (
-        <tr
-            className="text-sm transition-colors"
-            style={{ borderBottom: isLast ? 'none' : '1px solid rgba(66,71,83,0.05)' }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#1e1f26')}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
-        >
-            {/* Member */}
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-3">
-                    <div
-                        className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                        style={{ backgroundColor: member.avatarBg, color: member.avatarColor }}
-                    >
-                        {member.initials}
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="font-semibold text-[#e2e2eb] flex items-center gap-1">
-                            {member.name}
-                            {member.isYou && (
-                                <span
-                                    className="text-[10px] font-bold px-1.5 py-0.5 rounded ml-1"
-                                    style={{ backgroundColor: 'rgba(175,198,255,0.1)', color: '#afc6ff' }}
-                                >
-                                    YOU
-                                </span>
-                            )}
-                        </span>
-                        <span className="text-xs" style={{ color: '#8c909f' }}>{member.email}</span>
-                    </div>
-                </div>
-            </td>
+  const avatar = AVATAR_COLORS[index % AVATAR_COLORS.length];
+  const isActive = member.status === 'active';
+  const removable =
+    member.role !== 'owner' && (canManage || member.is_you);
+  const removeLabel = member.is_you && member.role !== 'owner'
+    ? 'Leave'
+    : isActive ? 'Remove' : 'Revoke';
 
-            {/* Role */}
-            <td className="px-6 py-4" style={{ color: '#8c909f' }}>{member.role}</td>
-
-            {/* Status */}
-            <td className="px-6 py-4">
-                <div className="flex items-center gap-1.5 text-emerald-400">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
-                    <span className="text-xs font-medium">Active</span>
-                </div>
-            </td>
-
-            {/* Last Active */}
-            <td className="px-6 py-4 text-xs" style={{ color: '#8c909f' }}>{member.lastActive}</td>
-
-            {/* Actions */}
-            <td className="px-6 py-4 text-right">
-                <button
-                    className="transition-colors"
-                    style={{ color: '#8c909f' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = 'white')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#8c909f')}
+  return (
+    <tr
+      className="text-sm transition-colors"
+      style={{ borderBottom: isLast ? 'none' : '1px solid rgba(66,71,83,0.05)' }}
+    >
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold"
+            style={{ backgroundColor: avatar.bg, color: avatar.fg }}
+          >
+            {initialsOf(member.name, member.email)}
+          </div>
+          <div className="flex flex-col">
+            <span className="flex items-center gap-1 font-semibold text-[#e2e2eb]">
+              {member.name}
+              {member.is_you && (
+                <span
+                  className="ml-1 rounded px-1.5 py-0.5 text-[10px] font-bold"
+                  style={{ backgroundColor: 'rgba(175,198,255,0.1)', color: '#afc6ff' }}
                 >
-                    <span className="material-symbols-outlined" style={{ fontSize: 20 }}>more_horiz</span>
-                </button>
-            </td>
-        </tr>
-    );
+                  YOU
+                </span>
+              )}
+            </span>
+            <span className="text-xs" style={{ color: '#8c909f' }}>{member.email}</span>
+          </div>
+        </div>
+      </td>
+      <td className="px-6 py-4 capitalize" style={{ color: '#8c909f' }}>{member.role}</td>
+      <td className="px-6 py-4">
+        {isActive ? (
+          <div className="flex items-center gap-1.5 text-emerald-400">
+            <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-400" />
+            <span className="text-xs font-medium">Active</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5" style={{ color: '#ffd8a8' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>mail</span>
+            <span className="text-xs font-medium">Invited</span>
+          </div>
+        )}
+      </td>
+      <td className="px-6 py-4 text-xs" style={{ color: '#8c909f' }}>
+        {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : '—'}
+      </td>
+      <td className="px-6 py-4 text-right">
+        {removable && (
+          <button
+            className="text-xs font-bold transition-colors disabled:opacity-50"
+            style={{ color: '#8c909f' }}
+            disabled={busy}
+            onClick={() => onRemove(member)}
+            onMouseEnter={e => (e.currentTarget.style.color = '#ffb4ab')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#8c909f')}
+          >
+            {removeLabel}
+          </button>
+        )}
+      </td>
+    </tr>
+  );
 }
-
-// ---------------------------------------------------------------------------
-// Coming soon card
-// ---------------------------------------------------------------------------
 
 function ComingSoonCard({
-    icon,
-    title,
-    description,
-    gradientColor,
+  icon,
+  title,
+  description,
 }: {
-    icon: string;
-    title: string;
-    description: string;
-    gradientColor: string;
+  icon: string;
+  title: string;
+  description: string;
 }) {
-    return (
-        <div
-            className="group relative p-8 rounded-2xl flex flex-col items-center justify-center text-center space-y-4 overflow-hidden"
-            style={{ backgroundColor: '#191b22', border: '1px solid rgba(66,71,83,0.1)' }}
-        >
-            {/* Hover gradient overlay */}
-            <div
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
-                style={{ background: `linear-gradient(135deg, ${gradientColor} 0%, transparent 60%)` }}
-            />
-
-            <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center relative z-10"
-                style={{ backgroundColor: '#33343b' }}
-            >
-                <span
-                    className="material-symbols-outlined"
-                    style={{ fontSize: 28, color: 'rgba(140,144,159,0.5)' }}
-                >
-                    {icon}
-                </span>
-            </div>
-
-            <div className="relative z-10">
-                <h3 className="text-lg font-bold text-[#e2e2eb]">{title}</h3>
-                <p className="text-sm mt-1" style={{ color: '#8c909f' }}>{description}</p>
-            </div>
-
-            <span
-                className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full relative z-10"
-                style={{ backgroundColor: 'rgba(175,198,255,0.1)', color: '#afc6ff' }}
-            >
-                Coming Soon
-            </span>
-        </div>
-    );
+  return (
+    <div
+      className="flex flex-col items-center justify-center space-y-4 rounded-2xl p-8 text-center"
+      style={CARD_STYLE}
+    >
+      <div className="flex h-12 w-12 items-center justify-center rounded-xl" style={{ backgroundColor: '#33343b' }}>
+        <span className="material-symbols-outlined" style={{ fontSize: 28, color: 'rgba(140,144,159,0.5)' }}>
+          {icon}
+        </span>
+      </div>
+      <div>
+        <h3 className="text-lg font-bold text-[#e2e2eb]">{title}</h3>
+        <p className="mt-1 text-sm" style={{ color: '#8c909f' }}>{description}</p>
+      </div>
+      <span
+        className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-widest"
+        style={{ backgroundColor: 'rgba(175,198,255,0.1)', color: '#afc6ff' }}
+      >
+        Coming Soon
+      </span>
+    </div>
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-
 export default function TeamPage() {
-    return (
-        <div className="flex-1 overflow-y-auto" style={{ backgroundColor: '#111319' }}>
-            <div className="max-w-6xl mx-auto px-12 pt-10 pb-0 space-y-12">
+  const { token, loading: authLoading } = useAuth();
+  const [workspace, setWorkspace] = useState<WorkspaceResponse | null>(null);
+  const [myInvites, setMyInvites] = useState<WorkspaceInviteResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-                {/* ── Header ── */}
-                <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <div className="space-y-1">
-                        <h1 className="text-2xl font-bold tracking-tight text-[#e2e2eb]">Team</h1>
-                        <p className="text-sm" style={{ color: '#c2c6d6' }}>
-                            Manage workspace members and their access levels across projects.
-                        </p>
-                    </div>
-                    <button
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded font-bold text-xs transition-all flex-shrink-0"
-                        style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
-                        onMouseEnter={e => (e.currentTarget.style.filter = 'brightness(1.1)')}
-                        onMouseLeave={e => (e.currentTarget.style.filter = 'none')}
-                    >
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>person_add</span>
-                        Invite Member
-                    </button>
-                </section>
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteError, setInviteError] = useState<string | null>(null);
 
-                {/* ── Stat cards ── */}
-                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard label="Total Members" value={3}  sub="Active" />
-                    <StatCard label="Admin"         value={1}  sub="Owner" />
-                    <StatCard label="Editors"       value={2}  sub="Collaborators" />
-                    <StatCard
-                        label="Seat Limit"
-                        value={5}
-                        sub="Pro Plan"
-                        proBadge
-                        progress={60}
-                    />
-                </section>
+  const refresh = useCallback(async () => {
+    if (authLoading) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    setError(null);
+    try {
+      const [ws, invites] = await Promise.all([
+        api.getWorkspace(token),
+        api.getMyWorkspaceInvites(token),
+      ]);
+      setWorkspace(ws);
+      setMyInvites(invites);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load workspace');
+    } finally {
+      setLoading(false);
+    }
+  }, [authLoading, token]);
 
-                {/* ── Member list ── */}
-                <section className="space-y-4">
-                    <h2
-                        className="text-sm font-semibold flex items-center gap-2"
-                        style={{ color: '#c2c6d6' }}
-                    >
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>list</span>
-                        Workspace Members
-                    </h2>
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
 
-                    <div
-                        className="overflow-hidden rounded-xl"
-                        style={{ backgroundColor: '#191b22', border: '1px solid rgba(66,71,83,0.1)' }}
-                    >
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr
-                                    className="text-[11px] font-bold uppercase tracking-widest"
-                                    style={{
-                                        color: '#8c909f',
-                                        borderBottom: '1px solid rgba(66,71,83,0.1)',
-                                    }}
-                                >
-                                    {['Member', 'Role', 'Status', 'Last Active', ''].map((h, i) => (
-                                        <th
-                                            key={i}
-                                            className="px-6 py-4"
-                                            style={{ textAlign: i === 4 ? 'right' : 'left' }}
-                                        >
-                                            {h}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {MEMBERS.map((member, i) => (
-                                    <MemberRow
-                                        key={member.email}
-                                        member={member}
-                                        isLast={i === MEMBERS.length - 1}
-                                    />
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
+  const withBusy = useCallback(
+    async (action: () => Promise<unknown>) => {
+      if (!token) return;
+      setBusy(true);
+      setError(null);
+      try {
+        await action();
+        await refresh();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Action failed');
+      } finally {
+        setBusy(false);
+      }
+    },
+    [token, refresh],
+  );
 
-                {/* ── Pending invites ── */}
-                <section className="space-y-4">
-                    <h2
-                        className="text-sm font-semibold flex items-center gap-2"
-                        style={{ color: '#c2c6d6' }}
-                    >
-                        <span className="material-symbols-outlined" style={{ fontSize: 16 }}>mail</span>
-                        Pending Invites
-                    </h2>
+  const submitInvite = useCallback(async () => {
+    if (!token) return;
+    const email = inviteEmail.trim();
+    if (!email) return;
+    setBusy(true);
+    setInviteError(null);
+    try {
+      await api.inviteWorkspaceMember(token, email);
+      setInviteEmail('');
+      setInviteOpen(false);
+      await refresh();
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setInviteError(err.message);
+      } else {
+        setInviteError('Failed to send invite');
+      }
+    } finally {
+      setBusy(false);
+    }
+  }, [token, inviteEmail, refresh]);
 
-                    <div
-                        className="rounded-xl px-6 py-4 flex items-center justify-between"
-                        style={{ backgroundColor: '#191b22', border: '1px solid rgba(66,71,83,0.1)' }}
-                    >
-                        <div className="flex items-center gap-4">
-                            <div
-                                className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                                style={{ backgroundColor: '#1e1f26', color: '#8c909f' }}
-                            >
-                                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>
-                                    alternate_email
-                                </span>
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-sm font-semibold text-[#e2e2eb]">
-                                    sarah.lee@acmecorp.com
-                                </span>
-                                <span className="text-xs" style={{ color: '#8c909f' }}>
-                                    Invited 3 days ago as Editor
-                                </span>
-                            </div>
-                        </div>
+  const removeMember = useCallback(
+    (member: WorkspaceMemberResponse) => {
+      const verb = member.is_you ? 'Leave this workspace' : `Remove ${member.email}`;
+      if (!window.confirm(`${verb}? They keep their own personal workspace; nothing shared is deleted.`)) {
+        return;
+      }
+      void withBusy(() => api.removeWorkspaceMember(token as string, member.id));
+    },
+    [token, withBusy],
+  );
 
-                        <div className="flex items-center gap-3">
-                            <button
-                                className="text-xs font-bold px-3 py-1.5 transition-colors"
-                                style={{ color: '#8c909f' }}
-                                onMouseEnter={e => (e.currentTarget.style.color = '#e2e2eb')}
-                                onMouseLeave={e => (e.currentTarget.style.color = '#8c909f')}
-                            >
-                                Revoke
-                            </button>
-                            <button
-                                className="text-xs font-bold px-4 py-2 rounded transition-colors"
-                                style={{ border: '1px solid #1E2028', color: '#8B8D97' }}
-                                onMouseEnter={e => (e.currentTarget.style.color = 'white')}
-                                onMouseLeave={e => (e.currentTarget.style.color = '#8B8D97')}
-                            >
-                                Resend
-                            </button>
-                        </div>
-                    </div>
-                </section>
+  const isOwner = workspace?.my_role === 'owner';
+  const activeMembers = workspace?.members.filter(m => m.status === 'active') ?? [];
+  const pendingMembers = workspace?.members.filter(m => m.status === 'invited') ?? [];
+  const switchable = (workspace?.workspaces ?? []).length > 1;
 
-                {/* ── Coming soon cards ── */}
-                <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <ComingSoonCard
-                        icon="lock_person"
-                        title="Roles & Permissions"
-                        description="Granular access control for enterprise workflows."
-                        gradientColor="rgba(175,198,255,0.05)"
-                    />
-                    <ComingSoonCard
-                        icon="history"
-                        title="Activity Log"
-                        description="Audit trail of member actions and system events."
-                        gradientColor="rgba(178,198,248,0.05)"
-                    />
-                </section>
+  return (
+    <div className="flex-1 overflow-y-auto" style={{ backgroundColor: '#111319' }}>
+      <div className="mx-auto max-w-6xl space-y-10 px-12 pb-16 pt-10">
 
+        {/* ── Header ── */}
+        <section className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight text-[#e2e2eb]">Team</h1>
+            <p className="text-sm" style={{ color: '#c2c6d6' }}>
+              {workspace ? `${workspace.name} — ` : ''}everyone here shares this workspace&apos;s
+              evidence, themes, specs, and outcomes.
+            </p>
+          </div>
+          <div className="flex flex-shrink-0 items-center gap-3">
+            {switchable && workspace && (
+              <select
+                aria-label="Switch workspace"
+                className="rounded px-3 py-2 text-xs font-bold"
+                style={{ backgroundColor: '#1e1f26', color: '#e2e2eb', border: '1px solid rgba(66,71,83,0.2)' }}
+                value={workspace.id}
+                disabled={busy}
+                onChange={e => {
+                  const option = workspace.workspaces.find(w => w.id === e.target.value);
+                  if (!option || option.is_active) return;
+                  void withBusy(() =>
+                    api.switchWorkspace(token as string, option.is_personal ? null : option.id),
+                  );
+                }}
+              >
+                {workspace.workspaces.map(option => (
+                  <option key={option.id} value={option.id}>
+                    {option.is_personal ? `${option.name} (personal)` : option.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {isOwner && (
+              <button
+                className="inline-flex items-center gap-2 rounded px-4 py-2 text-xs font-bold transition-all disabled:opacity-50"
+                style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
+                disabled={busy}
+                onClick={() => { setInviteOpen(open => !open); setInviteError(null); }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>person_add</span>
+                Invite Member
+              </button>
+            )}
+          </div>
+        </section>
+
+        {error && (
+          <p className="text-sm" style={{ color: '#ffb4ab' }}>{error}</p>
+        )}
+
+        {/* ── Invite form ── */}
+        {inviteOpen && isOwner && (
+          <section className="space-y-3 rounded-xl px-6 py-5" style={CARD_STYLE}>
+            <p className="text-sm font-semibold text-[#e2e2eb]">Invite by email</p>
+            <p className="text-xs" style={{ color: '#8c909f' }}>
+              They&apos;ll see the invite on their own Team page after signing in with this email, and
+              join only when they accept. Joining shares this workspace&apos;s evidence, specs, and
+              outcomes with them.
+            </p>
+            <div className="flex items-center gap-3">
+              <input
+                type="email"
+                value={inviteEmail}
+                onChange={e => setInviteEmail(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') void submitInvite(); }}
+                placeholder="teammate@example.com"
+                className="flex-1 rounded px-3 py-2 text-sm text-[#e2e2eb] outline-none"
+                style={{ backgroundColor: '#111319', border: '1px solid rgba(66,71,83,0.3)' }}
+              />
+              <button
+                className="rounded px-4 py-2 text-xs font-bold transition-all disabled:opacity-50"
+                style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
+                disabled={busy || !inviteEmail.trim()}
+                onClick={() => void submitInvite()}
+              >
+                Send Invite
+              </button>
             </div>
+            {inviteError && (
+              <p className="text-xs" style={{ color: '#ffb4ab' }}>{inviteError}</p>
+            )}
+          </section>
+        )}
 
-            {/* ── Footer ── */}
-            <footer className="py-8 px-12 flex justify-center">
-                <div
-                    className="inline-flex items-center gap-3 px-4 py-2 rounded-full"
-                    style={{ backgroundColor: '#191b22', border: '1px solid rgba(66,71,83,0.05)' }}
-                >
-                    <div className="w-2 h-2 rounded-full bg-[#afc6ff] animate-pulse" />
-                    <p
-                        className="text-[11px] font-medium uppercase tracking-wider"
-                        style={{ color: '#8c909f' }}
-                    >
-                        Plan Status: Spec10x Pro — 3 of 5 seats used
-                    </p>
+        {/* ── Invitations addressed to me ── */}
+        {myInvites.length > 0 && (
+          <section className="space-y-4">
+            <h2 className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#c2c6d6' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16 }}>forward_to_inbox</span>
+              Invitations for you
+            </h2>
+            {myInvites.map(invite => (
+              <div
+                key={invite.id}
+                className="flex items-center justify-between rounded-xl px-6 py-4"
+                style={CARD_STYLE}
+              >
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold text-[#e2e2eb]">{invite.workspace_name}</span>
+                  <span className="text-xs" style={{ color: '#8c909f' }}>
+                    {invite.owner_name || invite.owner_email} invited you
+                    {' · '}
+                    {new Date(invite.invited_at).toLocaleDateString()}
+                  </span>
                 </div>
-            </footer>
-        </div>
-    );
+                <div className="flex items-center gap-3">
+                  <button
+                    className="px-3 py-1.5 text-xs font-bold transition-colors disabled:opacity-50"
+                    style={{ color: '#8c909f' }}
+                    disabled={busy}
+                    onClick={() => void withBusy(() => api.declineWorkspaceInvite(token as string, invite.id))}
+                  >
+                    Decline
+                  </button>
+                  <button
+                    className="rounded px-4 py-2 text-xs font-bold transition-all disabled:opacity-50"
+                    style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
+                    disabled={busy}
+                    onClick={() => void withBusy(() => api.acceptWorkspaceInvite(token as string, invite.id))}
+                  >
+                    Accept &amp; Join
+                  </button>
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {loading ? (
+          <p className="text-sm" style={{ color: '#8c909f' }}>Loading workspace...</p>
+        ) : workspace ? (
+          <>
+            {/* ── Stat cards ── */}
+            <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <StatCard label="Active Members" value={activeMembers.length} sub="in this workspace" />
+              <StatCard label="Pending Invites" value={pendingMembers.length} sub="awaiting accept" />
+              <StatCard label="Your Role" value={workspace.my_role === 'owner' ? 'Owner' : 'Member'} sub={workspace.owner_email} />
+            </section>
+
+            {/* ── Member list ── */}
+            <section className="space-y-4">
+              <h2 className="flex items-center gap-2 text-sm font-semibold" style={{ color: '#c2c6d6' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>list</span>
+                Workspace Members
+              </h2>
+              <div className="overflow-hidden rounded-xl" style={CARD_STYLE}>
+                <table className="w-full border-collapse text-left">
+                  <thead>
+                    <tr
+                      className="text-[11px] font-bold uppercase tracking-widest"
+                      style={{ color: '#8c909f', borderBottom: '1px solid rgba(66,71,83,0.1)' }}
+                    >
+                      {['Member', 'Role', 'Status', 'Joined', ''].map((heading, i) => (
+                        <th key={i} className="px-6 py-4" style={{ textAlign: i === 4 ? 'right' : 'left' }}>
+                          {heading}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workspace.members.map((member, i) => (
+                      <MemberRow
+                        key={member.id}
+                        member={member}
+                        index={i}
+                        isLast={i === workspace.members.length - 1}
+                        canManage={isOwner}
+                        busy={busy}
+                        onRemove={removeMember}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </>
+        ) : null}
+
+        {/* ── Coming soon ── */}
+        <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <ComingSoonCard
+            icon="lock_person"
+            title="Roles & Permissions"
+            description="Granular access control beyond owner and member."
+          />
+          <ComingSoonCard
+            icon="history"
+            title="Activity Log"
+            description="Audit trail of member actions and system events."
+          />
+        </section>
+      </div>
+    </div>
+  );
 }

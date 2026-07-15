@@ -339,8 +339,70 @@ class ApiClient {
     return this.requestText(`/api/specs/${id}/export`, { token });
   }
 
+  async exportSpecTasksToGitHub(
+    token: string,
+    id: string,
+    repo: string,
+    githubToken: string,
+  ) {
+    // The GitHub token is request-scoped on the server: used for the export
+    // calls, never persisted, logged, or echoed back (D-11-03).
+    return this.request<GitHubExportResponse>(`/api/specs/${id}/tasks/github`, {
+      method: 'POST',
+      body: JSON.stringify({ repo, token: githubToken }),
+      token,
+    });
+  }
+
   async getSpecOutcomes(token: string) {
     return this.request<SpecOutcomesPageResponse>('/api/specs/outcomes', { token });
+  }
+
+  // === Workspace & membership (v1.1 multi-user) ===
+
+  async getWorkspace(token: string) {
+    return this.request<WorkspaceResponse>('/api/workspace', { token });
+  }
+
+  async inviteWorkspaceMember(token: string, email: string) {
+    return this.request<WorkspaceMemberResponse>('/api/workspace/members', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+      token,
+    });
+  }
+
+  async removeWorkspaceMember(token: string, memberId: string) {
+    return this.request<void>(`/api/workspace/members/${memberId}`, {
+      method: 'DELETE',
+      token,
+    });
+  }
+
+  async getMyWorkspaceInvites(token: string) {
+    return this.request<WorkspaceInviteResponse[]>('/api/workspace/invites', { token });
+  }
+
+  async acceptWorkspaceInvite(token: string, inviteId: string) {
+    return this.request<WorkspaceResponse>(`/api/workspace/invites/${inviteId}/accept`, {
+      method: 'POST',
+      token,
+    });
+  }
+
+  async declineWorkspaceInvite(token: string, inviteId: string) {
+    return this.request<void>(`/api/workspace/invites/${inviteId}/decline`, {
+      method: 'POST',
+      token,
+    });
+  }
+
+  async switchWorkspace(token: string, workspaceId: string | null) {
+    return this.request<WorkspaceResponse>('/api/workspace/switch', {
+      method: 'POST',
+      body: JSON.stringify({ workspace_id: workspaceId }),
+      token,
+    });
   }
 
   async regenerateSpec(token: string, id: string) {
@@ -1430,6 +1492,24 @@ export interface SpecTask {
   complexity: 'S' | 'M' | 'L' | string;
   depends_on: number[];
   citations: number[];
+  // v1.1: set once the task has been exported to GitHub Issues
+  issue_url?: string | null;
+  issue_number?: number | null;
+}
+
+export interface GitHubExportTaskResult {
+  number: number | null;
+  title: string;
+  status: 'created' | 'already_exported' | 'failed' | 'not_attempted';
+  issue_url: string | null;
+  error: string | null;
+}
+
+export interface GitHubExportResponse {
+  repo: string;
+  created: number;
+  results: GitHubExportTaskResult[];
+  tasks: SpecTask[];
 }
 
 export interface SpecListItemResponse {
@@ -1510,6 +1590,43 @@ export interface ThemeTrendsPageResponse {
   weeks: string[];
   themes: TrendThemeResponse[];
   has_data: boolean;
+}
+
+// === Workspace & membership types (v1.1 multi-user) ===
+
+export interface WorkspaceMemberResponse {
+  id: string;
+  name: string;
+  email: string;
+  role: 'owner' | 'member';
+  status: 'invited' | 'active';
+  is_you: boolean;
+  joined_at: string | null;
+}
+
+export interface WorkspaceOptionResponse {
+  id: string;
+  name: string;
+  owner_email: string;
+  is_personal: boolean;
+  is_active: boolean;
+}
+
+export interface WorkspaceResponse {
+  id: string;
+  name: string;
+  owner_email: string;
+  my_role: 'owner' | 'member';
+  members: WorkspaceMemberResponse[];
+  workspaces: WorkspaceOptionResponse[];
+}
+
+export interface WorkspaceInviteResponse {
+  id: string;
+  workspace_name: string;
+  owner_name: string;
+  owner_email: string;
+  invited_at: string;
 }
 
 // === Singleton export ===

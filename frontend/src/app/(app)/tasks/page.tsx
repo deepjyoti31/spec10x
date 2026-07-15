@@ -11,6 +11,7 @@
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 
+import { GitHubExportModal } from '@/components/specs/GitHubExportModal';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSpecs } from '@/hooks/useSpecs';
@@ -26,6 +27,7 @@ function DeliveryRow({ spec }: { spec: SpecListItemResponse }) {
   const { token } = useAuth();
   const { showToast } = useToast();
   const [copying, setCopying] = useState(false);
+  const [githubOpen, setGithubOpen] = useState(false);
   const statusMeta = SPEC_STATUS_META[spec.status];
 
   async function handleCopy() {
@@ -75,6 +77,20 @@ function DeliveryRow({ spec }: { spec: SpecListItemResponse }) {
             Break into tasks →
           </Link>
         )}
+        {spec.task_count > 0 ? (
+          <button
+            type="button"
+            className="flex items-center gap-1 rounded px-2.5 py-1 text-[11px] font-bold transition-colors hover:bg-white/[0.08]"
+            style={{ border: '1px solid rgba(66,71,83,0.3)', color: '#c2c6d6' }}
+            title="Create one GitHub issue per task (token used once, never stored)"
+            onClick={() => setGithubOpen(true)}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 13 }}>
+              upload
+            </span>
+            GitHub Issues
+          </button>
+        ) : null}
         <button
           type="button"
           disabled={copying}
@@ -91,6 +107,24 @@ function DeliveryRow({ spec }: { spec: SpecListItemResponse }) {
           {copying ? 'Copying…' : 'Copy for agent'}
         </button>
       </div>
+
+      {githubOpen && token ? (
+        <GitHubExportModal
+          specId={spec.id}
+          specTitle={spec.title}
+          token={token}
+          onClose={() => setGithubOpen(false)}
+          onExported={(result) => {
+            setGithubOpen(false);
+            showToast(
+              result.created > 0
+                ? `Created ${result.created} GitHub issue${result.created === 1 ? '' : 's'} in ${result.repo}`
+                : 'All tasks already have GitHub issues',
+              'success'
+            );
+          }}
+        />
+      ) : null}
     </div>
   );
 }

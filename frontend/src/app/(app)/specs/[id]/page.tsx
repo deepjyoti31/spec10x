@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 
+import { GitHubExportModal } from '@/components/specs/GitHubExportModal';
 import { useToast } from '@/components/ui/Toast';
 import { useSpec } from '@/hooks/useSpecs';
 import { api, SpecEvidenceItem, SpecSection, SpecStatus, SpecTask } from '@/lib/api';
@@ -165,8 +166,21 @@ function TaskCard({
           {task.summary}
         </p>
       ) : null}
-      {(task.depends_on.length > 0 || task.citations.length > 0) && (
+      {(task.depends_on.length > 0 || task.citations.length > 0 || task.issue_url) && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {task.issue_url ? (
+            <a
+              href={task.issue_url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold transition-colors hover:bg-[rgba(168,230,176,0.2)]"
+              style={{ backgroundColor: 'rgba(168,230,176,0.1)', color: '#a8e6b0' }}
+              title="Open the exported GitHub issue"
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 12 }}>open_in_new</span>
+              {task.issue_number != null ? `issue #${task.issue_number}` : 'GitHub issue'}
+            </a>
+          ) : null}
           {task.depends_on.map((number) => (
             <span
               key={`dep-${number}`}
@@ -254,7 +268,7 @@ export default function SpecDetailPage() {
   const router = useRouter();
   const { token } = useAuth();
   const { showToast } = useToast();
-  const { spec, loading, error, updateSpec, regenerate, generateTasks } = useSpec(params?.id ?? null);
+  const { spec, loading, error, refetch, updateSpec, regenerate, generateTasks } = useSpec(params?.id ?? null);
 
   const [savingSection, setSavingSection] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
@@ -263,6 +277,7 @@ export default function SpecDetailPage() {
   const [focusedRef, setFocusedRef] = useState<number | null>(null);
   const [generatingTasks, setGeneratingTasks] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [githubOpen, setGithubOpen] = useState(false);
 
   if (loading) {
     return (
@@ -613,26 +628,42 @@ export default function SpecDetailPage() {
                           : 'Available once the spec is approved.'}
                     </p>
                   </div>
-                  {tasksReady ? (
-                    <button
-                      type="button"
-                      disabled={generatingTasks}
-                      className="flex flex-shrink-0 items-center gap-1 rounded px-3 py-1.5 text-xs font-bold disabled:opacity-50"
-                      style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
-                      onClick={() => {
-                        void handleGenerateTasks();
-                      }}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
-                        {spec.tasks.length > 0 ? 'refresh' : 'account_tree'}
-                      </span>
-                      {generatingTasks
-                        ? 'Breaking down…'
-                        : spec.tasks.length > 0
-                          ? 'Regenerate tasks'
-                          : 'Break into tasks'}
-                    </button>
-                  ) : null}
+                  <div className="flex flex-shrink-0 items-center gap-2">
+                    {spec.tasks.length > 0 ? (
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 rounded px-3 py-1.5 text-xs font-bold transition-colors hover:bg-white/[0.08]"
+                        style={{ border: '1px solid rgba(66,71,83,0.3)', color: '#c2c6d6' }}
+                        title="Create one GitHub issue per task (token used once, never stored)"
+                        onClick={() => setGithubOpen(true)}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                          upload
+                        </span>
+                        GitHub Issues
+                      </button>
+                    ) : null}
+                    {tasksReady ? (
+                      <button
+                        type="button"
+                        disabled={generatingTasks}
+                        className="flex items-center gap-1 rounded px-3 py-1.5 text-xs font-bold disabled:opacity-50"
+                        style={{ backgroundColor: '#afc6ff', color: '#002d6c' }}
+                        onClick={() => {
+                          void handleGenerateTasks();
+                        }}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>
+                          {spec.tasks.length > 0 ? 'refresh' : 'account_tree'}
+                        </span>
+                        {generatingTasks
+                          ? 'Breaking down…'
+                          : spec.tasks.length > 0
+                            ? 'Regenerate tasks'
+                            : 'Break into tasks'}
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
                 {spec.tasks.length > 0 ? (
                   <div className="mt-3 space-y-2">
@@ -669,6 +700,25 @@ export default function SpecDetailPage() {
           </div>
         </div>
       </div>
+
+      {githubOpen && token ? (
+        <GitHubExportModal
+          specId={spec.id}
+          specTitle={spec.title}
+          token={token}
+          onClose={() => setGithubOpen(false)}
+          onExported={(result) => {
+            setGithubOpen(false);
+            showToast(
+              result.created > 0
+                ? `Created ${result.created} GitHub issue${result.created === 1 ? '' : 's'} in ${result.repo}`
+                : 'All tasks already have GitHub issues',
+              'success'
+            );
+            void refetch();
+          }}
+        />
+      ) : null}
     </div>
   );
 }

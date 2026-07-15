@@ -101,7 +101,15 @@ export default function TrustPage() {
                             <p>Spec10x does not use your content to train Spec10x-owned generalized models.</p>
                             <p><strong className="text-[#F0F0F3]">Spec generation</strong> sends the selected theme&apos;s evidence excerpts to the same Vertex AI processing used for interview analysis and Ask. Generated specs are AI drafts, labeled as such until you edit or approve them, and every generated claim carries citations back to your own evidence.</p>
                             <p><strong className="text-[#F0F0F3]">Task breakdown</strong> re-sends only that spec&apos;s own sections and evidence snapshot through the same Vertex AI path — nothing new leaves your workspace. The exported markdown bundle contains only what Spec Studio already shows you, and post-ship outcome readouts are computed from your own signals without any model call.</p>
+                            <p><strong className="text-[#F0F0F3]">GitHub Issues export</strong> uses the token you paste for that one export request and then discards it — it is never stored, logged, or echoed back. The created issues contain only the spec&apos;s own task titles, summaries, and evidence reference numbers.</p>
                             <p>We keep our language conservative about model-provider retention and do not claim stronger guarantees than the deployed configuration verifies.</p>
+                        </div>
+                    </Section>
+
+                    <Section title="Workspace sharing and programmatic access">
+                        <div className="space-y-4 text-[15px] text-[#B0B2BA] leading-relaxed">
+                            <p><strong className="text-[#F0F0F3]">Inviting a member shares the workspace.</strong> Someone who accepts your invite sees and works in the same evidence pool you do: interviews, feed, themes, specs, tasks, and outcomes. Nobody joins without explicitly accepting, the Team page always shows exactly who has access, and removing a member (or leaving) takes effect immediately.</p>
+                            <p><strong className="text-[#F0F0F3]">The MCP server</strong> is programmatic access equivalent to the configured user&apos;s own access — it reads specs, bundles, and outcomes, and its only write is marking a spec shipped. It is configured entirely in the operator&apos;s own environment; Spec10x stores no MCP credentials.</p>
                         </div>
                     </Section>
 

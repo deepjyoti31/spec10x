@@ -12,7 +12,7 @@ from sqlalchemy.orm import selectinload
 from arq import create_pool
 from arq.connections import RedisSettings
 
-from app.core.auth import get_current_user
+from app.core.auth import get_scoped_user
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.core.storage import generate_upload_url
@@ -147,7 +147,7 @@ async def _prepare_interview_reanalysis(
 @router.post("/upload-url", response_model=UploadUrlResponse)
 async def get_upload_url(
     request: UploadUrlRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
 ):
     """
     Get a pre-signed URL for direct file upload from the browser.
@@ -171,7 +171,7 @@ async def get_upload_url(
 @router.post("", response_model=InterviewResponse, status_code=status.HTTP_201_CREATED)
 async def create_interview(
     request: InterviewCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -219,7 +219,7 @@ async def create_interview(
 async def list_interviews(
     sort: str = Query("recent", pattern="^(recent|name|sentiment)$"),
     status_filter: Optional[str] = Query(None, alias="status"),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List all interviews for the current user."""
@@ -247,7 +247,7 @@ async def get_interview_library(
         pattern="^(done|processing|error|low_insight)$",
     ),
     source: Optional[str] = Query(None),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     return await build_interview_library(
@@ -263,7 +263,7 @@ async def get_interview_library(
 @router.post("/bulk-reanalyze", response_model=InterviewBulkResultResponse)
 async def bulk_reanalyze_interviews(
     request: InterviewBulkRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     succeeded_ids: list[uuid.UUID] = []
@@ -320,7 +320,7 @@ async def bulk_reanalyze_interviews(
 @router.post("/bulk-delete", response_model=InterviewBulkResultResponse)
 async def bulk_delete_interviews(
     request: InterviewBulkRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     succeeded_ids: list[uuid.UUID] = []
@@ -365,7 +365,7 @@ async def bulk_delete_interviews(
 @router.get("/{interview_id}", response_model=InterviewDetailResponse)
 async def get_interview(
     interview_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get interview detail with transcript and insights."""
@@ -393,7 +393,7 @@ async def get_interview(
 async def update_interview(
     interview_id: uuid.UUID,
     body: InterviewUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Update a lightweight interview note. Currently supports the private `comment` field only."""
@@ -418,7 +418,7 @@ async def update_interview(
 @router.delete("/{interview_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_interview(
     interview_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Delete an interview and cascade-delete its insights and chunks."""
@@ -441,7 +441,7 @@ async def delete_interview(
 @router.post("/{interview_id}/reanalyze", response_model=InterviewResponse)
 async def reanalyze_interview(
     interview_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Re-run AI analysis on an existing interview."""
@@ -473,7 +473,7 @@ async def update_speaker(
     interview_id: uuid.UUID,
     speaker_id: uuid.UUID,
     speaker_update: SpeakerUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Update speaker metadata."""

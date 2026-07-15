@@ -314,4 +314,162 @@ export const HOME_DASHBOARD = {
       href: '/insights?theme=theme-2',
     },
   ],
+  spec_pipeline: {
+    draft: 1,
+    in_review: 0,
+    needs_changes: 0,
+    approved: 1,
+    in_dev: 0,
+    shipped: 1,
+    total: 3,
+  },
+};
+
+// ── Specs → tasks → outcomes (v1.1 full-loop smoke, US-11-04-01) ──
+
+const SPEC_EVIDENCE = [
+  {
+    ref: 1,
+    signal_id: 'signal-spec-1',
+    source_type: 'support',
+    source_label: 'Zendesk',
+    provider_label: 'Zendesk',
+    signal_kind: 'ticket',
+    signal_kind_label: 'Ticket',
+    excerpt: 'Exports keep timing out for our weekly reports.',
+    author_or_speaker: 'Dana P.',
+    sentiment: 'negative',
+    occurred_at: '2026-06-20T10:00:00Z',
+    link: null,
+  },
+  {
+    ref: 2,
+    signal_id: 'signal-spec-2',
+    source_type: 'interview',
+    source_label: 'Interview',
+    provider_label: 'Native upload',
+    signal_kind: 'insight',
+    signal_kind_label: 'Insight',
+    excerpt: 'I gave up on the export and copied the table by hand.',
+    author_or_speaker: 'Speaker 2',
+    sentiment: 'negative',
+    occurred_at: '2026-06-22T10:00:00Z',
+    link: null,
+  },
+];
+
+const SPEC_TASKS = [
+  {
+    number: 1,
+    title: 'Add export job queue',
+    summary: 'Move exports to a background job so large reports stop timing out.',
+    complexity: 'M',
+    depends_on: [],
+    citations: [1],
+    issue_url: null,
+    issue_number: null,
+  },
+  {
+    number: 2,
+    title: 'Stream export progress to the UI',
+    summary: 'Progress indicator fed by the job status.',
+    complexity: 'S',
+    depends_on: [1],
+    citations: [2],
+    issue_url: null,
+    issue_number: null,
+  },
+];
+
+export const SPEC_APPROVED = {
+  id: 'spec-approved-1',
+  title: 'Fix export timeouts',
+  status: 'approved',
+  generation_status: 'ready',
+  theme_id: 'theme-2',
+  theme_name_snapshot: 'Export failures',
+  impact_score_snapshot: 8.2,
+  section_count: 2,
+  evidence_count: 2,
+  task_count: 2,
+  is_edited: false,
+  shipped_at: null,
+  created_at: '2026-07-01T10:00:00Z',
+  updated_at: '2026-07-10T10:00:00Z',
+};
+
+export const SPEC_SHIPPED = {
+  id: 'spec-shipped-1',
+  title: 'Faster onboarding checklist',
+  status: 'shipped',
+  generation_status: 'ready',
+  theme_id: 'theme-1',
+  theme_name_snapshot: 'Onboarding confusion',
+  impact_score_snapshot: 7.4,
+  section_count: 2,
+  evidence_count: 2,
+  task_count: 2,
+  is_edited: false,
+  shipped_at: '2026-06-20T09:00:00Z',
+  created_at: '2026-06-01T10:00:00Z',
+  updated_at: '2026-06-20T09:00:00Z',
+};
+
+export const SPEC_LIST = [SPEC_APPROVED, SPEC_SHIPPED];
+
+export const SPEC_APPROVED_DETAIL = {
+  ...SPEC_APPROVED,
+  generation_error: null,
+  model_used: 'gemini',
+  sections: [
+    {
+      key: 'problem_statement',
+      title: 'Problem Statement',
+      content: 'Large exports time out before finishing.',
+      citations: [1],
+    },
+    {
+      key: 'proposed_solution',
+      title: 'Proposed Solution',
+      content: 'Queue exports as background jobs with progress reporting.',
+      citations: [2],
+    },
+  ],
+  evidence: SPEC_EVIDENCE,
+  tasks: SPEC_TASKS,
+  tasks_generated_at: '2026-07-10T10:00:00Z',
+};
+
+export const SPEC_EXPORT_BUNDLE = [
+  '# Fix export timeouts',
+  '',
+  'from theme: Export failures',
+  '',
+  '## Problem Statement',
+  'Large exports time out before finishing. Evidence: [1]',
+  '',
+  '## Task Breakdown',
+  '### Task 1: Add export job queue (complexity M)',
+  '',
+  '## Evidence Appendix',
+  '**[1]** Exports keep timing out for our weekly reports.',
+].join('\n');
+
+export const SPEC_OUTCOMES = {
+  window_weeks: 4,
+  has_data: true,
+  specs: [
+    {
+      spec_id: 'spec-shipped-1',
+      title: 'Faster onboarding checklist',
+      theme_id: 'theme-1',
+      theme_name: 'Onboarding confusion',
+      shipped_at: '2026-06-20T09:00:00Z',
+      state: 'improving',
+      pre_counts: [4, 3, 5, 4],
+      post_counts: [2, 1, 0],
+      pre_weekly_avg: 4.0,
+      post_weekly_avg: 1.0,
+    },
+  ],
 };

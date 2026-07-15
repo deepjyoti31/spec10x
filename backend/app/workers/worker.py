@@ -107,6 +107,19 @@ async def scheduled_connector_sync(ctx: dict) -> dict:
     return {"synced": synced, "failed": failed, "suspended": suspended_count}
 
 
+async def scheduled_outcome_notifications(ctx: dict) -> dict:
+    """Daily cron — notify spec owners the first time a shipped spec's
+    outcome readout leaves `too_early` (v1.1 auto-close loop, D-11-05).
+    Idempotent via the `outcome_notified_at` stamp."""
+    from app.core.database import get_session_factory
+    from app.services.outcomes import generate_outcome_notifications
+
+    async with get_session_factory()() as db:
+        created = await generate_outcome_notifications(db)
+        await db.commit()
+    return {"notifications_created": created}
+
+
 class WorkerSettings:
     """arq worker configuration."""
 
@@ -115,6 +128,8 @@ class WorkerSettings:
     cron_jobs = [
         # Hourly incremental sync for connected API-token sources
         cron(scheduled_connector_sync, minute=15, timeout=1800),
+        # Daily post-ship outcome notifications (v1.1 full-loop close)
+        cron(scheduled_outcome_notifications, hour=6, minute=30, timeout=600),
     ]
 
     redis_settings = RedisSettings.from_dsn(settings.redis_url)

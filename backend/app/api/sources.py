@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.auth import get_current_user
+from app.core.auth import get_scoped_user
 from app.core.database import get_db
 from app.models import DataSource, SourceConnection, SourceConnectionStatus, SyncRun, SyncRunStatus, User
 from app.schemas import (
@@ -39,7 +39,7 @@ async def _get_user_workspace(
 
 @router.get("/data-sources", response_model=list[DataSourceResponse])
 async def list_data_sources(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     await _get_user_workspace(current_user, db)
@@ -61,7 +61,7 @@ async def list_data_sources(
 )
 async def create_connection(
     request: SourceConnectionCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     workspace = await _get_user_workspace(current_user, db)
@@ -91,7 +91,7 @@ async def create_connection(
 
 @router.get("/source-connections", response_model=list[SourceConnectionResponse])
 async def list_connections(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     workspace = await _get_user_workspace(current_user, db)
@@ -139,7 +139,7 @@ async def list_connections(
 )
 async def get_connection(
     connection_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     workspace = await _get_user_workspace(current_user, db)
@@ -170,7 +170,7 @@ async def get_connection(
 )
 async def disconnect_connection(
     connection_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     workspace = await _get_user_workspace(current_user, db)
@@ -202,7 +202,7 @@ async def disconnect_connection(
 )
 async def delete_imported_data(
     connection_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Delete Spec10x's copies of data imported through this connection.
@@ -256,7 +256,7 @@ async def delete_imported_data(
 )
 async def validate_connection(
     connection_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     workspace = await _get_user_workspace(current_user, db)
@@ -306,7 +306,7 @@ async def validate_connection(
 async def list_sync_runs(
     connection_id: uuid.UUID,
     status_filter: SyncRunStatus | None = Query(None, alias="status"),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     workspace = await _get_user_workspace(current_user, db)
@@ -342,7 +342,7 @@ async def list_sync_runs(
 async def get_sync_run(
     connection_id: uuid.UUID,
     sync_run_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     workspace = await _get_user_workspace(current_user, db)
@@ -369,7 +369,7 @@ async def get_sync_run(
 )
 async def trigger_backfill(
     connection_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Start a historical backfill for the given connection."""
@@ -414,7 +414,7 @@ async def trigger_backfill(
 )
 async def trigger_sync(
     connection_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Trigger an incremental sync for the given connection."""
@@ -460,7 +460,7 @@ async def trigger_sync(
 async def rotate_connection_credentials(
     connection_id: uuid.UUID,
     request: SourceConnectionCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Update credentials for a connection without disconnecting.
@@ -506,7 +506,7 @@ async def rotate_connection_credentials(
 )
 async def reenable_suspended_connection(
     connection_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Re-enable a connection that was auto-suspended after consecutive failures.

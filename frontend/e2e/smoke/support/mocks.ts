@@ -7,6 +7,10 @@ import {
   FEED_SIGNALS,
   HOME_DASHBOARD,
   SOURCE_CONNECTIONS,
+  SPEC_APPROVED_DETAIL,
+  SPEC_EXPORT_BUNDLE,
+  SPEC_LIST,
+  SPEC_OUTCOMES,
   SURVEY_CONFIRM,
   SURVEY_HISTORY,
   SURVEY_VALIDATION,
@@ -54,6 +58,39 @@ export async function mockApi(page: Page): Promise<void> {
     if (path === '/api/survey-import/validate') return json(route, SURVEY_VALIDATION);
     if (path === '/api/survey-import/confirm') return json(route, SURVEY_CONFIRM);
     if (path === '/api/themes/board') return json(route, BOARD_THEMES);
+
+    // Specs → tasks → outcomes (v1.1 full-loop smoke)
+    if (path === '/api/specs/outcomes') return json(route, SPEC_OUTCOMES);
+    if (path === '/api/specs' && method === 'GET') return json(route, SPEC_LIST);
+    if (path === `/api/specs/${SPEC_APPROVED_DETAIL.id}/export`) {
+      return route.fulfill({
+        status: 200,
+        headers: { ...CORS_HEADERS, 'content-type': 'text/markdown; charset=utf-8' },
+        body: SPEC_EXPORT_BUNDLE,
+      });
+    }
+    if (path === `/api/specs/${SPEC_APPROVED_DETAIL.id}/tasks/github` && method === 'POST') {
+      const exportedTasks = SPEC_APPROVED_DETAIL.tasks.map((task) => ({
+        ...task,
+        issue_url: `https://github.com/acme/roadmap/issues/${100 + task.number}`,
+        issue_number: 100 + task.number,
+      }));
+      return json(route, {
+        repo: 'acme/roadmap',
+        created: exportedTasks.length,
+        results: exportedTasks.map((task) => ({
+          number: task.number,
+          title: task.title,
+          status: 'created',
+          issue_url: task.issue_url,
+          error: null,
+        })),
+        tasks: exportedTasks,
+      });
+    }
+    if (path === `/api/specs/${SPEC_APPROVED_DETAIL.id}`) {
+      return json(route, SPEC_APPROVED_DETAIL);
+    }
 
     if (path === '/api/feed') {
       const source = url.searchParams.get('source');

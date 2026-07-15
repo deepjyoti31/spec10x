@@ -12,7 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.auth import get_current_user
+from app.core.auth import get_scoped_user
 from app.core.config import get_settings
 from app.core.database import get_db
 from app.models import User, AskConversation
@@ -29,7 +29,7 @@ settings = get_settings()
 @router.post("")
 async def ask_question(
     request: AskRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -68,7 +68,7 @@ async def ask_question(
 
 @router.get("/starters", response_model=list[str])
 async def get_ask_starters(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get dynamic starter questions based on user's recent interviews."""
@@ -78,7 +78,7 @@ async def get_ask_starters(
 
 @router.get("/conversations", response_model=list[AskConversationResponse])
 async def list_conversations(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List all Ask conversations for the current user."""
@@ -94,7 +94,7 @@ async def list_conversations(
 @router.get("/conversations/{conversation_id}")
 async def get_conversation(
     conversation_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get a conversation with all its messages."""

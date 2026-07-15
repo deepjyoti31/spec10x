@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.auth import get_current_user
+from app.core.auth import get_scoped_user
 from app.core.database import get_db
 from app.models import Interview, Signal, SourceType, Theme, ThemeStatus, User
 from app.schemas import (
@@ -253,7 +253,7 @@ def _serialize_theme_explorer_card(
 async def list_themes(
     sort: str = Query("urgency", pattern="^(urgency|frequency|sentiment|recency)$"),
     status_filter: str = Query("active", alias="status"),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List all themes for the current user."""
@@ -289,7 +289,7 @@ async def list_themes(
 
 @router.get("/board", response_model=list[BoardThemeCardResponse])
 async def get_theme_board(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Return ranked theme cards for the Sprint 6 priority board."""
@@ -360,7 +360,7 @@ async def get_theme_explorer(
     date_from: date | None = Query(default=None),
     date_to: date | None = Query(default=None),
     selected_theme_id: uuid.UUID | None = Query(default=None),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Return a filter-aware theme explorer payload for the redesigned Insights page."""
@@ -507,7 +507,7 @@ TRENDS_WEEKS = 8
 
 @router.get("/trends", response_model=ThemeTrendsPageResponse)
 async def get_theme_trends(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Weekly voice-signal volume per active theme for the /trends page (v0.8).
@@ -578,7 +578,7 @@ async def get_theme_trends(
 @router.get("/{theme_id}", response_model=ThemeDetailResponse)
 async def get_theme(
     theme_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Get theme detail with source-aware evidence and score breakdown."""
@@ -640,7 +640,7 @@ async def get_theme(
 async def update_theme(
     theme_id: uuid.UUID,
     update: ThemeUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Rename a theme or update its priority state."""
@@ -684,7 +684,7 @@ async def update_theme(
 async def merge_theme(
     theme_id: uuid.UUID,
     body: ThemeMergeRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Merge `source_theme_id` into `theme_id`, preserving all evidence and insight history."""

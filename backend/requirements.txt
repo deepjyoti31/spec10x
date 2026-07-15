@@ -1,5 +1,6 @@
-# === Core Framework ===
+﻿# === Core Framework ===
 fastapi==0.115.12
+starlette==0.46.2  # pinned: newer starlette breaks fastapi 0.115.x; mcp accepts this version
 uvicorn[standard]==0.34.0
 python-dotenv==1.1.0
 python-multipart==0.0.20
@@ -25,6 +26,9 @@ google-cloud-storage==2.19.0
 
 # === AI / ML ===
 google-genai==1.72.0
+
+# === MCP server (v1.1 agent handoff) ===
+mcp==1.28.1
 
 # === File Processing ===
 PyPDF2==3.0.1

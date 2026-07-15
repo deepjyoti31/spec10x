@@ -150,6 +150,16 @@ class SpecGenerationStatus(str, enum.Enum):
     error = "error"
 
 
+class WorkspaceMemberRole(str, enum.Enum):
+    owner = "owner"
+    member = "member"
+
+
+class WorkspaceMemberStatus(str, enum.Enum):
+    invited = "invited"
+    active = "active"
+
+
 # ─── Models ──────────────────────────────────────────────
 
 class User(Base):
@@ -171,6 +181,14 @@ class User(Base):
     product_description: Mapped[str | None] = mapped_column(Text, nullable=True)
     product_website_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     product_context_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # v1.1 multi-user: which workspace this user is currently working in.
+    # NULL means the user's own personal workspace (D-11-02).
+    active_workspace_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("workspaces.id", ondelete="SET NULL", use_alter=True),
+        nullable=True,
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -199,7 +217,9 @@ class User(Base):
         back_populates="user", cascade="all, delete-orphan"
     )
     workspaces: Mapped[list["Workspace"]] = relationship(
-        back_populates="owner_user", cascade="all, delete-orphan"
+        back_populates="owner_user",
+        cascade="all, delete-orphan",
+        foreign_keys="Workspace.owner_user_id",
     )
     created_source_connections: Mapped[list["SourceConnection"]] = relationship(
         back_populates="created_by_user"
@@ -236,7 +256,9 @@ class Workspace(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
 
-    owner_user: Mapped["User"] = relationship(back_populates="workspaces")
+    owner_user: Mapped["User"] = relationship(
+        back_populates="workspaces", foreign_keys=[owner_user_id]
+    )
     source_connections: Mapped[list["SourceConnection"]] = relationship(
         back_populates="workspace", cascade="all, delete-orphan"
     )
@@ -246,9 +268,66 @@ class Workspace(Base):
     signals: Mapped[list["Signal"]] = relationship(
         back_populates="workspace", cascade="all, delete-orphan"
     )
+    members: Mapped[list["WorkspaceMember"]] = relationship(
+        back_populates="workspace", cascade="all, delete-orphan"
+    )
 
     __table_args__ = (
         Index("ix_workspaces_owner_kind", "owner_user_id", "kind"),
+    )
+
+
+class WorkspaceMember(Base):
+    """v1.1 multi-user: membership in a workspace (D-11-01).
+
+    Invites are addressed to an email; user_id attaches when the invitee
+    accepts (matched case-insensitively against their login email, D-11-02).
+    The workspace owner is represented by an implicit `owner` row created by
+    the workspace API on first read, so listing members needs no special case.
+    """
+
+    __tablename__ = "workspace_members"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    workspace_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workspaces.id", ondelete="CASCADE")
+    )
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    invited_email: Mapped[str] = mapped_column(String(255))
+    role: Mapped[WorkspaceMemberRole] = mapped_column(
+        Enum(WorkspaceMemberRole, name="workspace_member_role"),
+        default=WorkspaceMemberRole.member,
+    )
+    status: Mapped[WorkspaceMemberStatus] = mapped_column(
+        Enum(WorkspaceMemberStatus, name="workspace_member_status"),
+        default=WorkspaceMemberStatus.invited,
+    )
+    invited_by_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    joined_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    workspace: Mapped["Workspace"] = relationship(back_populates="members")
+    user: Mapped["User | None"] = relationship(foreign_keys=[user_id])
+
+    __table_args__ = (
+        UniqueConstraint(
+            "workspace_id", "invited_email", name="uq_workspace_members_email"
+        ),
+        Index("ix_workspace_members_workspace_status", "workspace_id", "status"),
+        Index("ix_workspace_members_user_id", "user_id"),
+        Index("ix_workspace_members_invited_email", "invited_email"),
     )
 
 
@@ -912,6 +991,10 @@ class Spec(Base):
         DateTime(timezone=True), nullable=True
     )
     shipped_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # v1.1: stamp so the outcome notification fires once per spec (D-11-05)
+    outcome_notified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
     created_at: Mapped[datetime] = mapped_column(

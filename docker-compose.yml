@@ -1,5 +1,14 @@
 # Spec10x — Local Development Infrastructure
 # PostgreSQL 17 + pgvector, Redis 7, MinIO (S3-compatible storage)
+#
+# Default (`docker compose up -d`) starts infrastructure only — use this when
+# running the backend/frontend from source (see README "Local Setup").
+#
+# Full stack (`docker compose --profile app up -d --build`) also builds and
+# runs migrations, the API, the background worker, and the frontend:
+# app on http://localhost:3000, API on http://localhost:8000.
+# AI-backed flows (interview processing, spec generation, task breakdown)
+# additionally need Vertex AI credentials — see README "AI features".
 
 services:
   postgres:
@@ -65,6 +74,74 @@ services:
       mc anonymous set download local/spec10x-uploads;
       echo 'Bucket spec10x-uploads created';
       "
+
+  # ── Full-stack profile (v1.1 open-source onboarding, US-11-01-01) ──
+
+  # One-shot: bring the database schema to head before the API starts
+  migrate:
+    profiles: ["app"]
+    build: ./backend
+    container_name: spec10x-migrate
+    command: alembic upgrade head
+    environment:
+      &backend-env
+      DATABASE_URL: postgresql+asyncpg://spec10x:spec10x_local@postgres:5432/spec10x
+      DATABASE_URL_SYNC: postgresql://spec10x:spec10x_local@postgres:5432/spec10x
+      REDIS_URL: redis://redis:6379/0
+      STORAGE_BACKEND: minio
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET: spec10x-uploads
+      MINIO_USE_SSL: "false"
+      APP_ENV: development
+      APP_SECRET_KEY: local-compose-dev-secret
+      BACKEND_URL: http://localhost:8000
+      FRONTEND_URL: http://localhost:3000
+      CORS_ORIGINS: http://localhost:3000
+      # Alembic's env.py reads DATABASE_URL and needs the sync driver
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    profiles: ["app"]
+    build: ./backend
+    container_name: spec10x-backend
+    environment: *backend-env
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  worker:
+    profiles: ["app"]
+    build: ./backend
+    container_name: spec10x-worker
+    command: python -m arq app.workers.worker.WorkerSettings
+    environment: *backend-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  frontend:
+    profiles: ["app"]
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    container_name: spec10x-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
 
 volumes:
   pgdata:

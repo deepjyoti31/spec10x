@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.auth import get_current_user
+from app.core.auth import get_scoped_user
 from app.core.database import get_db
 from app.models import Collection, CollectionInterview, Interview, User
 from app.schemas import (
@@ -61,7 +61,7 @@ def _serialize_summary(collection: Collection, interview_count: int) -> Collecti
 
 @router.get("", response_model=list[CollectionResponse])
 async def list_collections(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = (
@@ -81,7 +81,7 @@ async def list_collections(
 @router.post("", response_model=CollectionResponse, status_code=201)
 async def create_collection(
     body: CollectionCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     name = body.name.strip()
@@ -101,7 +101,7 @@ async def create_collection(
 @router.get("/{collection_id}", response_model=CollectionDetailResponse)
 async def get_collection(
     collection_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     collection = await _get_owned_collection(
@@ -121,7 +121,7 @@ async def get_collection(
 async def update_collection(
     collection_id: uuid.UUID,
     body: CollectionUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     collection = await _get_owned_collection(
@@ -143,7 +143,7 @@ async def update_collection(
 @router.delete("/{collection_id}", status_code=204)
 async def delete_collection(
     collection_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     collection = await _get_owned_collection(
@@ -157,7 +157,7 @@ async def delete_collection(
 async def add_collection_interviews(
     collection_id: uuid.UUID,
     body: CollectionInterviewsRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     collection = await _get_owned_collection(
@@ -187,7 +187,7 @@ async def add_collection_interviews(
 async def remove_collection_interview(
     collection_id: uuid.UUID,
     interview_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     await _get_owned_collection(db, collection_id=collection_id, user_id=current_user.id)

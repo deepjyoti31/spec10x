@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import get_current_user
+from app.core.auth import get_scoped_user
 from app.core.database import get_db
 from app.models import User, Insight, Theme
 from app.schemas import InsightResponse, InsightCreate, InsightUpdate
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/api/insights", tags=["Insights"])
 @router.post("", response_model=InsightResponse, status_code=status.HTTP_201_CREATED)
 async def create_insight(
     request: InsightCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Manually add an insight (user-created)."""
@@ -55,7 +55,7 @@ async def create_insight(
 async def update_insight(
     insight_id: uuid.UUID,
     update: InsightUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Edit insight category, title, or theme assignment."""
@@ -93,7 +93,7 @@ async def update_insight(
 @router.delete("/{insight_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def dismiss_insight(
     insight_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Dismiss (soft-delete) an insight."""
@@ -118,7 +118,7 @@ async def dismiss_insight(
 @router.post("/{insight_id}/flag", response_model=InsightResponse)
 async def flag_insight(
     insight_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Flag an insight as uncertain."""

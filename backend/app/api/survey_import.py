@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.auth import get_current_user
+from app.core.auth import get_scoped_user
 from app.core.database import get_db
 from app.connectors.csv_import import (
     TEMPLATE_CSV,
@@ -45,7 +45,7 @@ router = APIRouter(prefix="/api/survey-import", tags=["Survey Import"])
 
 @router.get("/template")
 async def download_template(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
 ):
     """Download the survey/NPS CSV template."""
     return StreamingResponse(
@@ -60,7 +60,7 @@ async def download_template(
 @router.post("/validate")
 async def validate_csv(
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Validate an uploaded survey/NPS CSV file.
@@ -95,7 +95,7 @@ async def validate_csv(
 @router.post("/confirm")
 async def confirm_import(
     file: UploadFile = File(...),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Confirm and execute a survey/NPS CSV import.
@@ -229,7 +229,7 @@ async def confirm_import(
 
 @router.get("/history")
 async def import_history(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """List past survey/NPS CSV imports with status and counts.

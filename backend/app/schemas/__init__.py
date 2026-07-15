@@ -684,6 +684,9 @@ class SpecTaskResponse(BaseModel):
     complexity: str  # "S" | "M" | "L"
     depends_on: list[int] = []
     citations: list[int] = []
+    # v1.1: set once the task has been exported to GitHub Issues
+    issue_url: Optional[str] = None
+    issue_number: Optional[int] = None
 
 
 class SpecListItemResponse(BaseModel):
@@ -731,6 +734,28 @@ class SpecOutcomesPageResponse(BaseModel):
     window_weeks: int
     specs: list[SpecOutcomeResponse] = []
     has_data: bool
+
+
+# ─── GitHub Issues export (v1.1, D-11-03) ────────────────
+
+class GitHubExportRequest(BaseModel):
+    repo: str  # "owner/name"
+    token: str  # request-scoped; never persisted, logged, or echoed back
+
+
+class GitHubExportTaskResult(BaseModel):
+    number: Optional[int] = None
+    title: str = ""
+    status: str  # "created" | "already_exported" | "failed" | "not_attempted"
+    issue_url: Optional[str] = None
+    error: Optional[str] = None
+
+
+class GitHubExportResponse(BaseModel):
+    repo: str
+    created: int
+    results: list[GitHubExportTaskResult] = []
+    tasks: list[SpecTaskResponse] = []
 
 
 # ─── Trends (v0.8) ───────────────────────────────────────

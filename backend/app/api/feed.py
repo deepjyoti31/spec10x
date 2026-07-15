@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import get_current_user
+from app.core.auth import get_scoped_user
 from app.core.database import get_db
 from app.models import Signal, Theme, User, SourceType, SignalStatus
 from app.schemas import FeedSignalDetailResponse, FeedSignalResponse
@@ -30,7 +30,7 @@ async def list_feed(
     sentiment: str | None = Query(None),
     date_from: date | None = Query(None),
     date_to: date | None = Query(None),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     workspace = await ensure_signal_consistency(
@@ -57,7 +57,7 @@ async def list_feed(
 @router.get("/{signal_id}", response_model=FeedSignalDetailResponse)
 async def get_feed_signal(
     signal_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     workspace = await ensure_signal_consistency(

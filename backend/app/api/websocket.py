@@ -11,7 +11,7 @@ import json
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query
 from sqlalchemy import select
 
-from app.core.auth import verify_firebase_token
+from app.core.auth import verify_firebase_token, resolve_data_owner
 from app.core.database import get_session_factory
 from app.core.pubsub import subscribe_user
 from app.models import User, Interview, InterviewStatus
@@ -57,10 +57,15 @@ async def processing_updates(
             result = await db.execute(stmt)
             user = result.scalar_one_or_none()
 
-        if user is None:
-            logger.warning(f"WebSocket: No DB user found for Firebase UID {firebase_uid}")
-            await websocket.close(code=4001, reason="User not found")
-            return
+            if user is None:
+                logger.warning(f"WebSocket: No DB user found for Firebase UID {firebase_uid}")
+                await websocket.close(code=4001, reason="User not found")
+                return
+
+            # v1.1 multi-user: interviews in a shared workspace belong to the
+            # workspace owner's pool, and the worker publishes updates keyed
+            # by that pool's user UUID — subscribe to the scoped id.
+            user = await resolve_data_owner(db, user)
 
         user_id = str(user.id)
     except Exception as e:

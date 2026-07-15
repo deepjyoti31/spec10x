@@ -11,28 +11,32 @@ Shipped stamps `shipped_at`, which anchors the outcomes window (D-10-06).
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 
-from app.core.auth import get_current_user
+from app.core.auth import get_scoped_user
 from app.core.database import get_db
 from app.models import Signal, Spec, SpecGenerationStatus, SpecStatus, Theme, User
 from app.schemas import (
+    GitHubExportRequest,
+    GitHubExportResponse,
     SpecCreate,
     SpecDetailResponse,
     SpecListItemResponse,
     SpecOutcomesPageResponse,
     SpecUpdate,
 )
+from app.services.github_export import GitHubExportError, export_tasks_to_github
+from app.services.outcomes import OUTCOME_WINDOW_WEEKS, compute_spec_outcomes
 from app.services.signals import (
     _parse_theme_match_id,
     ensure_signal_consistency,
     get_workspace_signals,
-    is_voice_signal,
 )
 from app.services.spec_generation import generate_spec_for_theme
 from app.services.task_breakdown import (
@@ -66,8 +70,6 @@ TASK_READY_STATUSES = {
     SpecStatus.in_dev,
     SpecStatus.shipped,
 }
-
-OUTCOME_WINDOW_WEEKS = 4
 
 
 async def _get_owned_spec(
@@ -146,16 +148,10 @@ def _serialize_detail(spec: Spec) -> dict:
     return payload
 
 
-def _as_utc(value: datetime) -> datetime:
-    if value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
-    return value
-
-
 @router.post("", response_model=SpecDetailResponse, status_code=201)
 async def create_spec(
     body: SpecCreate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Generate a new spec from a theme's evidence."""
@@ -190,7 +186,7 @@ async def create_spec(
 @router.get("", response_model=list[SpecListItemResponse])
 async def list_specs(
     status_filter: SpecStatus | None = Query(default=None, alias="status"),
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     stmt = select(Spec).where(Spec.user_id == current_user.id)
@@ -203,7 +199,7 @@ async def list_specs(
 
 @router.get("/outcomes", response_model=SpecOutcomesPageResponse)
 async def list_spec_outcomes(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Post-ship outcomes for every shipped spec (v1.0 Full Loop, D-10-06).
@@ -212,85 +208,10 @@ async def list_spec_outcomes(
     OUTCOME_WINDOW_WEEKS before and after the first ship. Correlational
     only — the readout never claims the feature caused the change.
     Registered before `/{spec_id}` so the path does not parse as a UUID.
+    The computation lives in services/outcomes.py, shared with the v1.1
+    auto-close notifier.
     """
-    workspace = await ensure_signal_consistency(db, user_id=current_user.id)
-    result = await db.execute(
-        select(Spec)
-        .where(Spec.user_id == current_user.id, Spec.shipped_at.is_not(None))
-        .order_by(Spec.shipped_at.desc())
-    )
-    shipped_specs = list(result.scalars().all())
-
-    workspace_signals = await get_workspace_signals(db, workspace_id=workspace.id)
-    voice_by_theme: dict[uuid.UUID, list[datetime]] = {}
-    for signal in workspace_signals:
-        theme_id = _parse_theme_match_id(signal.metadata_json)
-        if theme_id is not None and is_voice_signal(signal):
-            voice_by_theme.setdefault(theme_id, []).append(_as_utc(signal.occurred_at))
-
-    theme_ids = {spec.theme_id for spec in shipped_specs if spec.theme_id is not None}
-    theme_names: dict[uuid.UUID, str] = {}
-    if theme_ids:
-        themes_result = await db.execute(select(Theme).where(Theme.id.in_(theme_ids)))
-        theme_names = {theme.id: theme.name for theme in themes_result.scalars().all()}
-
-    now = datetime.now(timezone.utc)
-    week = timedelta(days=7)
-    outcomes = []
-    for spec in shipped_specs:
-        shipped_at = _as_utc(spec.shipped_at)
-        entry = {
-            "spec_id": spec.id,
-            "title": spec.title,
-            "theme_id": spec.theme_id,
-            "theme_name": theme_names.get(spec.theme_id, spec.theme_name_snapshot),
-            "shipped_at": shipped_at,
-            "state": "unavailable",
-            "pre_counts": [],
-            "post_counts": [],
-            "pre_weekly_avg": None,
-            "post_weekly_avg": None,
-        }
-        if spec.theme_id is None:
-            outcomes.append(entry)
-            continue
-
-        occurred_ats = voice_by_theme.get(spec.theme_id, [])
-        pre_counts = [0] * OUTCOME_WINDOW_WEEKS
-        for index in range(OUTCOME_WINDOW_WEEKS):
-            bucket_start = shipped_at - week * (OUTCOME_WINDOW_WEEKS - index)
-            pre_counts[index] = sum(
-                1 for at in occurred_ats if bucket_start <= at < bucket_start + week
-            )
-        entry["pre_counts"] = pre_counts
-        entry["pre_weekly_avg"] = round(sum(pre_counts) / OUTCOME_WINDOW_WEEKS, 1)
-
-        elapsed_weeks = min(OUTCOME_WINDOW_WEEKS, int((now - shipped_at).days // 7))
-        if elapsed_weeks < 1:
-            entry["state"] = "too_early"
-            outcomes.append(entry)
-            continue
-
-        post_counts = [0] * elapsed_weeks
-        for index in range(elapsed_weeks):
-            bucket_start = shipped_at + week * index
-            post_counts[index] = sum(
-                1 for at in occurred_ats if bucket_start <= at < bucket_start + week
-            )
-        entry["post_counts"] = post_counts
-        pre_avg = entry["pre_weekly_avg"]
-        post_avg = round(sum(post_counts) / elapsed_weeks, 1)
-        entry["post_weekly_avg"] = post_avg
-
-        # Voice volume on a pain theme falling after ship reads as improvement;
-        # thresholds keep small wobbles honest as "flat".
-        if post_avg <= pre_avg * 0.8 and post_avg < pre_avg:
-            entry["state"] = "improving"
-        elif post_avg >= pre_avg * 1.2 and post_avg > pre_avg:
-            entry["state"] = "worsening"
-        else:
-            entry["state"] = "flat"
-        outcomes.append(entry)
+    outcomes = await compute_spec_outcomes(db, user_id=current_user.id)
 
     return SpecOutcomesPageResponse(
         window_weeks=OUTCOME_WINDOW_WEEKS,
@@ -302,7 +223,7 @@ async def list_spec_outcomes(
 @router.get("/{spec_id}", response_model=SpecDetailResponse)
 async def get_spec(
     spec_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     spec = await _get_owned_spec(db, spec_id=spec_id, user_id=current_user.id)
@@ -313,7 +234,7 @@ async def get_spec(
 async def update_spec(
     spec_id: uuid.UUID,
     body: SpecUpdate,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Edit the spec title, section content, or move it through the review workflow."""
@@ -360,7 +281,7 @@ async def update_spec(
 @router.post("/{spec_id}/regenerate", response_model=SpecDetailResponse)
 async def regenerate_spec(
     spec_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Re-run generation, replacing sections and evidence. Pre-approval only."""
@@ -397,7 +318,7 @@ async def regenerate_spec(
 @router.post("/{spec_id}/tasks", response_model=SpecDetailResponse)
 async def generate_spec_tasks(
     spec_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Break the approved brief into agent-ready tasks (v1.0 Full Loop).
@@ -432,10 +353,59 @@ async def generate_spec_tasks(
     return _serialize_detail(spec)
 
 
+@router.post("/{spec_id}/tasks/github", response_model=GitHubExportResponse)
+async def export_spec_tasks_to_github(
+    spec_id: uuid.UUID,
+    body: GitHubExportRequest,
+    current_user: User = Depends(get_scoped_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """One-way export: one GitHub issue per task (v1.1, D-11-03).
+
+    The token is request-scoped — used for these GitHub calls, then
+    discarded; it is never persisted, logged, or echoed back. Already
+    exported tasks are skipped, so a retry after a partial failure only
+    creates the missing issues.
+    """
+    spec = await _get_owned_spec(db, spec_id=spec_id, user_id=current_user.id)
+    if not spec.tasks_json:
+        raise HTTPException(
+            status_code=409,
+            detail="Break the spec into tasks before exporting to GitHub Issues.",
+        )
+
+    try:
+        results = await export_tasks_to_github(
+            spec, repo=body.repo, token=body.token
+        )
+    except GitHubExportError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    # The service mutated the loaded task dicts in place, so the reassigned
+    # copy compares equal and the ORM would skip the UPDATE — force it.
+    # Issue links are saved even when later tasks failed; retries skip them.
+    spec.tasks_json = [dict(task) for task in spec.tasks_json]
+    flag_modified(spec, "tasks_json")
+    await db.flush()
+    await db.refresh(spec, attribute_names=["updated_at"])
+
+    created = sum(1 for result in results if result["status"] == "created")
+    failed = [result for result in results if result["status"] == "failed"]
+    if created == 0 and failed:
+        raise HTTPException(status_code=502, detail=failed[0]["error"])
+
+    return GitHubExportResponse(
+        repo=body.repo.strip().strip("/"),
+        created=created,
+        results=results,
+        tasks=spec.tasks_json or [],
+    )
+
+
 @router.get("/{spec_id}/export", response_class=PlainTextResponse)
 async def export_spec(
     spec_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Agent-ready markdown context bundle: brief + tasks + evidence (D-10-04)."""
@@ -453,7 +423,7 @@ async def export_spec(
 @router.delete("/{spec_id}", status_code=204)
 async def delete_spec(
     spec_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_scoped_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Delete a spec. Never touches the underlying theme, insights, or signals."""
