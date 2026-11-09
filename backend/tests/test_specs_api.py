@@ -263,6 +263,33 @@ class TestSpecWorkflow:
         assert by_key["proposed_solution"]["content"].startswith("Ship a guided setup")
         assert by_key["proposed_solution"]["citations"] == [1]
 
+        # The edit must be persisted, not just echoed back in the response
+        reloaded = await client.get(f"/api/specs/{spec['id']}", headers=AUTH_HEADER)
+        assert reloaded.status_code == 200
+        reloaded_by_key = {
+            section["key"]: section for section in reloaded.json()["sections"]
+        }
+        assert reloaded_by_key["problem_statement"]["content"] == "Edited problem."
+
+    @pytest.mark.asyncio
+    async def test_section_only_edit_is_persisted(
+        self, client, db_session, test_user, mock_genai_client_global
+    ):
+        spec = await self._create_ready_spec(
+            client, db_session, test_user, mock_genai_client_global, "Section Only Theme"
+        )
+        response = await client.patch(
+            f"/api/specs/{spec['id']}",
+            headers=AUTH_HEADER,
+            json={"sections": [{"key": "success_metrics", "content": "Edited metrics."}]},
+        )
+        assert response.status_code == 200
+
+        reloaded = await client.get(f"/api/specs/{spec['id']}", headers=AUTH_HEADER)
+        by_key = {section["key"]: section for section in reloaded.json()["sections"]}
+        assert by_key["success_metrics"]["content"] == "Edited metrics."
+        assert reloaded.json()["is_edited"] is True
+
     @pytest.mark.asyncio
     async def test_edit_unknown_section_rejected(
         self, client, db_session, test_user, mock_genai_client_global

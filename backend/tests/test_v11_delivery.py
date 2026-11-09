@@ -207,6 +207,9 @@ class TestOutcomeNotifications:
     async def test_notification_fires_once_when_outcome_becomes_readable(
         self, client, db_session, test_user, mock_genai_client_global
     ):
+        # Unique per run: the suite DB is never truncated, and the assertions
+        # below find notifications by message text.
+        brief_title = f"Notify Improving Brief {uuid.uuid4().hex[:8]}"
         theme = await _create_theme_with_insights(
             db_session,
             test_user,
@@ -214,7 +217,7 @@ class TestOutcomeNotifications:
             insight_ages_days=[24, 28, 33, 40],
         )
         spec = await _create_spec(
-            client, mock_genai_client_global, theme, "Notify Improving Brief"
+            client, mock_genai_client_global, theme, brief_title
         )
         await _walk_to(client, spec["id"], ["in_review", "approved", "in_dev", "shipped"])
         await _backdate_ship(db_session, spec["id"], days_ago=21)
@@ -226,7 +229,7 @@ class TestOutcomeNotifications:
         result = await db_session.execute(
             select(Notification).where(
                 Notification.user_id == test_user.id,
-                Notification.message.contains("Notify Improving Brief"),
+                Notification.message.contains(brief_title),
             )
         )
         notifications = result.scalars().all()
@@ -250,7 +253,7 @@ class TestOutcomeNotifications:
         result = await db_session.execute(
             select(Notification).where(
                 Notification.user_id == test_user.id,
-                Notification.message.contains("Notify Improving Brief"),
+                Notification.message.contains(brief_title),
             )
         )
         assert len(result.scalars().all()) == 1

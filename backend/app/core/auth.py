@@ -170,6 +170,33 @@ async def get_current_user(
     return user
 
 
+async def get_verified_email_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """
+    FastAPI dependency for routes that grant access based on the login email
+    (workspace invites, v1.1). The web client refuses unverified email/password
+    sign-ins, but a token for an unverified address can still be minted
+    directly against Firebase, so the email claim is only trusted here when
+    the token says it was verified. Dev-mode mock claims carry no
+    `email_verified` key and are accepted.
+    """
+    claims = verify_firebase_token(credentials.credentials)
+    if claims is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired authentication token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if claims.get("email_verified") is False:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Verify your email address before joining a workspace.",
+        )
+    return current_user
+
+
 async def resolve_data_owner(db: AsyncSession, current_user: User) -> User:
     """
     v1.1 multi-user (D-11-01): resolve whose data pool the requester works in.

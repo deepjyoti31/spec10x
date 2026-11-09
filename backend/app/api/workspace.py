@@ -16,7 +16,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user, get_verified_email_user
 from app.core.database import get_db
 from app.models import (
     User,
@@ -358,7 +358,7 @@ async def remove_member(
 
 @router.get("/invites", response_model=list[MyInviteResponse])
 async def list_my_invites(
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_verified_email_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Pending invites addressed to my login email."""
@@ -413,7 +413,7 @@ async def _get_my_pending_invite(
 @router.post("/invites/{invite_id}/accept", response_model=WorkspaceResponse)
 async def accept_invite(
     invite_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_verified_email_user),
     db: AsyncSession = Depends(get_db),
 ):
     """Accept an invite and switch into the shared workspace (D-11-02)."""
@@ -436,7 +436,7 @@ async def accept_invite(
 @router.post("/invites/{invite_id}/decline", status_code=204)
 async def decline_invite(
     invite_id: uuid.UUID,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_verified_email_user),
     db: AsyncSession = Depends(get_db),
 ):
     member = await _get_my_pending_invite(db, invite_id, current_user)

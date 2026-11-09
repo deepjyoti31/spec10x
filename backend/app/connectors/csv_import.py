@@ -11,7 +11,7 @@ import csv
 import hashlib
 import io
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from app.connectors import register_connector
@@ -173,6 +173,18 @@ def _parse_datetime(value: str) -> datetime:
     raise ValueError(f"Cannot parse datetime: {value}")
 
 
+def _parse_nps_score(value: Any) -> int | None:
+    """NPS as an int, or None when blank/unparseable. Validation only warns
+    about bad scores, so import must not fail on them — the score is dropped."""
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return int(text)
+    except ValueError:
+        return None
+
+
 def _build_external_id(row: dict[str, Any], row_index: int) -> str:
     respondent_id = str(row.get("respondent_id", "") or "").strip()
     if respondent_id:
@@ -259,14 +271,15 @@ class CSVImportConnector(BaseConnector):
             try:
                 occurred_at = _parse_datetime(submitted_at)
             except ValueError:
-                occurred_at = datetime.utcnow()
+                occurred_at = datetime.now(timezone.utc)
 
             tags_str = row.get("tags", "")
             tags = [t.strip() for t in tags_str.split(";") if t.strip()] if tags_str else []
 
             metadata: dict[str, Any] = {}
-            if row.get("nps_score"):
-                metadata["nps_score"] = int(row["nps_score"])
+            nps_score = _parse_nps_score(row.get("nps_score"))
+            if nps_score is not None:
+                metadata["nps_score"] = nps_score
             if row.get("question"):
                 metadata["question"] = row["question"]
             if row.get("channel"):
