@@ -172,3 +172,22 @@ class TestMcpShipAndOutcome:
         )
         with pytest.raises(McpToolError, match="not shipped"):
             await get_spec_outcome_tool(db_session, test_user, unshipped["id"])
+
+
+@pytest.mark.asyncio
+async def test_mcp_server_never_echoes_sql_to_stdout(monkeypatch):
+    """stdout is the stdio MCP server's JSON-RPC channel; SQLAlchemy echo
+    (on by default in development) writes there and corrupts the stream."""
+    import app.core.database as database_module
+
+    monkeypatch.setattr(database_module.settings, "app_env", "development")
+    monkeypatch.setattr(database_module, "_engine", None)
+    monkeypatch.setattr(database_module, "_session_factory", None)
+    monkeypatch.setattr(database_module, "_sql_echo_override", None)
+
+    database_module.disable_sql_echo()
+    engine = database_module.get_engine()
+    try:
+        assert engine.echo is False
+    finally:
+        await engine.dispose()

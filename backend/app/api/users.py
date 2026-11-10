@@ -13,7 +13,7 @@ from app.core.database import get_db
 from app.models import (
     User, Interview, Theme, Insight, AskConversation, Usage,
     Workspace, SourceConnection, SourceConnectionStatus, SourceItem, SyncRun, Signal,
-    WorkspaceKind,
+    WorkspaceKind, Spec,
 )
 from app.schemas import (
     UserResponse, UserUpdateRequest,
@@ -109,8 +109,9 @@ async def delete_my_data(
     """
     Delete all ingested data for the current user but keep integration connections intact.
 
-    Deleted: interviews, themes, insights, ask conversations, signals, source items,
-             and sync run history (so the next sync performs a clean backfill).
+    Deleted: interviews, themes, insights, specs (they quote customer evidence),
+             ask conversations, signals, source items, and sync run history
+             (so the next sync performs a clean backfill).
     Kept:    SourceConnection records — the user can re-sync or disconnect from the
              Integrations page without needing to re-enter credentials.
     """
@@ -170,6 +171,9 @@ async def delete_my_data(
         await db.execute(delete(Theme).where(Theme.user_id == current_user.id))
         await db.execute(delete(Insight).where(Insight.user_id == current_user.id))
         await db.execute(delete(AskConversation).where(AskConversation.user_id == current_user.id))
+        # Specs snapshot verbatim customer quotes (evidence_json), so they are
+        # ingested data too and must not outlive the interviews they cite.
+        await db.execute(delete(Spec).where(Spec.user_id == current_user.id))
         # Usage records are left intact for billing history.
 
         await db.commit()

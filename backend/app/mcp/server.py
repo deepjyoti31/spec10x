@@ -19,7 +19,7 @@ import os
 
 from mcp.server.fastmcp import FastMCP
 
-from app.core.database import get_session_factory
+from app.core.database import disable_sql_echo, get_session_factory
 from app.mcp import tools
 
 server = FastMCP(
@@ -78,6 +78,9 @@ async def mark_spec_shipped(spec_id: str) -> dict:
 
 
 def main() -> None:
+    # stdout carries the JSON-RPC stream; any log line written there (such as
+    # SQLAlchemy's development-mode echo) corrupts the protocol.
+    disable_sql_echo()
     server.run()
 
 

@@ -335,3 +335,42 @@ class TestUpdateInterviewComment:
             f"/api/interviews/{fake_id}", headers=AUTH_HEADER, json={"comment": "note"}
         )
         assert response.status_code == 404
+
+
+class TestProcessingEnqueueOrdering:
+    @pytest.mark.asyncio
+    async def test_job_is_sent_only_once_the_interview_is_committed(self, client):
+        """The worker runs in another process: when the job reaches it, the
+        interview row must already be visible outside the request's
+        transaction, or the worker drops the job and the upload hangs in
+        'queued'."""
+        from unittest.mock import AsyncMock, MagicMock, patch
+
+        from sqlalchemy import select as sa_select
+        from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+        from app.core.config import get_settings
+        from app.core.jobs import wait_for_pending_enqueues
+        from app.models import Interview
+
+        engine = create_async_engine(get_settings().database_url)
+        observer = async_sessionmaker(engine)
+        seen_by_worker: list[bool] = []
+
+        async def fake_enqueue(job, interview_id, **kwargs):
+            async with observer() as session:
+                row = await session.execute(
+                    sa_select(Interview.id).where(Interview.id == uuid.UUID(interview_id))
+                )
+                seen_by_worker.append(row.scalar_one_or_none() is not None)
+
+        pool = MagicMock()
+        pool.enqueue_job = AsyncMock(side_effect=fake_enqueue)
+        try:
+            with patch("app.api.interviews._get_arq_pool", new=AsyncMock(return_value=pool)):
+                await create_test_interview(client, filename="ordering.txt")
+                await wait_for_pending_enqueues()
+        finally:
+            await engine.dispose()
+
+        assert seen_by_worker == [True]
