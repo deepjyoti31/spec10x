@@ -215,3 +215,27 @@ class TestGenerateThemeDescription:
         desc = _generate_theme_description(insights)
         assert "pain point" in desc.lower()
         assert "positive" in desc.lower()
+
+
+def test_synthesis_lock_key_is_identical_across_processes():
+    """The API and the worker are separate processes; they must agree on the
+    advisory-lock key or the lock never excludes concurrent synthesis."""
+    import subprocess
+    import sys
+    import uuid as uuid_module
+
+    from app.services.synthesis import synthesis_lock_key
+
+    user_id = uuid_module.UUID("12345678-1234-5678-1234-567812345678")
+    code = (
+        "import uuid; from app.services.synthesis import synthesis_lock_key; "
+        f"print(synthesis_lock_key(uuid.UUID('{user_id}')))"
+    )
+    keys = {
+        subprocess.run(
+            [sys.executable, "-c", code], capture_output=True, text=True, check=True
+        ).stdout.strip()
+        for _ in range(3)
+    }
+    assert keys == {str(synthesis_lock_key(user_id))}
+    assert 0 <= synthesis_lock_key(user_id) < 2**63

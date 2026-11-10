@@ -11,6 +11,7 @@ import uuid
 from datetime import datetime, timezone
 from collections import defaultdict
 from difflib import SequenceMatcher
+from functools import lru_cache
 
 from sqlalchemy import select, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -48,6 +49,21 @@ SUFFIX_NORMALIZATIONS = [
     (r"ment$", ""),       # improvement → improve (rough)
 ]
 
+_COMPILED_SUFFIX_NORMALIZATIONS = [
+    (re.compile(pattern), replacement) for pattern, replacement in SUFFIX_NORMALIZATIONS
+]
+_WHITESPACE = re.compile(r"\s+")
+
+
+def synthesis_lock_key(user_id: uuid.UUID) -> int:
+    """Advisory-lock key for a user's synthesis, identical in every process.
+
+    Must not use hash(): Python randomizes str hashes per process, so the API
+    and the worker would take different locks and never exclude each other.
+    Folded into the signed 63-bit range pg_advisory_xact_lock(bigint) takes.
+    """
+    return uuid.UUID(str(user_id)).int & 0x7FFF_FFFF_FFFF_FFFF
+
 
 async def synthesize_themes(
     db: AsyncSession,
@@ -73,7 +89,7 @@ async def synthesize_themes(
 
     # ── Concurrency safety: acquire advisory lock ──
     # Use user_id hash as lock key to prevent parallel synthesis for same user
-    lock_key = hash(str(user_id)) % (2**31)  # PostgreSQL advisory lock needs int
+    lock_key = synthesis_lock_key(user_id)
     try:
         await db.execute(text(f"SELECT pg_advisory_xact_lock({lock_key})"))
         logger.debug(f"Acquired advisory lock {lock_key} for user {user_id}")
@@ -209,6 +225,7 @@ async def synthesize_themes(
 
 # ─── Normalization & Matching ────────────────────────────
 
+@lru_cache(maxsize=4096)
 def _normalize_theme_name(name: str) -> str:
     """Normalize a theme name for grouping.
     
@@ -218,20 +235,21 @@ def _normalize_theme_name(name: str) -> str:
     # Replace common separators
     name = name.replace("_", " ").replace("-", " ")
     # Remove extra whitespace
-    name = re.sub(r"\s+", " ", name).strip()
+    name = _WHITESPACE.sub(" ", name).strip()
     # Remove stop words
     words = [w for w in name.split() if w not in STOP_WORDS]
     return " ".join(words) if words else name
 
 
+@lru_cache(maxsize=4096)
 def _normalize_for_comparison(name: str) -> str:
     """Deeper normalization for fuzzy comparison — strips suffixes too."""
     normalized = _normalize_theme_name(name)
     words = normalized.split()
     stemmed = []
     for word in words:
-        for pattern, replacement in SUFFIX_NORMALIZATIONS:
-            word = re.sub(pattern, replacement, word)
+        for pattern, replacement in _COMPILED_SUFFIX_NORMALIZATIONS:
+            word = pattern.sub(replacement, word)
         if word:  # Don't add empty strings
             stemmed.append(word)
     return " ".join(stemmed)
@@ -258,6 +276,31 @@ def _similarity(a: str, b: str) -> float:
     
     # SequenceMatcher for fuzzy matching
     return SequenceMatcher(None, a_deep, b_deep).ratio()
+
+
+def similarity_reaching(a: str, b: str, floor: float) -> float:
+    """``_similarity(a, b)`` whenever that can be >= ``floor``; otherwise
+    0.0 without running SequenceMatcher.
+
+    SequenceMatcher.ratio() is at most 2*min(len)/(len_a + len_b), so a short
+    theme name against a long ticket body can be ruled out from lengths
+    alone. Equal and substring cases still go through ``_similarity``, so
+    every result at or above ``floor`` is exactly what it would have been.
+    """
+    if a == b:
+        return 1.0
+    a_deep = _normalize_for_comparison(a)
+    b_deep = _normalize_for_comparison(b)
+    total = len(a_deep) + len(b_deep)
+    if (
+        total
+        and a_deep != b_deep
+        and a_deep not in b_deep
+        and b_deep not in a_deep
+        and 2 * min(len(a_deep), len(b_deep)) / total < floor
+    ):
+        return 0.0
+    return _similarity(a, b)
 
 
 # Threshold for considering two theme names as the same

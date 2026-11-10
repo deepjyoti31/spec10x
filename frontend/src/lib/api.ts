@@ -14,9 +14,34 @@ interface RequestOptions extends RequestInit {
 
 class ApiClient {
   private baseUrl: string;
+  private tokenProvider: (() => Promise<string | null>) | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
+  }
+
+  /**
+   * Register where fresh ID tokens come from (Firebase caches the token and
+   * refreshes it shortly before its one-hour expiry). Callers keep passing
+   * the session token they hold, which only signals "authenticated"; the
+   * header always carries a current token, so nothing has to re-render or
+   * refetch when the token rotates.
+   */
+  setTokenProvider(provider: (() => Promise<string | null>) | null) {
+    this.tokenProvider = provider;
+  }
+
+  async resolveToken(token?: string | null): Promise<string | null> {
+    if (!token) return null;
+    if (this.tokenProvider) {
+      try {
+        const fresh = await this.tokenProvider();
+        if (fresh) return fresh;
+      } catch {
+        // Fall back to the token the caller holds.
+      }
+    }
+    return token;
   }
 
   private async request<T>(
@@ -30,8 +55,9 @@ class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    const authToken = await this.resolveToken(token);
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
     }
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -64,8 +90,9 @@ class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    const authToken = await this.resolveToken(token);
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
     }
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -716,7 +743,7 @@ class ApiClient {
 
     const response = await fetch(`${this.baseUrl}/api/survey-import/validate`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${await this.resolveToken(token)}` },
       body: formData,
     });
 
@@ -736,7 +763,7 @@ class ApiClient {
 
     const response = await fetch(`${this.baseUrl}/api/survey-import/confirm`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${await this.resolveToken(token)}` },
       body: formData,
     });
 
@@ -760,7 +787,7 @@ class ApiClient {
 
   async downloadSurveyTemplate(token: string): Promise<Blob> {
     const response = await fetch(`${this.baseUrl}/api/survey-import/template`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${await this.resolveToken(token)}` },
     });
 
     if (!response.ok) {

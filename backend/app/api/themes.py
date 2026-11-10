@@ -660,9 +660,14 @@ async def update_theme(
 
     needs_match_refresh = False
     if update.name is not None:
-        theme.name = update.name
+        name = update.name.strip()
+        if not name:
+            # Synthesis ignores blank theme suggestions, so a blank name would
+            # orphan every insight and drop the theme on the next run.
+            raise HTTPException(status_code=422, detail="Theme name cannot be empty")
+        theme.name = name
         for insight in theme.insights:
-            insight.theme_suggestion = update.name
+            insight.theme_suggestion = name
         needs_match_refresh = True
 
     if update.priority_state is not None:

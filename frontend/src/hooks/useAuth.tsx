@@ -78,25 +78,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
         }
 
-        // onIdTokenChanged (not onAuthStateChanged): it also fires when the
-        // SDK refreshes the hourly ID token, so API calls never go out with
-        // an expired token. The backend profile is only re-fetched when the
-        // signed-in account actually changes.
+        // Firebase ID tokens expire after one hour. Every API request asks
+        // the SDK for a current token (it caches and refreshes on its own), so
+        // the `token` in state stays fixed for the session: rotating it would
+        // make every data hook refetch and every page flash its loading state.
+        // onIdTokenChanged also fires on refresh; the profile is only
+        // re-verified when the signed-in account changes.
         let verifiedUid: string | null = null;
+        let currentUser: FirebaseUser | null = null;
+        api.setTokenProvider(async () => (currentUser ? currentUser.getIdToken() : null));
+
         const unsubscribe = onTokenChange(async (fbUser) => {
+            currentUser = fbUser;
             setFirebaseUser(fbUser);
 
             if (fbUser) {
+                if (verifiedUid === fbUser.uid) return;
                 try {
                     const idToken = await fbUser.getIdToken();
+                    // Verify token with our backend & get/create user
+                    const apiUser = await api.verifyToken(idToken);
+                    verifiedUid = fbUser.uid;
                     setToken(idToken);
-
-                    if (verifiedUid !== fbUser.uid) {
-                        // Verify token with our backend & get/create user
-                        const apiUser = await api.verifyToken(idToken);
-                        verifiedUid = fbUser.uid;
-                        setUser(apiUser);
-                    }
+                    setUser(apiUser);
                 } catch (error) {
                     console.error('Auth verification failed:', error);
                     verifiedUid = null;
@@ -112,7 +116,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => {
+            unsubscribe();
+            api.setTokenProvider(null);
+        };
     }, []);
 
     const logout = async () => {

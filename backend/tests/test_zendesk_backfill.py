@@ -312,3 +312,49 @@ async def test_backfill_endpoint(client):
     runs = runs_resp.json()
     assert len(runs) >= 1
     assert runs[0]["run_type"] == "backfill"
+
+
+@pytest.mark.asyncio
+async def test_backfill_page_cap_keeps_resume_cursor():
+    """Stopping at the page cap must hand back the last cursor so the next
+    run resumes there, instead of restarting (backfill) or falling back to
+    the last 24 hours (incremental) and skipping everything in between."""
+    with _make_mock_connection() as (conn, _), patch(
+        "app.connectors.zendesk._MAX_PAGES", 2
+    ):
+        connector = _make_connector(conn)
+        pages = [
+            _make_zendesk_page([_make_ticket(1)], after_cursor="cursor_p1"),
+            _make_zendesk_page([_make_ticket(2)], after_cursor="cursor_p2"),
+        ]
+        calls = 0
+
+        async def mock_get(url, **kwargs):
+            nonlocal calls
+            page = pages[calls]
+            calls += 1
+            return Response(200, json=page, request=Request("GET", url))
+
+        with patch("httpx.AsyncClient.get", new_callable=AsyncMock, side_effect=mock_get):
+            result = await connector.backfill(MagicMock(), cursor_in=None)
+
+        assert calls == 2
+        assert result.records_seen == 2
+        assert result.cursor_out == {"after_cursor": "cursor_p2"}
+
+
+@pytest.mark.asyncio
+async def test_incremental_page_without_cursor_carries_previous_cursor():
+    with _make_mock_connection() as (conn, _):
+        connector = _make_connector(conn)
+        page = _make_zendesk_page([], after_cursor=None, end_of_stream=True)
+
+        async def mock_get(url, **kwargs):
+            return Response(200, json=page, request=Request("GET", url))
+
+        with patch("httpx.AsyncClient.get", new_callable=AsyncMock, side_effect=mock_get):
+            result = await connector.sync_incremental(
+                MagicMock(), cursor_in={"after_cursor": "kept_cursor"}
+            )
+
+        assert result.cursor_out == {"after_cursor": "kept_cursor"}

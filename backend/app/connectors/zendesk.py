@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import base64
 import logging
+import re
 import time
 from datetime import datetime, timezone, timedelta
 from typing import Any
@@ -27,6 +28,7 @@ _ZENDESK_TIMEOUT = httpx.Timeout(30.0, connect=10.0)
 
 # Maximum pages to fetch per sync run (safety valve)
 _MAX_PAGES = 100
+_SUBDOMAIN_PATTERN = re.compile(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?")
 
 # Default backfill window in days
 _DEFAULT_BACKFILL_DAYS = 90
@@ -60,9 +62,19 @@ class ZendeskConnector(BaseConnector):
         elif subdomain.startswith("https://"):
             subdomain = subdomain[8:]
             
+        subdomain = subdomain.rstrip("/")
         if subdomain.endswith(".zendesk.com"):
             subdomain = subdomain[:-12]
-            
+
+        # The value is spliced into the API host name, so anything beyond a
+        # plain DNS label (e.g. "internal-host#" or "evil.com/x?") would send
+        # requests, with the stored credentials, to a different host.
+        if not _SUBDOMAIN_PATTERN.fullmatch(subdomain):
+            raise ConnectorError(
+                "Invalid Zendesk subdomain — use the part before .zendesk.com, "
+                "e.g. 'acme' for acme.zendesk.com",
+                retryable=False,
+            )
         return subdomain
 
     @property
@@ -175,6 +187,16 @@ class ZendeskConnector(BaseConnector):
             self.connection.last_error_summary = error_msg
             return False
 
+        except ConnectorError as exc:
+            # Bad configuration (e.g. an invalid subdomain) — report it on the
+            # connection like any other validation failure.
+            transition_source_connection(
+                self.connection,
+                SourceConnectionStatus.error,
+            )
+            self.connection.last_error_summary = str(exc)
+            return False
+
         except httpx.ConnectError:
             error_msg = f"Cannot reach {self.subdomain}.zendesk.com — check subdomain"
             logger.error("Zendesk connect error for subdomain=%s", self.subdomain)
@@ -225,14 +247,19 @@ class ZendeskConnector(BaseConnector):
         self,
         client: httpx.AsyncClient,
         start_url: str,
+        cursor_in: dict[str, Any] | None = None,
     ) -> tuple[list[dict[str, Any]], dict[str, Any] | None]:
         """Paginate through all ticket pages.
 
-        Returns (all_tickets, cursor_out).
+        Returns (all_tickets, cursor_out). cursor_out is always the newest
+        cursor seen (falling back to cursor_in), including when the page cap
+        stops the walk early, so the next run resumes exactly where this one
+        stopped instead of restarting or skipping ahead.
         """
         all_tickets: list[dict[str, Any]] = []
         url = start_url
         pages = 0
+        latest_cursor = (cursor_in or {}).get("after_cursor")
 
         while url and pages < _MAX_PAGES:
             pages += 1
@@ -243,6 +270,8 @@ class ZendeskConnector(BaseConnector):
 
             end_of_stream = data.get("end_of_stream", False)
             after_cursor = data.get("after_cursor")
+            if after_cursor:
+                latest_cursor = after_cursor
 
             logger.info(
                 "Zendesk page %d: fetched %d tickets, end_of_stream=%s",
@@ -252,14 +281,11 @@ class ZendeskConnector(BaseConnector):
             )
 
             if end_of_stream or not data.get("after_url"):
-                cursor_out = {"after_cursor": after_cursor} if after_cursor else None
-                return all_tickets, cursor_out
+                break
 
             url = data["after_url"]
 
-        # Hit max pages
-        after_cursor = None
-        cursor_out = {"after_cursor": after_cursor} if after_cursor else None
+        cursor_out = {"after_cursor": latest_cursor} if latest_cursor else None
         return all_tickets, cursor_out
 
     async def backfill(
@@ -299,7 +325,7 @@ class ZendeskConnector(BaseConnector):
         try:
             async with httpx.AsyncClient(timeout=_ZENDESK_TIMEOUT) as client:
                 raw_tickets, cursor_out = await self._paginate_tickets(
-                    client, start_url
+                    client, start_url, cursor_in=cursor_in
                 )
         except ConnectorError:
             raise
@@ -355,7 +381,7 @@ class ZendeskConnector(BaseConnector):
         try:
             async with httpx.AsyncClient(timeout=_ZENDESK_TIMEOUT) as client:
                 raw_tickets, cursor_out = await self._paginate_tickets(
-                    client, start_url
+                    client, start_url, cursor_in=cursor_in
                 )
         except ConnectorError:
             raise

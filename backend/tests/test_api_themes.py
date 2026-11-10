@@ -55,3 +55,36 @@ class TestUpdateThemeComment:
         body = response.json()
         assert body["comment"] == "Escalated by CS — check again next sprint."
         assert body["name"] == "Slow export"
+
+
+class TestRenameTheme:
+    """Test PATCH /api/themes/{id} name field"""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("bad_name", ["", "   "])
+    async def test_blank_name_rejected(self, client, db_session, test_user, bad_name):
+        """A blank name is copied into every insight's theme_suggestion, which
+        synthesis skips, so the theme would silently drop out of the board."""
+        theme = Theme(user_id=test_user.id, name="Billing confusion", status=ThemeStatus.active)
+        db_session.add(theme)
+        await db_session.commit()
+
+        response = await client.patch(
+            f"/api/themes/{theme.id}", headers=AUTH_HEADER, json={"name": bad_name}
+        )
+        assert response.status_code == 422
+
+        await db_session.refresh(theme)
+        assert theme.name == "Billing confusion"
+
+    @pytest.mark.asyncio
+    async def test_name_is_trimmed(self, client, db_session, test_user):
+        theme = Theme(user_id=test_user.id, name="Old name", status=ThemeStatus.active)
+        db_session.add(theme)
+        await db_session.commit()
+
+        response = await client.patch(
+            f"/api/themes/{theme.id}", headers=AUTH_HEADER, json={"name": "  New name  "}
+        )
+        assert response.status_code == 200
+        assert response.json()["name"] == "New name"
