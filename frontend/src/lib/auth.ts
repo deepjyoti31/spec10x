@@ -14,6 +14,7 @@ import {
     GoogleAuthProvider,
     signOut,
     onAuthStateChanged,
+    onIdTokenChanged,
     sendEmailVerification,
     User,
     Auth,
@@ -114,6 +115,20 @@ export async function getIdToken(): Promise<string | null> {
     const user = auth.currentUser;
     if (!user) return null;
     return user.getIdToken();
+}
+
+/**
+ * Subscribe to ID-token changes: sign-in, sign-out, and the SDK's automatic
+ * hourly token refresh. Use this (not onAuthChange) to keep an API token
+ * current; Firebase ID tokens expire after one hour.
+ */
+export function onTokenChange(callback: (user: User | null) => void): () => void {
+    if (!auth) {
+        console.error('Firebase Auth is not initialized');
+        return () => { };
+    }
+
+    return onIdTokenChanged(auth, callback);
 }
 
 /**

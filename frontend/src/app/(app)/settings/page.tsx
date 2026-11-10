@@ -668,7 +668,7 @@ function DangerZonePanel() {
                         <div>
                             <h3 className="text-sm font-semibold text-white mb-1">Delete All Data</h3>
                             <p className="text-[11px]" style={{ color: '#8B8D97' }}>
-                                {dataDeleted ? 'All workspace data has been deleted.' : 'Permanently delete all interviews, insights, themes, and conversations. Your account will remain intact.'}
+                                {dataDeleted ? 'All workspace data has been deleted.' : 'Permanently delete all interviews, insights, themes, specs, and conversations. Your account will remain intact.'}
                             </p>
                         </div>
                         <button onClick={() => setConfirmAction('data')} disabled={dataDeleted || deletingData}
@@ -703,7 +703,7 @@ function DangerZonePanel() {
 
             {confirmAction === 'data' && (
                 <ConfirmModal danger title="Delete All Data"
-                    message="This will permanently delete all your interviews, insights, themes, and conversations. This action cannot be undone."
+                    message="This will permanently delete all your interviews, insights, themes, specs, and conversations. This action cannot be undone."
                     confirmLabel="Yes, Delete All Data"
                     onConfirm={() => { deleteData(); setConfirmAction(null); }}
                     onCancel={() => setConfirmAction(null)}

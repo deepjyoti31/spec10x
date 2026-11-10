@@ -172,3 +172,44 @@ async def test_validate_non_csv_file(client):
         headers=AUTH_HEADER,
     )
     assert resp.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_confirm_import_tolerates_invalid_nps_warning(client):
+    """An unparseable nps_score is only a validation warning, so the import
+    must still succeed (dropping the bad score) instead of failing with 500."""
+    import uuid
+
+    tag = uuid.uuid4().hex[:8]
+    csv_bytes = (
+        b"response_text,submitted_at,nps_score\n"
+        + f'"Bad nps {tag}","2026-03-15T10:30:00Z","n/a"\n'.encode()
+        + f'"Decimal nps {tag}","2026-03-15T11:30:00Z","8.5"\n'.encode()
+        + f'"Good nps {tag}","2026-03-15T12:30:00Z"," 9 "\n'.encode()
+    )
+    validation = validate_csv_bytes(csv_bytes)
+    assert validation["valid"] is True
+    assert validation["warnings"]
+
+    response = await client.post(
+        "/api/survey-import/confirm",
+        files={"file": (f"nps-{tag}.csv", csv_bytes, "text/csv")},
+        headers=AUTH_HEADER,
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["records_created"] == 3
+
+
+@pytest.mark.asyncio
+async def test_normalize_keeps_only_valid_nps_scores():
+    from app.connectors.csv_import import CSVImportConnector
+
+    connector = CSVImportConnector.__new__(CSVImportConnector)
+    signals = await connector.normalize(
+        [
+            {"response_text": "a", "submitted_at": "2026-03-15", "nps_score": "n/a"},
+            {"response_text": "b", "submitted_at": "2026-03-15", "nps_score": " 7 "},
+        ]
+    )
+    assert "nps_score" not in (signals[0].metadata_json or {})
+    assert signals[1].metadata_json["nps_score"] == 7

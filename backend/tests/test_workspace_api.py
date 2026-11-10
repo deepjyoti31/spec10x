@@ -310,3 +310,33 @@ async def test_stranger_cannot_touch_foreign_invites(multi_client):
         f"/api/workspace/members/{invite['id']}", headers=AUTH_HEADER
     )
     assert response.status_code == 404
+
+
+async def test_unverified_email_cannot_claim_an_invite(multi_client):
+    """A token for an unverified address must not unlock invites sent to it,
+    otherwise anyone could sign up as the invitee and join the workspace."""
+    from unittest.mock import patch
+
+    (owner_uid, owner_email, owner_name), (member_uid, member_email, member_name) = _fresh_pair()
+
+    multi_client.act_as(owner_uid, owner_email, owner_name)
+    invite = await _invite(multi_client, member_email)
+
+    multi_client.act_as(member_uid, member_email, member_name)
+    unverified_claims = {"uid": member_uid, "email": member_email, "email_verified": False}
+    with patch("app.core.auth.verify_firebase_token", return_value=unverified_claims):
+        response = await multi_client.get("/api/workspace/invites", headers=AUTH_HEADER)
+        assert response.status_code == 403
+        response = await multi_client.post(
+            f"/api/workspace/invites/{invite['id']}/accept", headers=AUTH_HEADER
+        )
+        assert response.status_code == 403
+
+    # Once verified, the same invite is claimable.
+    verified_claims = {**unverified_claims, "email_verified": True}
+    with patch("app.core.auth.verify_firebase_token", return_value=verified_claims):
+        response = await multi_client.post(
+            f"/api/workspace/invites/{invite['id']}/accept", headers=AUTH_HEADER
+        )
+        assert response.status_code == 200
+        assert response.json()["owner_email"] == owner_email

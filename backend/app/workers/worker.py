@@ -62,8 +62,10 @@ async def scheduled_connector_sync(ctx: dict) -> dict:
             .options(selectinload(SourceConnection.data_source))
         )
         result = await db.execute(stmt)
-        connections = [
-            conn
+        # Snapshot ids: a failed sync rolls the session back, which expires
+        # every loaded object, so each connection is reloaded per iteration.
+        connection_ids = [
+            conn.id
             for conn in result.scalars().all()
             if conn.data_source.connection_method == ConnectionMethod.api_token
         ]
@@ -78,11 +80,20 @@ async def scheduled_connector_sync(ctx: dict) -> dict:
         suspended_count = suspended_result.scalar() or 0
 
         logger.info(
-            f"Scheduled sync: {len(connections)} eligible API-token sources, "
+            f"Scheduled sync: {len(connection_ids)} eligible API-token sources, "
             f"{suspended_count} suspended (skipped)"
         )
-        for connection in connections:
+        for connection_id in connection_ids:
             try:
+                connection = (
+                    await db.execute(
+                        select(SourceConnection)
+                        .where(SourceConnection.id == connection_id)
+                        .options(selectinload(SourceConnection.data_source))
+                    )
+                ).scalar_one_or_none()
+                if connection is None:
+                    continue
                 sync_run = await run_incremental_sync(
                     db,
                     connection=connection,
@@ -97,7 +108,7 @@ async def scheduled_connector_sync(ctx: dict) -> dict:
                 failed += 1
                 await db.rollback()
                 logger.exception(
-                    f"Scheduled sync failed for connection {connection.id}"
+                    f"Scheduled sync failed for connection {connection_id}"
                 )
 
     logger.info(

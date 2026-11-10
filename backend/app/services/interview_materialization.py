@@ -26,6 +26,8 @@ from datetime import datetime, timezone
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.jobs import enqueue_after_commit
+
 from app.models import (
     FileType,
     Insight,
@@ -93,6 +95,12 @@ def _build_interview_metadata(meeting: MaterializedMeeting) -> dict:
     if meeting.participants:
         metadata["participants"] = meeting.participants
     return metadata
+
+
+def _enqueue_processing_after_commit(db: AsyncSession, interview_id: uuid.UUID) -> None:
+    """Enqueue processing once the sync's transaction commits — before that,
+    the worker cannot see the interview yet and would drop the job."""
+    enqueue_after_commit(db, lambda: _enqueue_processing(str(interview_id)))
 
 
 async def _reset_interview_analysis(
@@ -182,7 +190,7 @@ async def materialize_meeting(
             checksum=checksum,
         )
         await db.flush()
-        await _enqueue_processing(str(interview.id))
+        _enqueue_processing_after_commit(db, interview.id)
         logger.info(
             "Materialized interview updated: provider=%s external_id=%s interview=%s",
             meeting.provider,
@@ -217,7 +225,7 @@ async def materialize_meeting(
         native_entity_id=interview.id,
         checksum=checksum,
     )
-    await _enqueue_processing(str(interview.id))
+    _enqueue_processing_after_commit(db, interview.id)
     logger.info(
         "Materialized interview created: provider=%s external_id=%s interview=%s",
         meeting.provider,

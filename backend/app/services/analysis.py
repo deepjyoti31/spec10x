@@ -198,14 +198,17 @@ def _real_analyze(
         for i in data.get("insights", []):
             # Find quote position in transcript
             quote = i.get("quote", "")
-            quote_start = transcript.find(quote) if quote else None
-            quote_end = (quote_start + len(quote)) if quote_start and quote_start >= 0 else None
+            # find() returns -1 when absent; 0 is a valid position (a quote
+            # that opens the transcript), so compare explicitly.
+            found_at = transcript.find(quote) if quote else -1
+            quote_start = found_at if found_at >= 0 else None
+            quote_end = (found_at + len(quote)) if found_at >= 0 else None
 
             result.insights.append(InsightData(
                 category=i.get("category", "suggestion"),
                 title=i.get("title", ""),
                 quote=quote,
-                quote_start=quote_start if quote_start and quote_start >= 0 else None,
+                quote_start=quote_start,
                 quote_end=quote_end,
                 speaker=i.get("speaker"),
                 theme_suggestion=i.get("theme_suggestion", "General Feedback"),

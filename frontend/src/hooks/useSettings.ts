@@ -50,9 +50,12 @@ export function useProductContextSettings() {
         setFetching(true);
       }
       try {
+        // Send empty strings as-is: the API treats "" as "clear this field"
+        // and an omitted field as "leave unchanged", so `|| undefined` made
+        // it impossible to remove a saved description or website URL.
         const result = await api.updateProductContext(token, {
-          description: description || undefined,
-          website_url: websiteUrl || undefined,
+          description,
+          website_url: websiteUrl,
         });
         setContext(result);
         setSuccess(true);

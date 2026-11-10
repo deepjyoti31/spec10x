@@ -16,6 +16,7 @@ Design (PRD-10-01):
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 
@@ -98,7 +99,7 @@ def _parse_generated_tasks(data: dict, valid_refs: set[int]) -> list[dict]:
     return tasks
 
 
-def generate_tasks_for_spec(spec: Spec) -> list[dict]:
+async def generate_tasks_for_spec(spec: Spec) -> list[dict]:
     """One bounded Gemini call returning the sanitized task list.
 
     Raises TaskGenerationError instead of persisting partial output —
@@ -120,7 +121,8 @@ def generate_tasks_for_spec(spec: Spec) -> list[dict]:
         max_tasks=MAX_TASKS,
     )
     try:
-        response = client.models.generate_content(
+        response = await asyncio.to_thread(
+            client.models.generate_content,
             model=settings.gemini_model,
             contents=prompt,
             config=types.GenerateContentConfig(

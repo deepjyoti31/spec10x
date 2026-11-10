@@ -157,3 +157,31 @@ async def test_validate_endpoint(client):
     assert validate_resp.status_code == 200
     data = validate_resp.json()
     assert data["status"] == "connected"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "subdomain",
+    ["internal-host#", "evil.com/x?", "acme.zendesk.com@evil.com", "a b", "-acme"],
+)
+async def test_validate_rejects_subdomains_that_change_the_host(subdomain):
+    """The subdomain is spliced into the API host; anything that is not a
+    plain DNS label must fail validation without making any request."""
+    with _make_mock_connection(subdomain=subdomain) as (conn, _):
+        connector = _make_connector(conn)
+        with patch("httpx.AsyncClient.get", new_callable=AsyncMock) as mock_get:
+            result = await connector.validate()
+
+        assert result is False
+        mock_get.assert_not_called()
+        assert conn.status == SourceConnectionStatus.error
+        assert "subdomain" in conn.last_error_summary.lower()
+
+
+@pytest.mark.parametrize(
+    "raw, expected",
+    [("acme", "acme"), ("https://Acme.zendesk.com/", "acme"), ("my-co", "my-co")],
+)
+def test_subdomain_accepts_normal_forms(raw, expected):
+    with _make_mock_connection(subdomain=raw) as (conn, _):
+        assert _make_connector(conn).subdomain == expected

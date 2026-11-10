@@ -7,6 +7,8 @@ import uuid
 from unittest.mock import patch, AsyncMock, MagicMock
 
 import pytest
+
+from app.core.jobs import wait_for_pending_enqueues
 from httpx import Response, Request
 from sqlalchemy import select
 
@@ -91,6 +93,13 @@ def mock_enqueue(monkeypatch):
     return stub
 
 
+async def _committed_enqueue_count(db_session, stub) -> int:
+    """Processing jobs are sent only after the sync's transaction commits."""
+    await db_session.commit()
+    await wait_for_pending_enqueues()
+    return stub.await_count
+
+
 # ── Transcript building ────────────────────────────────────
 
 def test_build_transcript_text_labels_speakers():
@@ -134,8 +143,11 @@ async def test_backfill_materializes_interviews(db_session, test_user, mock_enqu
             select(Interview).where(
                 Interview.user_id == test_user.id,
                 Interview.file_hash.isnot(None),
-                Interview.filename.in_(
-                    ["Discovery call with Acme", "Churn interview with Globex"]
+                # Scoped to this connection: the suite DB is never truncated.
+                Interview.id.in_(
+                    select(SourceItem.native_entity_id).where(
+                        SourceItem.source_connection_id == connection.id
+                    )
                 ),
             )
         )
@@ -159,7 +171,7 @@ async def test_backfill_materializes_interviews(db_session, test_user, mock_enqu
     assert all(item.native_entity_type == "interview" for item in source_items)
 
     # Each new interview is enqueued for the standard pipeline
-    assert mock_enqueue.await_count == 2
+    assert await _committed_enqueue_count(db_session, mock_enqueue) == 2
 
 
 @pytest.mark.asyncio
@@ -191,7 +203,7 @@ async def test_backfill_is_idempotent(db_session, test_user, mock_enqueue):
         ).scalars().all()
     )
     assert count == 1
-    assert mock_enqueue.await_count == 1
+    assert await _committed_enqueue_count(db_session, mock_enqueue) == 1
 
 
 @pytest.mark.asyncio
@@ -227,7 +239,7 @@ async def test_changed_transcript_reprocesses(db_session, test_user, mock_enqueu
     ).scalar_one()
     interview = await db_session.get(Interview, item.native_entity_id)
     assert "A corrected transcript." in interview.transcript
-    assert mock_enqueue.await_count == 2  # initial + reprocess
+    assert await _committed_enqueue_count(db_session, mock_enqueue) == 2  # initial + reprocess
 
 
 @pytest.mark.asyncio
@@ -265,7 +277,7 @@ async def test_user_deleted_interview_is_not_recreated(db_session, test_user, mo
         )
     ).scalar_one_or_none()
     assert remaining is None
-    assert mock_enqueue.await_count == 1
+    assert await _committed_enqueue_count(db_session, mock_enqueue) == 1
 
 
 # ── Incremental sync ───────────────────────────────────────
@@ -370,3 +382,28 @@ async def test_delete_imported_data_removes_interviews(db_session, test_user, mo
         )
     ).scalars().all()
     assert remaining_items == []
+
+
+@pytest.mark.asyncio
+async def test_processing_is_enqueued_only_after_commit(db_session, test_user, mock_enqueue):
+    """The worker must never receive a job for an interview it cannot see yet:
+    nothing is sent while the sync transaction is open, and a rollback
+    discards the pending jobs."""
+    workspace, connection, data_source = await _make_connection(db_session, test_user)
+    await db_session.commit()
+    connector = FirefliesConnector(db=db_session, connection=connection)
+
+    page = _graphql_page([_transcript_record("ff-order-1", "Ordering meeting")])
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=page):
+        await connector.backfill(MagicMock())
+    await wait_for_pending_enqueues()
+    mock_enqueue.assert_not_awaited()
+
+    await db_session.rollback()
+    await wait_for_pending_enqueues()
+    mock_enqueue.assert_not_awaited()
+    await db_session.refresh(connection)  # rollback expired it
+
+    with patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=page):
+        await connector.backfill(MagicMock())
+    assert await _committed_enqueue_count(db_session, mock_enqueue) == 1

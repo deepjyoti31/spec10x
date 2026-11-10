@@ -38,6 +38,7 @@ async def process_interview(interview_id: str) -> dict:
     Returns:
         dict with processing results summary
     """
+    local_path = None
     async with get_session_factory()() as db:
         try:
             # Load interview
@@ -54,7 +55,6 @@ async def process_interview(interview_id: str) -> dict:
             user_id = str(interview.user_id)
 
             # ── Step 1+2: Obtain transcript ──
-            local_path = None
             if interview.transcript and not interview.storage_path:
                 # Materialized by a connector sync (e.g. Fireflies) —
                 # transcript is already present, nothing to download.
@@ -207,10 +207,6 @@ async def process_interview(interview_id: str) -> dict:
 
             await db.commit()
 
-            # Clean up temp file
-            if local_path:
-                _cleanup(local_path)
-
             logger.info(f"🚀 Processing pipeline FINISHED for interview {interview_id}")
 
             return {
@@ -256,6 +252,12 @@ async def process_interview(interview_id: str) -> dict:
 
             return {"error": str(e)}
 
+        finally:
+            # Remove the downloaded copy on every path, not just success —
+            # failed runs would otherwise leave customer files on disk.
+            if local_path:
+                _cleanup(local_path)
+
 
 async def _download_file(interview: Interview) -> str:
     """Download file from storage to a temp directory."""
@@ -263,10 +265,14 @@ async def _download_file(interview: Interview) -> str:
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     tmp.close()
 
-    download_file(
-        object_name=interview.storage_path,
-        local_path=tmp.name,
-    )
+    try:
+        download_file(
+            object_name=interview.storage_path,
+            local_path=tmp.name,
+        )
+    except Exception:
+        _cleanup(tmp.name)
+        raise
     logger.info(f"Downloaded {interview.filename} to {tmp.name}")
     return tmp.name
 

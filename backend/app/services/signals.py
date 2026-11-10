@@ -36,7 +36,7 @@ from app.models import (
     Workspace,
 )
 from app.services.sources import get_or_create_default_workspace, upsert_source_item
-from app.services.synthesis import _normalize_theme_name, _similarity
+from app.services.synthesis import _normalize_theme_name, similarity_reaching
 
 
 NATIVE_PROVIDER = "native_upload"
@@ -241,7 +241,12 @@ def match_signal_to_themes(
             if theme_name in candidate:
                 theme_best_score = 1.0
                 break
-            theme_best_score = max(theme_best_score, _similarity(theme_name, candidate))
+            # Scores below the threshold never decide the match (see below),
+            # so hopeless comparisons are skipped from string lengths alone.
+            theme_best_score = max(
+                theme_best_score,
+                similarity_reaching(theme_name, candidate, THEME_MATCH_THRESHOLD),
+            )
 
         if theme_best_score > best_score:
             best_theme = theme
@@ -543,7 +548,6 @@ async def ensure_native_interview_signals(
     )
     insight_rows = insights_result.all()
     active_insight_ids = {row.id for row in insight_rows}
-    interview_ids = sorted({row.interview_id for row in insight_rows})
 
     native_result = await db.execute(
         select(Signal.native_entity_id).where(
@@ -571,9 +575,15 @@ async def ensure_native_interview_signals(
         )
 
     missing_insight_ids = active_insight_ids - existing_native_ids
-    if not missing_insight_ids and not (existing_native_ids - active_insight_ids):
+    if not missing_insight_ids:
         return
 
+    # Re-sync only the interviews that actually lack signals. Re-syncing every
+    # interview here turned one unsyncable insight into a full re-sync on
+    # every read request.
+    interview_ids = sorted(
+        {row.interview_id for row in insight_rows if row.id in missing_insight_ids}
+    )
     for interview_id in interview_ids:
         await sync_interview_signals_for_interview(db, interview_id=interview_id)
 

@@ -90,3 +90,27 @@ class TestSegmentSplitting:
 
 
 
+
+
+def test_quote_at_start_of_transcript_keeps_its_position(mock_genai_client_global):
+    """A quote found at index 0 must keep quote_start=0 (0 is not "missing")."""
+    import json
+    from unittest.mock import Mock
+
+    quote = "The export button is impossible to find."
+    mock_genai_client_global.models.generate_content.return_value = Mock(
+        text=json.dumps(
+            {
+                "summary": "s",
+                "language": "en",
+                "speakers": [],
+                "insights": [
+                    {"category": "pain_point", "title": "Export hidden", "quote": quote}
+                ],
+            }
+        )
+    )
+    result = analyze_transcript(f"{quote} And the rest of the call.")
+    insight = result.insights[0]
+    assert insight.quote_start == 0
+    assert insight.quote_end == len(quote)

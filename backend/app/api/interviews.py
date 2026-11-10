@@ -15,6 +15,7 @@ from arq.connections import RedisSettings
 from app.core.auth import get_scoped_user
 from app.core.config import get_settings
 from app.core.database import get_db
+from app.core.jobs import enqueue_after_commit
 from app.core.storage import generate_upload_url
 from app.models import (
     User,
@@ -68,6 +69,18 @@ async def _get_arq_pool():
             RedisSettings.from_dsn(settings.redis_url),
         )
     return _arq_pool
+
+
+def _enqueue_processing_after_commit(db: AsyncSession, interview_id: uuid.UUID) -> None:
+    async def send() -> None:
+        pool = await _get_arq_pool()
+        await pool.enqueue_job(
+            "process_interview_job",
+            str(interview_id),
+            _queue_name="spec10x:jobs",
+        )
+
+    enqueue_after_commit(db, send)
 
 
 async def _load_owned_interview(
@@ -204,13 +217,9 @@ async def create_interview(
     db.add(interview)
     await db.flush()
 
-    # Enqueue processing job
-    pool = await _get_arq_pool()
-    await pool.enqueue_job(
-        "process_interview_job",
-        str(interview.id),
-        _queue_name="spec10x:jobs",
-    )
+    # Enqueue processing once the interview row is committed (get_db commits
+    # after this handler); earlier, the worker may not see it yet.
+    _enqueue_processing_after_commit(db, interview.id)
 
     return interview
 
@@ -300,13 +309,8 @@ async def bulk_reanalyze_interviews(
 
     if succeeded_ids:
         await _refresh_after_interview_mutation(db, user_id=current_user.id)
-        pool = await _get_arq_pool()
         for interview_id in succeeded_ids:
-            await pool.enqueue_job(
-                "process_interview_job",
-                str(interview_id),
-                _queue_name="spec10x:jobs",
-            )
+            _enqueue_processing_after_commit(db, interview_id)
 
     return {
         "requested_count": len(request.interview_ids),
@@ -458,12 +462,7 @@ async def reanalyze_interview(
     await _refresh_after_interview_mutation(db, user_id=current_user.id)
     await db.refresh(interview)
 
-    pool = await _get_arq_pool()
-    await pool.enqueue_job(
-        "process_interview_job",
-        str(interview.id),
-        _queue_name="spec10x:jobs",
-    )
+    _enqueue_processing_after_commit(db, interview.id)
 
     return interview
 

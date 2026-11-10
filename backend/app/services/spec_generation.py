@@ -14,6 +14,7 @@ Design (PRD-08-01):
     EVIDENCE_VOICE_CAP voice signals plus EVIDENCE_METRIC_CAP metric windows
 """
 
+import asyncio
 import json
 import logging
 
@@ -136,7 +137,7 @@ def _parse_generated_sections(data: dict, valid_refs: set[int]) -> list[dict]:
     return sections
 
 
-def _generate_brief(
+async def _generate_brief(
     *,
     theme: Theme,
     evidence: list[dict],
@@ -161,7 +162,8 @@ def _generate_brief(
         source_summary=source_summary,
         evidence_block=_format_evidence_block(evidence),
     )
-    response = client.models.generate_content(
+    response = await asyncio.to_thread(
+        client.models.generate_content,
         model=settings.gemini_model,
         contents=prompt,
         config=types.GenerateContentConfig(
@@ -204,7 +206,7 @@ async def generate_spec_for_theme(
     spec.model_used = settings.gemini_model
 
     try:
-        data = _generate_brief(
+        data = await _generate_brief(
             theme=theme,
             evidence=evidence,
             score=score,

@@ -261,7 +261,10 @@ async def update_spec(
         spec.is_edited = True
 
     if body.sections:
-        sections = list(spec.sections_json or [])
+        # Copy before editing: mutating the loaded dicts in place would also
+        # change the ORM's committed snapshot, so the reassigned list would
+        # compare equal and the UPDATE of sections_json would be skipped.
+        sections = [dict(section) for section in (spec.sections_json or [])]
         sections_by_key = {section["key"]: section for section in sections}
         for update in body.sections:
             if update.key not in sections_by_key:
@@ -269,8 +272,8 @@ async def update_spec(
                     status_code=422, detail=f"Unknown spec section: {update.key}"
                 )
             sections_by_key[update.key]["content"] = update.content
-        # Reassign so SQLAlchemy detects the JSON mutation
-        spec.sections_json = [dict(section) for section in sections]
+        spec.sections_json = sections
+        flag_modified(spec, "sections_json")
         spec.is_edited = True
 
     await db.flush()
@@ -339,7 +342,7 @@ async def generate_spec_tasks(
         )
 
     try:
-        tasks = generate_tasks_for_spec(spec)
+        tasks = await generate_tasks_for_spec(spec)
     except TaskGenerationError as exc:
         raise HTTPException(
             status_code=502,

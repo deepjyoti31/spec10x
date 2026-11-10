@@ -13,7 +13,7 @@ from app.core.database import get_db
 from app.models import (
     User, Interview, Theme, Insight, AskConversation, Usage,
     Workspace, SourceConnection, SourceConnectionStatus, SourceItem, SyncRun, Signal,
-    WorkspaceKind,
+    WorkspaceKind, Spec,
 )
 from app.schemas import (
     UserResponse, UserUpdateRequest,
@@ -50,6 +50,7 @@ async def update_product_context(
     If a website URL is provided, uses Gemini UrlContext to extract
     a product fingerprint from the website.
     """
+    user_id = current_user.id  # read before any rollback expires the instance
     from app.services.product_context import save_product_context
 
     try:
@@ -70,7 +71,7 @@ async def update_product_context(
         )
     except Exception as e:
         await db.rollback()
-        logger.error(f"Error updating product context for user {current_user.id}: {e}")
+        logger.error(f"Error updating product context for user {user_id}: {e}")
         raise HTTPException(
             status_code=500,
             detail="Failed to update product context",
@@ -85,6 +86,7 @@ async def update_me(
     db: AsyncSession = Depends(get_db),
 ):
     """Update the current user's profile (name, avatar_url)."""
+    user_id = current_user.id  # read before any rollback expires the instance
     if data.name is not None:
         current_user.name = data.name.strip()
     if data.avatar_url is not None:
@@ -94,7 +96,7 @@ async def update_me(
         await db.refresh(current_user)
     except Exception as e:
         await db.rollback()
-        logger.error(f"Error updating user {current_user.id}: {e}")
+        logger.error(f"Error updating user {user_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to update profile")
     return current_user
 
@@ -107,11 +109,13 @@ async def delete_my_data(
     """
     Delete all ingested data for the current user but keep integration connections intact.
 
-    Deleted: interviews, themes, insights, ask conversations, signals, source items,
-             and sync run history (so the next sync performs a clean backfill).
+    Deleted: interviews, themes, insights, specs (they quote customer evidence),
+             ask conversations, signals, source items, and sync run history
+             (so the next sync performs a clean backfill).
     Kept:    SourceConnection records — the user can re-sync or disconnect from the
              Integrations page without needing to re-enter credentials.
     """
+    user_id = current_user.id  # read before any rollback expires the instance
     try:
         # ── Resolve the user's personal workspace ──────────────────────────────
         workspace_result = await db.execute(
@@ -167,12 +171,15 @@ async def delete_my_data(
         await db.execute(delete(Theme).where(Theme.user_id == current_user.id))
         await db.execute(delete(Insight).where(Insight.user_id == current_user.id))
         await db.execute(delete(AskConversation).where(AskConversation.user_id == current_user.id))
+        # Specs snapshot verbatim customer quotes (evidence_json), so they are
+        # ingested data too and must not outlive the interviews they cite.
+        await db.execute(delete(Spec).where(Spec.user_id == current_user.id))
         # Usage records are left intact for billing history.
 
         await db.commit()
     except Exception as e:
         await db.rollback()
-        logger.error(f"Error deleting user data for {current_user.id}: {e}")
+        logger.error(f"Error deleting user data for {user_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete user data")
 
 
@@ -185,6 +192,7 @@ async def delete_my_account(
     Delete the current user account and all associated data.
     Also removes the user from Firebase Auth.
     """
+    user_id = current_user.id  # read before any rollback expires the instance
     try:
         # Remove from Firebase Auth
         try:
@@ -197,5 +205,5 @@ async def delete_my_account(
         await db.commit()
     except Exception as e:
         await db.rollback()
-        logger.error(f"Error deleting user account for {current_user.id}: {e}")
+        logger.error(f"Error deleting user account for {user_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete user account")

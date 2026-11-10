@@ -14,9 +14,34 @@ interface RequestOptions extends RequestInit {
 
 class ApiClient {
   private baseUrl: string;
+  private tokenProvider: (() => Promise<string | null>) | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
+  }
+
+  /**
+   * Register where fresh ID tokens come from (Firebase caches the token and
+   * refreshes it shortly before its one-hour expiry). Callers keep passing
+   * the session token they hold, which only signals "authenticated"; the
+   * header always carries a current token, so nothing has to re-render or
+   * refetch when the token rotates.
+   */
+  setTokenProvider(provider: (() => Promise<string | null>) | null) {
+    this.tokenProvider = provider;
+  }
+
+  async resolveToken(token?: string | null): Promise<string | null> {
+    if (!token) return null;
+    if (this.tokenProvider) {
+      try {
+        const fresh = await this.tokenProvider();
+        if (fresh) return fresh;
+      } catch {
+        // Fall back to the token the caller holds.
+      }
+    }
+    return token;
   }
 
   private async request<T>(
@@ -30,8 +55,9 @@ class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    const authToken = await this.resolveToken(token);
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
     }
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -43,7 +69,7 @@ class ApiClient {
       const error = await response.json().catch(() => ({
         detail: response.statusText,
       }));
-      throw new ApiError(response.status, error.detail || 'An error occurred');
+      throw new ApiError(response.status, formatErrorDetail(error.detail));
     }
 
     // Handle 204 No Content
@@ -64,8 +90,9 @@ class ApiClient {
       ...(options.headers as Record<string, string>),
     };
 
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+    const authToken = await this.resolveToken(token);
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
     }
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -77,7 +104,7 @@ class ApiClient {
       const error = await response.json().catch(() => ({
         detail: response.statusText,
       }));
-      throw new ApiError(response.status, error.detail || 'An error occurred');
+      throw new ApiError(response.status, formatErrorDetail(error.detail));
     }
 
     return response.text();
@@ -716,13 +743,15 @@ class ApiClient {
 
     const response = await fetch(`${this.baseUrl}/api/survey-import/validate`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${await this.resolveToken(token)}` },
       body: formData,
     });
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}));
-      throw new Error(body.detail || `Upload failed (${response.status})`);
+      throw new Error(
+        body.detail ? formatErrorDetail(body.detail) : `Upload failed (${response.status})`
+      );
     }
 
     return response.json();
@@ -734,7 +763,7 @@ class ApiClient {
 
     const response = await fetch(`${this.baseUrl}/api/survey-import/confirm`, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${await this.resolveToken(token)}` },
       body: formData,
     });
 
@@ -758,7 +787,7 @@ class ApiClient {
 
   async downloadSurveyTemplate(token: string): Promise<Blob> {
     const response = await fetch(`${this.baseUrl}/api/survey-import/template`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${await this.resolveToken(token)}` },
     });
 
     if (!response.ok) {
@@ -770,6 +799,38 @@ class ApiClient {
 }
 
 // === Error class ===
+
+/**
+ * FastAPI's `detail` is usually a string, but request-validation errors (422)
+ * send an array of `{loc, msg}` objects and some routes send an object such as
+ * `{message, errors}`. Passing those straight to `Error` would surface as
+ * "[object Object]" in the UI.
+ */
+export function formatErrorDetail(detail: unknown): string {
+  if (typeof detail === 'string' && detail) return detail;
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map(item => {
+        if (typeof item === 'string') return item;
+        if (item && typeof item === 'object' && 'msg' in item) {
+          return String((item as { msg: unknown }).msg);
+        }
+        return null;
+      })
+      .filter((message): message is string => Boolean(message));
+    if (messages.length > 0) return messages.join('; ');
+  }
+  if (detail && typeof detail === 'object') {
+    const { message, errors } = detail as { message?: unknown; errors?: unknown };
+    if (typeof message === 'string' && message) {
+      if (Array.isArray(errors) && errors.length > 0) {
+        return `${message}: ${errors.map(String).join('; ')}`;
+      }
+      return message;
+    }
+  }
+  return 'An error occurred';
+}
 
 export class ApiError extends Error {
   status: number;

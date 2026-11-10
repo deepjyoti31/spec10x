@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './useAuth';
+import { api } from '@/lib/api';
 
 export interface ProcessingUpdate {
     interview_id: string;
@@ -37,13 +38,24 @@ export function useWebSocket(enabled = true): UseWebSocketReturn {
     const reconnectTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
     // Reconnects go through a ref so the onclose closure always calls the
     // latest connect (with current token/enabled) instead of a stale one.
-    const connectRef = useRef<(() => void) | null>(null);
+    const connectRef = useRef<(() => Promise<void>) | null>(null);
+    // Bumped on every cleanup so an in-flight connect can tell it is stale.
+    const generationRef = useRef(0);
 
-    const connect = useCallback(() => {
+    const connect = useCallback(async () => {
         if (!enabled || !token) return;
 
+        // The session token in state can be older than an hour; reconnects
+        // must authenticate with a current one.
+        const generation = generationRef.current;
+        const authToken = await api.resolveToken(token);
+        // The effect was cleaned up while we awaited: do not open a socket.
+        if (!authToken || generation !== generationRef.current) return;
+
         try {
-            const ws = new WebSocket(`${WS_BASE_URL}/ws/processing?token=${token}`);
+            const ws = new WebSocket(
+                `${WS_BASE_URL}/ws/processing?token=${encodeURIComponent(authToken)}`
+            );
 
             ws.onopen = () => {
                 setIsConnected(true);
@@ -63,7 +75,7 @@ export function useWebSocket(enabled = true): UseWebSocketReturn {
                 setIsConnected(false);
                 // Auto-reconnect after 3 seconds
                 reconnectTimer.current = setTimeout(() => {
-                    connectRef.current?.();
+                    void connectRef.current?.();
                 }, 3000);
             };
 
@@ -79,10 +91,22 @@ export function useWebSocket(enabled = true): UseWebSocketReturn {
 
     useEffect(() => {
         connectRef.current = connect;
-        connect();
+        void connect();
         return () => {
+            generationRef.current += 1;
             if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-            if (wsRef.current) wsRef.current.close();
+            const ws = wsRef.current;
+            wsRef.current = null;
+            if (ws) {
+                // Intentional close (unmount, token refresh, disable): detach
+                // the handlers first, or onclose would schedule a reconnect
+                // that leaks a socket after cleanup has already run.
+                ws.onclose = null;
+                ws.onerror = null;
+                ws.onmessage = null;
+                ws.close();
+            }
+            setIsConnected(false);
         };
     }, [connect]);
 

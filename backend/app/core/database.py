@@ -14,13 +14,26 @@ settings = get_settings()
 
 _engine = None
 _session_factory = None
+# None = default (echo SQL in development). The stdio MCP server sets False:
+# SQLAlchemy echo logs to stdout, which is that server's JSON-RPC channel.
+_sql_echo_override: bool | None = None
+
+
+def disable_sql_echo() -> None:
+    """Never echo SQL, whatever APP_ENV says. Call before the first query."""
+    global _sql_echo_override
+    _sql_echo_override = False
 
 def get_engine():
     global _engine
     if _engine is None:
         _engine = create_async_engine(
             settings.database_url,
-            echo=settings.app_env == "development",
+            echo=(
+                _sql_echo_override
+                if _sql_echo_override is not None
+                else settings.app_env == "development"
+            ),
             pool_size=5,
             max_overflow=10,
         )
