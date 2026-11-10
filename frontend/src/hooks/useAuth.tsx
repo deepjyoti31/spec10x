@@ -8,7 +8,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthChange, getIdToken, logout as firebaseLogout, User as FirebaseUser } from '@/lib/auth';
+import { isAuthConfigured, onTokenChange, logout as firebaseLogout, User as FirebaseUser } from '@/lib/auth';
 import { api, UserResponse } from '@/lib/api';
 
 interface AuthContextType {
@@ -58,25 +58,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             return;
         }
 
-        const unsubscribe = onAuthChange(async (fbUser) => {
+        if (!isAuthConfigured()) {
+            // Local quick start without a Firebase project: the backend's
+            // development mode accepts any bearer token and maps it to its
+            // mock user. Whether that is allowed is decided by the backend
+            // alone; anywhere else verification fails and we stay signed out.
+            const devToken = 'local-dev-token';
+            api.verifyToken(devToken)
+                .then((apiUser) => {
+                    setUser(apiUser);
+                    setToken(devToken);
+                })
+                .catch(() => {
+                    console.error('Firebase is not configured and the backend rejected local dev auth.');
+                    setUser(null);
+                    setToken(null);
+                })
+                .finally(() => setLoading(false));
+            return;
+        }
+
+        // onIdTokenChanged (not onAuthStateChanged): it also fires when the
+        // SDK refreshes the hourly ID token, so API calls never go out with
+        // an expired token. The backend profile is only re-fetched when the
+        // signed-in account actually changes.
+        let verifiedUid: string | null = null;
+        const unsubscribe = onTokenChange(async (fbUser) => {
             setFirebaseUser(fbUser);
 
             if (fbUser) {
                 try {
-                    const idToken = await getIdToken();
+                    const idToken = await fbUser.getIdToken();
                     setToken(idToken);
 
-                    if (idToken) {
+                    if (verifiedUid !== fbUser.uid) {
                         // Verify token with our backend & get/create user
                         const apiUser = await api.verifyToken(idToken);
+                        verifiedUid = fbUser.uid;
                         setUser(apiUser);
                     }
                 } catch (error) {
                     console.error('Auth verification failed:', error);
+                    verifiedUid = null;
                     setUser(null);
                     setToken(null);
                 }
             } else {
+                verifiedUid = null;
                 setUser(null);
                 setToken(null);
             }
@@ -88,7 +116,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const logout = async () => {
-        await firebaseLogout();
+        if (isAuthConfigured()) {
+            await firebaseLogout();
+        }
         setUser(null);
         setToken(null);
         setFirebaseUser(null);

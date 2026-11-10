@@ -82,7 +82,18 @@ export function useWebSocket(enabled = true): UseWebSocketReturn {
         connect();
         return () => {
             if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-            if (wsRef.current) wsRef.current.close();
+            const ws = wsRef.current;
+            wsRef.current = null;
+            if (ws) {
+                // Intentional close (unmount, token refresh, disable): detach
+                // the handlers first, or onclose would schedule a reconnect
+                // that leaks a socket after cleanup has already run.
+                ws.onclose = null;
+                ws.onerror = null;
+                ws.onmessage = null;
+                ws.close();
+            }
+            setIsConnected(false);
         };
     }, [connect]);
 

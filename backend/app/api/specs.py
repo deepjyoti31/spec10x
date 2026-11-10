@@ -342,7 +342,7 @@ async def generate_spec_tasks(
         )
 
     try:
-        tasks = generate_tasks_for_spec(spec)
+        tasks = await generate_tasks_for_spec(spec)
     except TaskGenerationError as exc:
         raise HTTPException(
             status_code=502,

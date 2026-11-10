@@ -474,3 +474,38 @@ class TestHomeSpecPipeline:
         assert pipeline["total"] == status_sum
         assert pipeline["total"] >= 2
         assert draft_spec["id"] and approved_spec["id"]
+
+
+@pytest.mark.asyncio
+async def test_task_breakdown_does_not_block_the_event_loop(mock_genai_client_global):
+    """The Gemini SDK call is synchronous; it must run off the event loop so
+    one slow generation does not stall every other request on the server."""
+    import asyncio
+    import time
+
+    from app.models import Spec
+    from app.services.task_breakdown import TaskGenerationError, generate_tasks_for_spec
+
+    def slow_generate(*args, **kwargs):
+        time.sleep(0.3)
+        return Mock(text='{"tasks": []}')
+
+    mock_genai_client_global.models.generate_content.side_effect = slow_generate
+
+    ticks = 0
+
+    async def ticker():
+        nonlocal ticks
+        while True:
+            await asyncio.sleep(0.01)
+            ticks += 1
+
+    ticker_task = asyncio.create_task(ticker())
+    try:
+        await generate_tasks_for_spec(Spec(title="Loop check", sections_json=[], evidence_json=[]))
+    except TaskGenerationError:
+        pass
+    finally:
+        ticker_task.cancel()
+
+    assert ticks >= 5

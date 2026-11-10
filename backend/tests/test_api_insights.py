@@ -149,3 +149,101 @@ class TestFlagInsight:
         response = await client.post(f"/api/insights/{insight_id}/flag", headers=AUTH_HEADER)
         assert response.status_code == 200
         assert response.json()["is_flagged"] is False
+
+
+async def _create_foreign_owner_data(db_session):
+    """An interview and a theme owned by a different user."""
+    from app.models import FileType, Interview, InterviewStatus, User
+
+    tag = uuid.uuid4().hex[:10]
+    other = User(
+        firebase_uid=f"insight-other-{tag}",
+        email=f"insight-other-{tag}@spec10xtest.com",
+        name="Other",
+    )
+    db_session.add(other)
+    await db_session.flush()
+    interview = Interview(
+        user_id=other.id,
+        filename=f"{tag}.txt",
+        file_type=FileType.txt,
+        file_size_bytes=10,
+        storage_path=f"tests/{tag}.txt",
+        status=InterviewStatus.done,
+    )
+    theme = Theme(
+        user_id=other.id,
+        name=f"Foreign Theme {tag}",
+        mention_count=1,
+        status=ThemeStatus.active,
+    )
+    db_session.add_all([interview, theme])
+    await db_session.commit()
+    return interview, theme
+
+
+class TestInsightOwnership:
+    """Insights must never attach to another account's interview or theme."""
+
+    @pytest.mark.asyncio
+    async def test_cannot_create_insight_on_foreign_interview(self, client, db_session):
+        foreign_interview, _ = await _create_foreign_owner_data(db_session)
+        response = await client.post(
+            "/api/insights",
+            json={
+                "interview_id": str(foreign_interview.id),
+                "category": "pain_point",
+                "title": "Injected",
+                "quote": "Injected quote",
+            },
+            headers=AUTH_HEADER,
+        )
+        assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_cannot_create_insight_with_foreign_theme(self, client, db_session):
+        _, foreign_theme = await _create_foreign_owner_data(db_session)
+        interview = await create_test_interview(client)
+        response = await client.post(
+            "/api/insights",
+            json={
+                "interview_id": interview["id"],
+                "category": "pain_point",
+                "title": "Injected",
+                "quote": "Injected quote",
+                "theme_id": str(foreign_theme.id),
+            },
+            headers=AUTH_HEADER,
+        )
+        assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_cannot_move_insight_to_foreign_theme(self, client, db_session):
+        _, foreign_theme = await _create_foreign_owner_data(db_session)
+        interview = await create_test_interview(client)
+        created = await client.post(
+            "/api/insights",
+            json={
+                "interview_id": interview["id"],
+                "category": "pain_point",
+                "title": "Mine",
+                "quote": "My quote",
+            },
+            headers=AUTH_HEADER,
+        )
+        insight_id = created.json()["id"]
+
+        response = await client.patch(
+            f"/api/insights/{insight_id}",
+            json={"theme_id": str(foreign_theme.id)},
+            headers=AUTH_HEADER,
+        )
+        assert response.status_code == 404
+
+        # Unknown theme ids are a clean 404, not a foreign-key 500
+        response = await client.patch(
+            f"/api/insights/{insight_id}",
+            json={"theme_id": str(uuid.uuid4())},
+            headers=AUTH_HEADER,
+        )
+        assert response.status_code == 404

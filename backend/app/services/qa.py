@@ -4,6 +4,7 @@ Spec10x Backend — RAG Q&A Service
 Answers user questions using interview data via vector similarity + Gemini.
 """
 
+import asyncio
 import json
 import logging
 import uuid
@@ -151,7 +152,8 @@ async def _real_answer(
 
     try:
         # Step 1: Embed the question
-        emb_response = client.models.embed_content(
+        emb_response = await asyncio.to_thread(
+            client.models.embed_content,
             model="gemini-embedding-001",
             contents=question,
             config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY", output_dimensionality=768)
@@ -212,7 +214,8 @@ async def _real_answer(
             f"Use bullet points and bold key findings."
         )
 
-        response = client.models.generate_content(
+        response = await asyncio.to_thread(
+            client.models.generate_content,
             model=settings.gemini_model,
             contents=prompt,
             config=types.GenerateContentConfig(
@@ -272,7 +275,8 @@ async def _ai_suggest_followups(
 ) -> list[str]:
     """Generate follow-up question suggestions using Gemini."""
     try:
-        response = client.models.generate_content(
+        response = await asyncio.to_thread(
+            client.models.generate_content,
             model=settings.gemini_model,
             contents=(
                 f"Based on this Q&A about customer interviews, "
@@ -351,7 +355,7 @@ async def get_starters(
             return default_starters
 
         context_parts = [r.content for r in rows]
-        context = "\\n---\\n".join(context_parts)
+        context = "\n---\n".join(context_parts)
 
         prompt = (
             f"Based on the following excerpts from recent user interviews:\n{context}\n\n"
@@ -359,7 +363,8 @@ async def get_starters(
             f"Make them concise and specific to the topics discussed. "
             f'Respond as a JSON array of 4 strings, e.g. ["q1", "q2", "q3", "q4"]'
         )
-        response = client.models.generate_content(
+        response = await asyncio.to_thread(
+            client.models.generate_content,
             model=settings.gemini_model,
             contents=prompt,
             config=types.GenerateContentConfig(

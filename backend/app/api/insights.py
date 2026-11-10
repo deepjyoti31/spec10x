@@ -9,11 +9,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_scoped_user
 from app.core.database import get_db
-from app.models import User, Insight, Theme
+from app.models import User, Insight, Interview, Theme
 from app.schemas import InsightResponse, InsightCreate, InsightUpdate
 from app.services.signals import sync_interview_signals_for_interview
 
 router = APIRouter(prefix="/api/insights", tags=["Insights"])
+
+
+async def _get_owned_theme(db: AsyncSession, theme_id: uuid.UUID, user_id: uuid.UUID) -> Theme:
+    theme = await db.get(Theme, theme_id)
+    if theme is None or theme.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Theme not found")
+    return theme
 
 
 @router.post("", response_model=InsightResponse, status_code=status.HTTP_201_CREATED)
@@ -23,11 +30,14 @@ async def create_insight(
     db: AsyncSession = Depends(get_db),
 ):
     """Manually add an insight (user-created)."""
+    interview = await db.get(Interview, request.interview_id)
+    if interview is None or interview.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Interview not found")
+
     theme_name = None
     if request.theme_id is not None:
-        theme = await db.get(Theme, request.theme_id)
-        if theme is not None and theme.user_id == current_user.id:
-            theme_name = theme.name
+        theme = await _get_owned_theme(db, request.theme_id, current_user.id)
+        theme_name = theme.name
 
     insight = Insight(
         user_id=current_user.id,
@@ -74,13 +84,13 @@ async def update_insight(
     if update.title is not None:
         insight.title = update.title
     if "theme_id" in update.model_fields_set:
-        insight.theme_id = update.theme_id
         if update.theme_id is None:
+            insight.theme_id = None
             insight.theme_suggestion = None
         else:
-            theme = await db.get(Theme, update.theme_id)
-            if theme is not None and theme.user_id == current_user.id:
-                insight.theme_suggestion = theme.name
+            theme = await _get_owned_theme(db, update.theme_id, current_user.id)
+            insight.theme_id = theme.id
+            insight.theme_suggestion = theme.name
 
     await db.flush()
     await sync_interview_signals_for_interview(
