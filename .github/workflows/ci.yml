@@ -41,7 +41,10 @@ jobs:
           --health-timeout 5s
           --health-retries 10
       minio:
-        image: bitnami/minio:latest
+        # bitnami/minio was withdrawn from Docker Hub (and minio/minio no longer
+        # publishes there), so the job failed before any test ran. Same Bitnami
+        # image from its legacy namespace, pinned so it cannot move or vanish.
+        image: bitnamilegacy/minio:2025.7.23
         env:
           MINIO_ROOT_USER: minioadmin
           MINIO_ROOT_PASSWORD: minioadmin
